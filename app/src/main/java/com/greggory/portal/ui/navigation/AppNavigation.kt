@@ -7,6 +7,7 @@ import androidx.navigation.compose.composable
 import com.greggory.portal.ui.screens.LoginScreen
 import com.greggory.portal.ui.screens.PortalScreen
 import com.greggory.portal.ui.screens.SignupScreen
+import com.greggory.portal.ui.screens.ForgotPasswordScreen
 
 @Composable
 fun AppNavigation(navController: NavHostController, startDestination: String = Screen.Login.route) {
@@ -20,6 +21,9 @@ fun AppNavigation(navController: NavHostController, startDestination: String = S
                 },
                 onNavigateToSignup = {
                     navController.navigate(Screen.Signup.route)
+                },
+                onNavigateToForgotPassword = {
+                    navController.navigate(Screen.ForgotPassword.route)
                 }
             )
         }
@@ -30,6 +34,13 @@ fun AppNavigation(navController: NavHostController, startDestination: String = S
                         popUpTo(Screen.Login.route) { inclusive = true }
                     }
                 },
+                onBackToLogin = {
+                    navController.popBackStack()
+                }
+            )
+        }
+        composable(Screen.ForgotPassword.route) {
+            ForgotPasswordScreen(
                 onBackToLogin = {
                     navController.popBackStack()
                 }

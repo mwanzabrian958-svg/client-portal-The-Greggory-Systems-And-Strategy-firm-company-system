@@ -26,7 +26,11 @@ import com.greggory.portal.R
 import kotlinx.coroutines.launch
 
 @Composable
-fun LoginScreen(onLoginSuccess: () -> Unit, onNavigateToSignup: () -> Unit) {
+fun LoginScreen(
+    onLoginSuccess: () -> Unit,
+    onNavigateToSignup: () -> Unit,
+    onNavigateToForgotPassword: () -> Unit
+) {
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var passwordVisible by remember { mutableStateOf(false) }
@@ -91,7 +95,7 @@ fun LoginScreen(onLoginSuccess: () -> Unit, onNavigateToSignup: () -> Unit) {
 
         Box(modifier = Modifier.fillMaxWidth()) {
             TextButton(
-                onClick = { /* TODO: Implement Forgot Password Flow */ },
+                onClick = { onNavigateToForgotPassword() },
                 modifier = Modifier.align(Alignment.CenterEnd)
             ) {
                 Text("Forgot Password?", style = MaterialTheme.typography.bodySmall)
@@ -173,6 +177,6 @@ fun LoginScreen(onLoginSuccess: () -> Unit, onNavigateToSignup: () -> Unit) {
 @Composable
 fun LoginScreenPreview() {
     GreggoryPortalTheme {
-        LoginScreen(onLoginSuccess = {}, onNavigateToSignup = {})
+        LoginScreen(onLoginSuccess = {}, onNavigateToSignup = {}, onNavigateToForgotPassword = {})
     }
 }
