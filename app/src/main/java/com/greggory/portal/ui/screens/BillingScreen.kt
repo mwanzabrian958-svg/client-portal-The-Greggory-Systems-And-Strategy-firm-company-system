@@ -1,5 +1,6 @@
 package com.greggory.portal.ui.screens
 
+import android.widget.Toast
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -12,16 +13,19 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.greggory.portal.data.api.Invoice
 import com.greggory.portal.data.api.MpesaStkPushRequest
 import com.greggory.portal.data.api.RetrofitClient
+import com.greggory.portal.utils.FileDownloadHelper
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 @Composable
 fun BillingScreen(invoices: List<Invoice>) {
+    val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
     var selectedInvoice by remember { mutableStateOf<Invoice?>(null) }
@@ -53,6 +57,20 @@ fun BillingScreen(invoices: List<Invoice>) {
                     onPayClick = {
                         selectedInvoice = invoice
                         showPhoneDialog = true
+                    },
+                    onDownloadClick = {
+                        val fileName = "Invoice_${invoice.id}.pdf"
+                        val success = FileDownloadHelper.downloadFile(
+                            context = context,
+                            url = FileDownloadHelper.getInvoiceUrl(invoice.id),
+                            fileName = fileName,
+                            description = "Downloading Invoice #${invoice.id}"
+                        )
+                        if (success) {
+                            Toast.makeText(context, "Invoice download started", Toast.LENGTH_SHORT).show()
+                        } else {
+                            Toast.makeText(context, "Failed to start download", Toast.LENGTH_SHORT).show()
+                        }
                     }
                 )
             }
@@ -156,7 +174,7 @@ private suspend fun pollPaymentStatus(checkoutRequestId: String, snackbarHostSta
 }
 
 @Composable
-fun InvoiceCard(invoice: Invoice, onPayClick: () -> Unit) {
+fun InvoiceCard(invoice: Invoice, onPayClick: () -> Unit, onDownloadClick: () -> Unit) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
@@ -179,7 +197,7 @@ fun InvoiceCard(invoice: Invoice, onPayClick: () -> Unit) {
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 OutlinedButton(
-                    onClick = { /* TODO: Download PDF */ },
+                    onClick = onDownloadClick,
                     modifier = Modifier.weight(1f)
                 ) {
                     Icon(Icons.Default.Download, contentDescription = null)

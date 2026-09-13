@@ -1,9 +1,5 @@
 package com.greggory.portal.ui.screens
 
-import android.app.DownloadManager
-import android.content.Context
-import android.net.Uri
-import android.os.Environment
 import android.widget.Toast
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -19,13 +15,8 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.greggory.portal.data.api.Report
-import com.greggory.portal.data.api.RetrofitClient
-import kotlinx.coroutines.Dispatchers
+import com.greggory.portal.utils.FileDownloadHelper
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
-import java.io.File
-import java.io.FileOutputStream
-import java.io.InputStream
 
 @Composable
 fun ReportsScreen(reports: List<Report>) {
@@ -58,7 +49,12 @@ fun ReportsScreen(reports: List<Report>) {
                     onDownload = {
                         downloadingReportId = report.id
                         scope.launch {
-                            val success = downloadReportFile(context, report)
+                            val fileName = "${report.title.replace(" ", "_")}.pdf"
+                            val success = FileDownloadHelper.downloadFile(
+                                context = context,
+                                url = FileDownloadHelper.getReportUrl(report.id),
+                                fileName = fileName
+                            )
                             downloadingReportId = null
                             if (success) {
                                 Toast.makeText(context, "Report saved to Downloads", Toast.LENGTH_LONG).show()
@@ -70,26 +66,6 @@ fun ReportsScreen(reports: List<Report>) {
                 )
             }
         }
-    }
-}
-
-private suspend fun downloadReportFile(context: Context, report: Report): Boolean = withContext(Dispatchers.IO) {
-    try {
-        val fileName = "${report.title.replace(" ", "_")}.pdf"
-        val request = DownloadManager.Request(Uri.parse("${RetrofitClient.BASE_URL}api/users/my-reports/${report.id}/download"))
-            .setTitle(report.title)
-            .setDescription("Downloading report from The Greggory Firm")
-            .setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
-            .setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS, fileName)
-            .addRequestHeader("Authorization", "Bearer ${com.greggory.portal.data.local.PreferencesManager(context).getToken()}")
-            .setAllowedOverMetered(true)
-            .setAllowedOverRoaming(true)
-
-        val downloadManager = context.getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
-        downloadManager.enqueue(request)
-        true
-    } catch (e: Exception) {
-        false
     }
 }
 
