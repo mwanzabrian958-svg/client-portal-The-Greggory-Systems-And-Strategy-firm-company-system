@@ -17,20 +17,20 @@ import java.io.InputStream
 class TestImageProvider : ContentProvider() {
 
     companion object {
-        private const val CLASS_NAME = "com.greggory.portal.ui.test.TestImageProvider"
+        private const val AUTHORITY = "com.greggory.portal.testimageprovider"
         private const val TEST_IMAGE = 1
 
-        val CONTENT_URI: Uri = Uri.parse("content://$CLASS_NAME/test_image")
+        val CONTENT_URI: Uri = Uri.parse("content://$AUTHORITY/test_image")
     }
 
     private lateinit var assetManager: AssetManager
     private lateinit var cacheDir: File
     private val uriMatcher = UriMatcher(UriMatcher.NO_MATCH).apply {
-        addURI(CLASS_NAME, "test_image", TEST_IMAGE)
+        addURI(AUTHORITY, "test_image", TEST_IMAGE)
     }
 
     override fun onCreate(): Boolean {
-        assetManager = context?.getAssets() ?: return false
+        assetManager = context?.assets ?: return false
         cacheDir = File(context?.cacheDir, "test_images").apply {
             if (!exists()) mkdirs()
         }
@@ -52,11 +52,6 @@ class TestImageProvider : ContentProvider() {
         }
     }
 
-    override fun getType(uri: Uri): String? = getType(uri)
-
-    override fun getUriPermission(uri: Uri, modeFlags: Int): String? = null
-
-    override fun getUriPermissions(uri: Uri, flags: Int, userId: Int): MutableList<String> = mutableListOf()
 
     override fun insert(uri: Uri, values: ContentValues?): Uri? = null
 
@@ -72,11 +67,11 @@ class TestImageProvider : ContentProvider() {
     override fun openFile(uri: Uri, mode: String): ParcelFileDescriptor? {
         if (uriMatcher.match(uri) != TEST_IMAGE) return null
         val file = getOrCreateTestImageFile()
-        val accessMode = when {
-            mode.contains("rw") && mode.contains("wt") -> OsConstants.O_RDWR or OsConstants.O_CREAT or OsConstants.O_TRUNC
-            mode.contains("w") -> OsConstants.O_RDWR or OsConstants.O_CREAT or OsConstants.O_TRUNC
-            mode.contains("r") -> OsConstants.O_RDONLY
-            else -> OsConstants.O_RDONLY
+        val accessMode = when (mode) {
+            "r" -> ParcelFileDescriptor.MODE_READ_ONLY
+            "w", "wt" -> ParcelFileDescriptor.MODE_WRITE_ONLY or ParcelFileDescriptor.MODE_CREATE or ParcelFileDescriptor.MODE_TRUNCATE
+            "rw" -> ParcelFileDescriptor.MODE_READ_WRITE or ParcelFileDescriptor.MODE_CREATE
+            else -> ParcelFileDescriptor.MODE_READ_ONLY
         }
         return ParcelFileDescriptor.open(file, accessMode)
     }
