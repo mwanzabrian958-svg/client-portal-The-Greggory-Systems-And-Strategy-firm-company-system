@@ -5,6 +5,7 @@ plugins {
     id 'kotlin-kapt'
     id 'com.google.gms.google-services'
     id 'com.google.firebase.crashlytics'
+    id 'io.gitlab.arturbosch.detekt'
 }
 
 android {
@@ -68,6 +69,18 @@ android {
         resources {
             excludes += '/META-INF/{AL2.0,LGPL2.1}'
         }
+    }
+
+    // Detekt configuration - Code Quality Analysis
+    detekt {
+        config = files("$rootDir/detekt.yml")
+    }
+}
+
+// Detekt tasks configuration
+tasks.configureEach { task ->
+    if (task.name.startsWith("detekt")) {
+        // Target specific source sets or actions safely without class cast exceptions
     }
 }
 

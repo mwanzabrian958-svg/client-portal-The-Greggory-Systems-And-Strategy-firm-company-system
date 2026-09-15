@@ -24,24 +24,101 @@ fun ReportsScreen(reports: List<Report>) {
     val scope = rememberCoroutineScope()
     var downloadingReportId by remember { mutableStateOf<Int?>(null) }
 
-    if (reports.isEmpty()) {
-        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-            Text("No reports available yet", style = MaterialTheme.typography.bodyLarge)
+    // Mock Pinned Legal Documents (Until synced to DB)
+    val legalDocs = listOf(
+        Report(
+            id = -1,
+            title = "Client Registration Agreement (PDF)",
+            summary = "Standard firm agreement for all service engagements.",
+            file_type = "application/pdf",
+            file_size = 245000,
+            report_date = "2024-09-01",
+            project_name = "Legal & Compliance",
+            client_id = 0
+        ),
+        Report(
+            id = -2,
+            title = "Client Registration Agreement (Word)",
+            summary = "Editable version for contract review.",
+            file_type = "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+            file_size = 180000,
+            report_date = "2024-09-01",
+            project_name = "Legal & Compliance",
+            client_id = 0
+        )
+    )
+
+    LazyColumn(
+        modifier = Modifier.fillMaxSize(),
+        contentPadding = PaddingValues(16.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        item {
+            Text(
+                text = "Legal & Contracts",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.padding(bottom = 8.dp)
+            )
         }
-    } else {
-        LazyColumn(
-            modifier = Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
+        
+        items(legalDocs) { doc ->
+            ReportCard(
+                report = doc,
+                isDownloading = downloadingReportId == doc.id,
+                onDownload = {
+                    Toast.makeText(context, "Pinned Legal Doc: Syncing with cloud...", Toast.LENGTH_SHORT).show()
+                }
+            )
+        }
+
+        item {
+            Spacer(modifier = Modifier.height(16.dp))
+            Text(
+                text = "Active Proposals",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.padding(bottom = 8.dp)
+            )
+            Text(
+                text = "Approved and pending proposals for new and existing projects.",
+                style = MaterialTheme.typography.bodySmall,
+                modifier = Modifier.padding(bottom = 8.dp)
+            )
+        }
+
+        // Mock Proposals (To show variety of jobs)
+        val mockProposals = listOf(
+            Report(-10, "Proposal: Firm Networking Overhaul", "Detailed setup for Cisco failover networking.", "pdf", 1200000, "2024-09-12", "Networking", 0),
+            Report(-11, "Proposal: Mobile Client Portal V2", "Expansion of current Android app features.", "pdf", 950000, "2024-09-14", "Mobile Development", 0)
+        )
+
+        items(mockProposals) { proposal ->
+            ReportCard(
+                report = proposal,
+                isDownloading = false,
+                onDownload = { Toast.makeText(context, "Fetching proposal...", Toast.LENGTH_SHORT).show() }
+            )
+        }
+
+        item {
+            Spacer(modifier = Modifier.height(16.dp))
+            Text(
+                text = "Project Reports",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.padding(bottom = 8.dp)
+            )
+        }
+
+        if (reports.isEmpty()) {
             item {
-                Text(
-                    text = "Project Reports",
-                    style = MaterialTheme.typography.headlineSmall,
-                    color = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.padding(bottom = 8.dp)
-                )
+                Text("No project reports available yet", style = MaterialTheme.typography.bodySmall)
             }
+        } else {
             items(reports) { report ->
                 ReportCard(
                     report = report,

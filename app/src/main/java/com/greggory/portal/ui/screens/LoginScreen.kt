@@ -134,7 +134,7 @@ fun LoginScreen(
                                     val prefs = com.greggory.portal.data.local.PreferencesManager(context)
                                     prefs.saveToken(token)
                                     body.user?.let { user ->
-                                        prefs.saveUserInfo(user.id, user.email, user.first_name)
+                                        prefs.saveUserInfo(user.id, user.email, user.first_name, user.phone)
                                     }
                                     onLoginSuccess()
                                 } else {

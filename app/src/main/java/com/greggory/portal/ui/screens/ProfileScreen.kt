@@ -14,6 +14,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CameraAlt
 import androidx.compose.material.icons.filled.Email
+import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Phone
 import androidx.compose.material3.*
@@ -43,7 +44,7 @@ fun ProfileScreen() {
     
     var firstName by remember { mutableStateOf(prefs.getUserName() ?: "") }
     var email by remember { mutableStateOf(prefs.getUserEmail() ?: "") }
-    var phoneNumber by remember { mutableStateOf("") } // Would normally fetch from API
+    var phoneNumber by remember { mutableStateOf(prefs.getUserPhone() ?: "") }
     var isUpdating by remember { mutableStateOf(false) }
     var selectedImageUri by remember { mutableStateOf<Uri?>(null) }
 
@@ -137,6 +138,7 @@ fun ProfileScreen() {
                             ProfileUpdateRequest(firstName, phoneNumber)
                         )
                         if (response.isSuccessful && response.body()?.success == true) {
+                            prefs.saveUserInfo(prefs.getUserId(), email, firstName, phoneNumber)
                             Toast.makeText(context, "Profile updated successfully", Toast.LENGTH_SHORT).show()
                         } else {
                             Toast.makeText(context, "Update failed: ${response.body()?.message}", Toast.LENGTH_SHORT).show()
@@ -157,7 +159,90 @@ fun ProfileScreen() {
                 Text("SAVE CHANGES")
             }
         }
+
+        Spacer(modifier = Modifier.height(24.dp))
+        HorizontalDivider()
+        Spacer(modifier = Modifier.height(24.dp))
+
+        Text("Security", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, modifier = Modifier.fillMaxWidth(), textAlign = androidx.compose.ui.text.style.TextAlign.Start)
+        Spacer(modifier = Modifier.height(16.dp))
+        
+        var showPasswordDialog by remember { mutableStateOf(false) }
+        OutlinedButton(onClick = { showPasswordDialog = true }, modifier = Modifier.fillMaxWidth()) {
+            Icon(Icons.Default.Lock, contentDescription = null)
+            Spacer(modifier = Modifier.width(8.dp))
+            Text("CHANGE PASSWORD")
+        }
+
+        if (showPasswordDialog) {
+            ChangePasswordDialog(onDismiss = { showPasswordDialog = false })
+        }
     }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun ChangePasswordDialog(onDismiss: () -> Unit) {
+    var currentPassword by remember { mutableStateOf("") }
+    var newPassword by remember { mutableStateOf("") }
+    var confirmPassword by remember { mutableStateOf("") }
+    var isSubmitting by remember { mutableStateOf(false) }
+    val scope = rememberCoroutineScope()
+    val context = LocalContext.current
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Change Password") },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                OutlinedTextField(
+                    value = currentPassword,
+                    onValueChange = { currentPassword = it },
+                    label = { Text("Current Password") },
+                    visualTransformation = androidx.compose.ui.text.input.PasswordVisualTransformation(),
+                    modifier = Modifier.fillMaxWidth()
+                )
+                OutlinedTextField(
+                    value = newPassword,
+                    onValueChange = { newPassword = it },
+                    label = { Text("New Password") },
+                    visualTransformation = androidx.compose.ui.text.input.PasswordVisualTransformation(),
+                    modifier = Modifier.fillMaxWidth()
+                )
+                OutlinedTextField(
+                    value = confirmPassword,
+                    onValueChange = { confirmPassword = it },
+                    label = { Text("Confirm New Password") },
+                    visualTransformation = androidx.compose.ui.text.input.PasswordVisualTransformation(),
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
+        },
+        confirmButton = {
+            Button(
+                enabled = currentPassword.isNotBlank() && newPassword.length >= 6 && newPassword == confirmPassword && !isSubmitting,
+                onClick = {
+                    isSubmitting = true
+                    scope.launch {
+                        try {
+                            val response = RetrofitClient.instance.changePassword(com.greggory.portal.data.api.ChangePasswordRequest(currentPassword, newPassword))
+                            if (response.isSuccessful) {
+                                Toast.makeText(context, "Password updated successfully", Toast.LENGTH_SHORT).show()
+                                onDismiss()
+                            } else {
+                                Toast.makeText(context, "Failed: ${response.body()?.message ?: "Check current password"}", Toast.LENGTH_SHORT).show()
+                            }
+                        } catch (e: Exception) {
+                            Toast.makeText(context, "Error: ${e.localizedMessage}", Toast.LENGTH_SHORT).show()
+                        } finally {
+                            isSubmitting = false
+                        }
+                    }
+                }
+            ) { Text("UPDATE") }
+        },
+        dismissButton = { TextButton(onClick = onDismiss) { Text("CANCEL") } }
+    )
 }
 
 private fun uploadPhoto(

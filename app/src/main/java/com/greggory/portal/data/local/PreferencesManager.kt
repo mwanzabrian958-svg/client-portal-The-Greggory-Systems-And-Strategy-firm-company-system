@@ -30,17 +30,19 @@ class PreferencesManager(context: Context) {
         sharedPreferences.edit().clear().apply()
     }
 
-    fun saveUserInfo(userId: Int, email: String, name: String) {
+    fun saveUserInfo(userId: Int, email: String, name: String, phone: String? = null) {
         sharedPreferences.edit().apply {
             putInt("user_id", userId)
             putString("user_email", email)
             putString("user_name", name)
+            putString("user_phone", phone)
         }.apply()
     }
 
     fun getUserId(): Int = sharedPreferences.getInt("user_id", -1)
     fun getUserEmail(): String? = sharedPreferences.getString("user_email", null)
     fun getUserName(): String? = sharedPreferences.getString("user_name", null)
+    fun getUserPhone(): String? = sharedPreferences.getString("user_phone", null)
 
     fun saveFcmToken(token: String) {
         sharedPreferences.edit().putString("fcm_token", token).apply()

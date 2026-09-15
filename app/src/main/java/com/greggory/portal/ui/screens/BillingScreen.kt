@@ -33,6 +33,10 @@ fun BillingScreen(invoices: List<Invoice>) {
     var showPhoneDialog by remember { mutableStateOf(false) }
     var phoneNumber by remember { mutableStateOf("") }
     var isProcessing by remember { mutableStateOf(false) }
+    
+    var showReportDialog by remember { mutableStateOf(false) }
+    var mpesaFeedbackMessage by remember { mutableStateOf("") }
+    var isReporting by remember { mutableStateOf(false) }
 
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) }
@@ -72,6 +76,11 @@ fun BillingScreen(invoices: List<Invoice>) {
                         } else {
                             Toast.makeText(context, "Failed to start download", Toast.LENGTH_SHORT).show()
                         }
+                    },
+                    onReportClick = {
+                        selectedInvoice = invoice
+                        mpesaFeedbackMessage = ""
+                        showReportDialog = true
                     }
                 )
             }
@@ -181,6 +190,71 @@ fun BillingScreen(invoices: List<Invoice>) {
             }
         )
     }
+
+    if (showReportDialog) {
+        AlertDialog(
+            onDismissRequest = { if (!isReporting) showReportDialog = false },
+            title = { Text("Report Payment Feedback") },
+            text = {
+                Column {
+                    Text(
+                        text = "Submit the M-Pesa receipt message or transaction code for Invoice #${selectedInvoice?.id} to the accounts office for manually reconciling.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Spacer(modifier = Modifier.height(12.dp))
+                    OutlinedTextField(
+                        value = mpesaFeedbackMessage,
+                        onValueChange = { mpesaFeedbackMessage = it },
+                        label = { Text("M-Pesa Transaction Code / Message") },
+                        placeholder = { Text("Example: PKG87HDKS9 Confirmed. Ksh...") },
+                        modifier = Modifier.fillMaxWidth().height(120.dp),
+                        enabled = !isReporting,
+                        maxLines = 5
+                    )
+                    if (isReporting) {
+                        Spacer(modifier = Modifier.height(8.dp))
+                        LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
+                    }
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        isReporting = true
+                        scope.launch {
+                            try {
+                                val response = RetrofitClient.instance.reportManualPayment(
+                                    com.greggory.portal.data.api.PaymentReportRequest(
+                                        invoiceId = selectedInvoice?.id.toString(),
+                                        mpesaMessage = mpesaFeedbackMessage.trim()
+                                    )
+                                )
+                                if (response.isSuccessful && response.body()?.success == true) {
+                                    snackbarHostState.showSnackbar("✅ Payment report submitted successfully to webmaster.")
+                                    showReportDialog = false
+                                } else {
+                                    snackbarHostState.showSnackbar("❌ Submission failed: ${response.body()?.message ?: "Unknown error"}")
+                                }
+                            } catch (e: Exception) {
+                                snackbarHostState.showSnackbar("Error: ${e.localizedMessage}")
+                            } finally {
+                                isReporting = false
+                            }
+                        }
+                    },
+                    enabled = mpesaFeedbackMessage.trim().isNotEmpty() && !isReporting
+                ) {
+                    Text("SUBMIT REPORT")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showReportDialog = false }, enabled = !isReporting) {
+                    Text("CANCEL")
+                }
+            }
+        )
+    }
 }
 
 private suspend fun pollPaymentStatus(checkoutRequestId: String, snackbarHostState: SnackbarHostState) {
@@ -208,7 +282,7 @@ private suspend fun pollPaymentStatus(checkoutRequestId: String, snackbarHostSta
 }
 
 @Composable
-fun InvoiceCard(invoice: Invoice, onPayClick: () -> Unit, onDownloadClick: () -> Unit) {
+fun InvoiceCard(invoice: Invoice, onPayClick: () -> Unit, onDownloadClick: () -> Unit, onReportClick: () -> Unit) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
@@ -248,6 +322,15 @@ fun InvoiceCard(invoice: Invoice, onPayClick: () -> Unit, onDownloadClick: () ->
                         Spacer(modifier = Modifier.width(4.dp))
                         Text("PAY")
                     }
+                }
+            }
+            if (invoice.status.lowercase() != "paid") {
+                Spacer(modifier = Modifier.height(8.dp))
+                TextButton(
+                    onClick = onReportClick,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text("Already Paid? Submit M-Pesa Code / Message", style = MaterialTheme.typography.bodySmall)
                 }
             }
         }
