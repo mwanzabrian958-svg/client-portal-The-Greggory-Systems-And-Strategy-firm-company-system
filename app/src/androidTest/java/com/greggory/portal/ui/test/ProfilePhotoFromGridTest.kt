@@ -11,6 +11,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.unit.dp
 import androidx.test.core.app.ApplicationProvider
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
@@ -39,9 +40,8 @@ class ProfilePhotoFromGridTest {
     @Test
     fun profileScreen_canLoadTestGridImageFromProvider() {
         val providerUri = Uri.parse(
-            "content://com.greggory.portal.ui.test.TestImageProvider/test_image"
+            "content://com.greggory.portal.testimageprovider/test_image"
         )
-        assertNotNull("Test image provider content URI should be non-null", providerUri)
 
         composeTestRule.setContent {
             GreggoryPortalTheme {
@@ -51,8 +51,8 @@ class ProfilePhotoFromGridTest {
 
         composeTestRule.waitForIdle()
 
-        val profilePhotoNode = composeTestRule.onNodeWithContentDescription("Profile Photo")
-        assertNotNull("Profile photo node should exist in ProfileScreen", profilePhotoNode)
+        // Verify ProfileScreen displays the photo section
+        composeTestRule.onNodeWithContentDescription("Profile Photo").assertExists()
 
         val cacheDir = context.cacheDir
         val targetFile = File(cacheDir, "test_images/test_grid.jpeg")
@@ -61,9 +61,9 @@ class ProfilePhotoFromGridTest {
             assetExposedByProvider(context, providerUri, targetFile)
         )
 
+        // Verify that AsyncImage can load from our custom ContentProvider
         composeTestRule.setContent {
-            LocalContext.current.let { ctx ->
-                var painterState by remember { mutableStateOf<Any?>(null) }
+            GreggoryPortalTheme {
                 AsyncImage(
                     model = providerUri,
                     contentDescription = "Test provider image",
@@ -74,16 +74,12 @@ class ProfilePhotoFromGridTest {
         }
         composeTestRule.waitForIdle()
 
-        val testProviderImageNode = composeTestRule.onNodeWithContentDescription("Test provider image")
-        assertNotNull(
-            "AsyncImage bound to the test provider URI should appear in the Compose test",
-            testProviderImageNode
-        )
+        composeTestRule.onNodeWithContentDescription("Test provider image").assertExists()
 
+        // Coil specific check: build a request for the file we just extracted from the provider
         val fileUri = Uri.fromFile(targetFile)
         val fileRequest = ImageRequest.Builder(context)
             .data(fileUri)
-            .target { _, _ -> }
             .build()
         assertNotNull("Coil should build a request for the test image file URI", fileRequest)
     }
