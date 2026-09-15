@@ -1,0 +1,134 @@
+# The Greggory Client Portal - Detekt Code Quality Configuration
+# This configuration defines the code quality standards for the Android application
+
+build:
+  maxIssues: 10
+  maxErrors: 5
+  maxWarnings: 0
+
+complexity:
+  active: true
+  Methodcount:
+    threshold: 15
+  LongMethod:
+    threshold: 30
+  LargeClass:
+    threshold: 500
+  LongParameterList:
+    threshold: 8
+  MethodName:
+    minimumNameLength: 3
+    maximumNameLength: 30
+  NestedBlock:
+    max: 5
+
+config:
+  validation: true
+  warningsAsErrors: false
+  buildEvalTriage: false
+  warningsAsErrorsInTests: false
+
+comments:
+  active: true
+  CommentOverPrivateFunction:
+    active: true
+  CommentOverPrivateSpaces:
+    active: true
+  UndocumentedPublicFunction:
+    active: false
+  UndocumentedPublicClass:
+    active: false
+  UndocumentedPublicProperty:
+    active: false
+
+empty:
+  active: true
+  EmptyCatchBlock:
+    active: true
+  EmptyFinallyBlock:
+    active: true
+  EmptyFunction:
+    active: true
+  doNotIgnoreException: false
+  TooGenericExceptionCaught:
+    active: true
+  EmptyClass:
+    active: false
+
+exceptions:
+  active: true
+  OrThrow:
+    active: true
+  SwallowingThrowable:
+    active: true
+
+naming:
+  active: true
+  FunctionName:
+    active: true
+    funMethodNameRegex: "^(on[A-Z].*|[a-z][a-zA-Z0-9_]*)$"
+  ClassNaming:
+    active: true
+  PackageNaming:
+    active: true
+  VariableNaming:
+    active: true
+  TopLevelPropertyNaming:
+    active: true
+
+performance:
+  active: true
+  SpreadOperator:
+    active: true
+  UnnecessaryCallForNonNull:
+    active: true
+  UnnecessaryFilterInPlace:
+    active: true
+  UnnecessarySetOrMapForEach:
+    active: true
+
+potentialbugs:
+  active: true
+  ConstantConditionIfPresent:
+    active: true
+  DivisionByZero:
+    active: true
+  ElseCase:
+    active: true
+  NullCheckOnMutableReference:
+    active: true
+  ImplicitUnitReturn:
+    active: true
+  RedundantElseExpression:
+    active: true
+  UselessCallOnNotNull:
+    active: true
+
+style:
+  active: true
+  MaxLineLength:
+    active: false
+  Braces:
+    active: true
+  Indentation:
+    active: true
+  Semicolon:
+    active: true
+  WildcardImport:
+    active: true
+  ExplicitIt:
+    active: false
+  MagicNumber:
+    active: false
+  NestedClasses:
+    active: true
+
+size:
+  active: true
+  TooManyFunctions:
+    active: false
+  TooManyFields:
+    active: false
+  LargeClass:
+    active: true
+    threshold: 500
