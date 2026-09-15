@@ -98,17 +98,17 @@ fun PortalScreen(onLogout: () -> Unit) {
                 val notifsResponse = notifsDeferred.await()
 
                 if (dashResponse.isSuccessful && dashResponse.body()?.success == true) {
-                    val body = dashResponse.body()
+                    val body = dashResponse.body()?.dashboard
                     val reports = reportsResponse.body()?.reports ?: emptyList()
                     
                     // Validate Set in Stone Routing Integrity for all incoming data
                     val isIntegrityValid = 
-                        (body?.projects?.all { com.greggory.portal.utils.DataRouter.verifyRoutingIntegrity(it.client_id, userId) } ?: true) &&
-                        (body?.invoices?.all { com.greggory.portal.utils.DataRouter.verifyRoutingIntegrity(it.client_id, userId) } ?: true) &&
-                        (reports.all { com.greggory.portal.utils.DataRouter.verifyRoutingIntegrity(it.client_id, userId) })
+                        (body?.projects?.all { com.greggory.portal.utils.DataRouter.verifyRoutingIntegrity(it.clientId, userId) } ?: true) &&
+                        (body?.invoices?.all { com.greggory.portal.utils.DataRouter.verifyRoutingIntegrity(it.clientId, userId) } ?: true) &&
+                        (reports.all { com.greggory.portal.utils.DataRouter.verifyRoutingIntegrity(it.clientId, userId) })
 
                     if (isIntegrityValid) {
-                        dashboardData = body
+                        dashboardData = dashResponse.body()
                         reportsData = reports
                         notificationsData = notifsResponse.body()?.notifications ?: emptyList()
                         
@@ -272,10 +272,10 @@ fun PortalScreen(onLogout: () -> Unit) {
                         notifications = notificationsData,
                         onNavigate = { currentView = it }
                     )
-                        "Projects" -> ProjectListScreen(dashboardData?.projects ?: localProjects.map { it.toApi() })
-                        "Team" -> TeamScreen(dashboardData?.teamMembers ?: emptyList())
-                        "Tasks" -> TasksScreen(dashboardData?.tasks ?: emptyList())
-                        "Billing" -> BillingScreen(dashboardData?.invoices ?: localInvoices.map { it.toApi() })
+                        "Projects" -> ProjectListScreen(dashboardData?.dashboard?.projects ?: localProjects.map { it.toApi() })
+                        "Team" -> TeamScreen(dashboardData?.dashboard?.teamMembers ?: emptyList())
+                        "Tasks" -> TasksScreen(dashboardData?.dashboard?.tasks ?: emptyList())
+                        "Billing" -> BillingScreen(dashboardData?.dashboard?.invoices ?: localInvoices.map { it.toApi() })
                         "Documents" -> ReportsScreen(if (reportsData.isNotEmpty()) reportsData else localReports.map { it.toApi() })
                         "Services" -> JobServicesScreen()
                         "Requests" -> RequestsScreen()
@@ -324,12 +324,12 @@ fun HomeScreen(
     notifications: List<Notification>,
     onNavigate: (String) -> Unit
 ) {
-    val displayProjects = dashboardData?.projects ?: localProjects.map { it.toApi() }
-    val displayInvoices = dashboardData?.invoices ?: localInvoices.map { it.toApi() }
+    val displayProjects = dashboardData?.dashboard?.projects ?: localProjects.map { it.toApi() }
+    val displayInvoices = dashboardData?.dashboard?.invoices ?: localInvoices.map { it.toApi() }
 
     Column(modifier = Modifier.fillMaxSize().padding(16.dp).verticalScroll(rememberScrollState())) {
         // Mission Briefing Section
-        dashboardData?.user?.mission_briefing?.let { briefing ->
+        dashboardData?.dashboard?.user?.missionBriefing?.let { briefing ->
             Card(
                 modifier = Modifier.fillMaxWidth().padding(bottom = 24.dp),
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primary)
@@ -356,7 +356,7 @@ fun HomeScreen(
         }
         
         // Budget & Financial Forecast
-        dashboardData?.budgetOverview?.let { budget ->
+        dashboardData?.dashboard?.budgetOverview?.let { budget ->
             Spacer(modifier = Modifier.height(24.dp))
             SectionHeader("Financial Forecast", Icons.AutoMirrored.Filled.TrendingUp)
             Card(modifier = Modifier.fillMaxWidth()) {
@@ -418,7 +418,7 @@ fun HomeScreen(
         
         Spacer(modifier = Modifier.height(24.dp))
         SectionHeader("Milestone Tasks", Icons.Default.Assignment)
-        TasksSummaryList(dashboardData?.tasks?.take(3) ?: emptyList())
+        TasksSummaryList(dashboardData?.dashboard?.tasks?.take(3) ?: emptyList())
 
         Spacer(modifier = Modifier.height(24.dp))
         SectionHeader("Recent Invoices", Icons.Default.Payments)
@@ -427,12 +427,12 @@ fun HomeScreen(
         SectionHeader("Latest Updates", Icons.Default.Notifications)
         
         // Show Live Feed (Messages)
-        dashboardData?.messages?.take(3)?.forEach { message ->
+        dashboardData?.dashboard?.messages?.take(3)?.forEach { message ->
             MessageFeedItem(message)
             Spacer(modifier = Modifier.height(8.dp))
         }
 
-        if (notifications.isEmpty() && (dashboardData?.messages.isNullOrEmpty())) {
+        if (notifications.isEmpty() && (dashboardData?.dashboard?.messages.isNullOrEmpty())) {
             Text("No recent updates", style = MaterialTheme.typography.bodySmall)
         }
     }
@@ -458,7 +458,7 @@ fun MessageFeedItem(message: Message) {
 
 @Composable
 fun HomeKpiSection(dashboardData: com.greggory.portal.data.api.DashboardResponse?, projects: List<Project>, invoices: List<Invoice>) {
-    val summary = dashboardData?.businessSummary
+    val summary = dashboardData?.dashboard?.businessSummary
     
     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
         KpiCard("Active Projects", summary?.activeProjects?.toString() ?: "0", Modifier.weight(1f))
@@ -470,7 +470,7 @@ fun HomeKpiSection(dashboardData: com.greggory.portal.data.api.DashboardResponse
         KpiCard("Next Milestone", summary?.nextMilestone ?: "Syncing...", Modifier.weight(1f))
     }
 
-    dashboardData?.kpiMetrics?.forEach { metric ->
+    dashboardData?.dashboard?.kpiMetrics?.forEach { metric ->
         Spacer(modifier = Modifier.height(8.dp)); KpiCard(metric.label, metric.value, Modifier.fillMaxWidth())
     }
 }

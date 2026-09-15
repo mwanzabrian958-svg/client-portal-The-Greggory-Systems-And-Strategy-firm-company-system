@@ -1,5 +1,6 @@
 package com.greggory.portal.data.api
 
+import com.google.gson.annotations.SerializedName
 import retrofit2.Response
 import retrofit2.http.*
 
@@ -17,7 +18,7 @@ interface ApiService {
     suspend fun forgotPassword(@Body request: ForgotPasswordRequest): Response<SimpleResponse>
 
     @GET("api/user-projects")
-    suspend fun getProjects(): Response<ProjectsResponse>
+    suspend fun getProjects(): Response<List<Project>>
 
     @GET("api/users/notifications/me")
     suspend fun getNotifications(): Response<NotificationsResponse>
@@ -107,45 +108,57 @@ data class FeedbackItem(
     val id: Int,
     val title: String,
     val message: String,
-    val type: String,
+    @SerializedName("feedback_type") val type: String,
     val rating: Int,
     val priority: String,
     val author: String,
-    val created_at: String
-)
+    @SerializedName("created_at") val createdAt: String
+) {
+    val created_at: String get() = createdAt
+}
 
 data class QuotesResponse(val success: Boolean, val quotes: List<Quote>)
 data class Quote(
     val id: Int,
-    val project_id: Int,
-    val project_name: String,
+    @SerializedName("project_id") val projectId: Int,
+    @SerializedName("project_name") val projectName: String,
     val amount: Double,
     val description: String,
     val status: String,
-    val created_at: String
-)
+    @SerializedName("created_at") val createdAt: String
+) {
+    val project_name: String get() = projectName
+    val created_at: String get() = createdAt
+}
 
 data class SignatureRequestsResponse(val success: Boolean, val requests: List<SignatureRequest>)
 data class SignatureRequest(
     val id: Int,
-    val document_name: String,
-    val project_name: String,
+    @SerializedName("document_name") val documentName: String,
+    @SerializedName("project_name") val projectName: String,
     val status: String,
-    val created_at: String
-)
+    @SerializedName("created_at") val createdAt: String
+) {
+    val document_name: String get() = documentName
+    val project_name: String get() = projectName
+    val created_at: String get() = createdAt
+}
 
 data class DecisionRequest(val decision: String, val note: String? = null)
 
 data class ChangeRequestsResponse(val success: Boolean, val requests: List<ChangeRequest>)
 data class ChangeRequest(
     val id: Int,
-    val project_id: Int,
-    val project_name: String,
+    @SerializedName("project_id") val projectId: Int,
+    @SerializedName("project_name") val projectName: String,
     val title: String,
     val description: String,
     val status: String,
-    val created_at: String
-)
+    @SerializedName("created_at") val createdAt: String
+) {
+    val project_name: String get() = projectName
+    val created_at: String get() = createdAt
+}
 
 data class ChangeRequestAction(val project_id: Int, val title: String, val description: String)
 
@@ -154,16 +167,36 @@ data class PaymentReportRequest(val invoiceId: String, val mpesaMessage: String)
 data class PushTokenRequest(val token: String, val platform: String = "android")
 
 data class LoginRequest(val email: String, val password: String)
-data class LoginResponse(val success: Boolean, val message: String?, val token: String?, val user: UserInfo?)
+
+/**
+ * AUTH PROTOCOL: Terminal Lock response.
+ * The backend returns user fields at the top level and uses a persistent DB token.
+ */
+data class LoginResponse(
+    val id: Int,
+    val email: String,
+    @SerializedName("first_name") val firstName: String,
+    @SerializedName("last_name") val lastName: String? = null,
+    @SerializedName("display_name") val displayName: String? = null,
+    val phone: String? = null,
+    @SerializedName("primary_role") val primaryRole: String? = "user",
+    val token: String?,
+    // Error fields for failed login
+    val success: Boolean? = null,
+    val message: String? = null,
+    val error: String? = null
+)
+
 data class UserInfo(
     val id: Int, 
     val email: String, 
-    val first_name: String, 
-    val last_name: String? = null,
-    val display_name: String? = null,
+    @SerializedName("first_name") val firstName: String, 
+    @SerializedName("last_name") val lastName: String? = null,
+    @SerializedName("display_name") val displayName: String? = null,
     val phone: String? = null,
-    val mission_briefing: String? = null,
-    val primary_role: String? = null
+    @SerializedName("mission_briefing") val missionBriefing: String? = null,
+    @SerializedName("primary_role") val primaryRole: String? = null,
+    @SerializedName("profilePhotoData") val profilePhotoData: String? = null
 )
 
 data class RegisterRequest(
@@ -180,39 +213,43 @@ data class RegisterResponse(val success: Boolean, val message: String?, val logi
 
 data class DashboardResponse(
     val success: Boolean,
+    val dashboard: DashboardData?
+)
+
+data class DashboardData(
     val user: UserInfo?,
     val projects: List<Project>?,
     val invoices: List<Invoice>?,
     val tasks: List<Task>?,
-    val teamMembers: List<TeamMember>?,
+    @SerializedName("teamMembers") val teamMembers: List<TeamMember>?,
     val messages: List<Message>?,
-    val budgetOverview: BudgetOverview?,
-    val businessSummary: BusinessSummary?,
-    val kpiMetrics: List<KpiMetric>?
+    @SerializedName("budgetOverview") val budgetOverview: BudgetOverview?,
+    @SerializedName("businessSummary") val businessSummary: BusinessSummary?,
+    @SerializedName("kpiMetrics") val kpiMetrics: List<KpiMetric>?
 )
 
 data class Project(
     val id: Int, 
-    val name: String, 
+    @SerializedName("project_name") val name: String, 
     val status: String, 
-    val progress: Int, 
-    val client_id: Int,
+    @SerializedName("progress_percentage") val progress: Int, 
+    @SerializedName("user_id") val clientId: Int,
     val priority: String? = "Medium",
-    val manager: String? = "Team Lead",
-    val deadline: String? = null,
-    val plannedBudget: Double? = 0.0,
-    val actualBudget: Double? = 0.0
+    @SerializedName("manager_name") val manager: String? = "Team Lead",
+    @SerializedName("end_date") val deadline: String? = null,
+    @SerializedName("estimated_budget") val plannedBudget: Double? = 0.0,
+    @SerializedName("actual_budget") val actualBudget: Double? = 0.0
 )
 
 data class Task(
     val id: Int,
-    val title: String,
-    val project: String,
-    val assignee: String,
+    @SerializedName("task_name") val title: String,
+    @SerializedName("project_name") val project: String,
+    @SerializedName("assignee_name") val assignee: String,
     val priority: String,
-    val progress: Int,
+    @SerializedName("progress_percentage") val progress: Int,
     val status: String,
-    val dueDate: String?
+    @SerializedName("due_date") val dueDate: String?
 )
 
 data class TeamMember(
@@ -221,7 +258,7 @@ data class TeamMember(
     val role: String,
     val duties: String,
     val email: String?,
-    val projectName: String?
+    @SerializedName("project_name") val projectName: String?
 )
 
 data class Message(
@@ -242,13 +279,22 @@ data class BudgetOverview(
 )
 
 data class BusinessSummary(
-    val activeProjects: Int,
-    val completedProjects: Int,
-    val openInvoices: Int,
-    val openMessages: Int,
-    val nextMilestone: String?
+    @SerializedName("activeProjects") val activeProjects: Int,
+    @SerializedName("openInvoices") val openInvoices: Int,
+    @SerializedName("openMessages") val openMessages: Int,
+    @SerializedName("nextMilestone") val nextMilestone: String?
 )
-data class Invoice(val id: Int, val amount: Double, val status: String, val client_id: Int)
+
+data class Invoice(
+    val id: Int,
+    val amount: Double,
+    val status: String,
+    @SerializedName("user_id") val clientId: Int,
+    @SerializedName("invoice_number") val invoiceNumber: String? = null,
+    @SerializedName("project_name") val projectName: String? = null,
+    @SerializedName("due_date") val dueDate: String? = null
+)
+
 data class KpiMetric(val label: String, val value: String, val trend: String? = "neutral")
 
 data class SearchResponse(
@@ -263,8 +309,6 @@ data class SearchResults(
     val documents: List<Report>?
 )
 
-data class ProjectsResponse(val success: Boolean, val projects: List<Project>)
-
 data class NotificationsResponse(val success: Boolean, val notifications: List<Notification>)
 data class Notification(
     val id: Int,
@@ -272,20 +316,30 @@ data class Notification(
     val message: String,
     val priority: String,
     val status: String,
-    val created_at: String
-)
+    @SerializedName("created_at") val createdAt: String
+) {
+    val created_at: String get() = createdAt
+}
 
 data class ReportsResponse(val success: Boolean, val reports: List<Report>)
 data class Report(
     val id: Int,
     val title: String,
     val summary: String,
-    val file_type: String,
-    val file_size: Long,
-    val report_date: String,
-    val project_name: String,
-    val client_id: Int
-)
+    @SerializedName("file_type") val file_type: String,
+    @SerializedName("file_size") val file_size: Long,
+    @SerializedName("report_date") val report_date: String,
+    @SerializedName("project_name") val project_name: String,
+    @SerializedName("client_id") val client_id: Int
+) {
+    val fileType: String get() = file_type
+    val fileSize: Long get() = file_size
+    val reportDate: String get() = report_date
+    val projectName: String get() = project_name
+    val clientId: Int get() = client_id
+}
+
+data class ProjectsResponse(val success: Boolean, val projects: List<Project>)
 
 data class ChangePasswordRequest(
     val current_password: String,

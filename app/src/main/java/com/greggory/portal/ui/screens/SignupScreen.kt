@@ -263,7 +263,14 @@ fun SignupScreen(onSignupSuccess: () -> Unit, onBackToLogin: () -> Unit) {
                             if (response.isSuccessful && response.body()?.success == true) {
                                 onBackToLogin()
                             } else {
-                                errorMessage = response.body()?.message ?: "Registration failed"
+                                val errorBody = response.errorBody()?.string()
+                                val errorMsg = try {
+                                    val json = com.google.gson.Gson().fromJson(errorBody, com.greggory.portal.data.api.SimpleResponse::class.java)
+                                    json.message
+                                } catch (e: Exception) {
+                                    null
+                                }
+                                errorMessage = errorMsg ?: response.body()?.message ?: "Registration failed: ${response.code()}"
                             }
                         } catch (e: Exception) {
                             isLoading = false

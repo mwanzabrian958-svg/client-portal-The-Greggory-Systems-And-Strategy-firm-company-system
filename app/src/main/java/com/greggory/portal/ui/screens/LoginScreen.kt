@@ -127,21 +127,33 @@ fun LoginScreen(
                                 com.greggory.portal.data.api.LoginRequest(email, password)
                             )
                             isLoading = false
-                            if (response.isSuccessful && response.body()?.success == true) {
-                                val body = response.body()
-                                val token = body?.token
+                            if (response.isSuccessful && response.body() != null) {
+                                val body = response.body()!!
+                                val token = body.token
                                 if (token != null) {
                                     val prefs = com.greggory.portal.data.local.PreferencesManager(context)
                                     prefs.saveToken(token)
-                                    body.user?.let { user ->
-                                        prefs.saveUserInfo(user.id, user.email, user.first_name, user.phone)
-                                    }
+                                    // Backend returns user details at top level for login success
+                                    prefs.saveUserInfo(
+                                        body.id,
+                                        body.email,
+                                        body.firstName,
+                                        body.phone ?: ""
+                                    )
                                     onLoginSuccess()
                                 } else {
-                                    errorMessage = "Invalid response from server"
+                                    errorMessage = body.message ?: body.error ?: "Invalid response from server"
                                 }
                             } else {
-                                errorMessage = response.body()?.message ?: "Login failed"
+                                // Extract error message from body if possible
+                                val errorBody = response.errorBody()?.string()
+                                val errorMsg = try {
+                                    val json = com.google.gson.Gson().fromJson(errorBody, com.greggory.portal.data.api.LoginResponse::class.java)
+                                    json.error ?: json.message
+                                } catch (e: Exception) {
+                                    null
+                                }
+                                errorMessage = errorMsg ?: "Login failed: ${response.code()}"
                             }
                         } catch (e: Exception) {
                             isLoading = false

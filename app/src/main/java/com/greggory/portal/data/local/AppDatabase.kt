@@ -94,11 +94,11 @@ abstract class AppDatabase : RoomDatabase() {
 }
 
 // Mappers to convert between API models and Database entities
-fun com.greggory.portal.data.api.Project.toEntity() = ProjectEntity(id, name, status, progress, client_id)
+fun com.greggory.portal.data.api.Project.toEntity() = ProjectEntity(id, name, status, progress, clientId)
 fun ProjectEntity.toApi() = com.greggory.portal.data.api.Project(id, name, status, progress, client_id)
 
-fun com.greggory.portal.data.api.Invoice.toEntity() = InvoiceEntity(id, amount, status, client_id)
+fun com.greggory.portal.data.api.Invoice.toEntity() = InvoiceEntity(id, amount, status, clientId)
 fun InvoiceEntity.toApi() = com.greggory.portal.data.api.Invoice(id, amount, status, client_id)
 
-fun com.greggory.portal.data.api.Report.toEntity() = ReportEntity(id, title, summary, file_type, file_size, report_date, project_name, client_id)
+fun com.greggory.portal.data.api.Report.toEntity() = ReportEntity(id, title, summary, fileType, fileSize, reportDate, projectName, clientId)
 fun ReportEntity.toApi() = com.greggory.portal.data.api.Report(id, title, summary, file_type, file_size, report_date, project_name, client_id)
