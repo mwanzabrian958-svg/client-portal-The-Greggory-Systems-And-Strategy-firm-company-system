@@ -3,15 +3,17 @@ package com.greggory.portal.data.local
 import android.content.Context
 import android.content.SharedPreferences
 import androidx.security.crypto.EncryptedSharedPreferences
-import androidx.security.crypto.MasterKeys
+import androidx.security.crypto.MasterKey
 
 class PreferencesManager(context: Context) {
-    private val masterKeyAlias = MasterKeys.getOrCreate(MasterKeys.AES256_GCM_SPEC)
+    private val masterKey = MasterKey.Builder(context)
+        .setKeyScheme(MasterKey.KeyScheme.AES256_GCM)
+        .build()
 
     private val sharedPreferences: SharedPreferences = EncryptedSharedPreferences.create(
-        "GreggoryPrefsSecure",
-        masterKeyAlias,
         context,
+        "GreggoryPrefsSecure",
+        masterKey,
         EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
         EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
     )
@@ -39,4 +41,10 @@ class PreferencesManager(context: Context) {
     fun getUserId(): Int = sharedPreferences.getInt("user_id", -1)
     fun getUserEmail(): String? = sharedPreferences.getString("user_email", null)
     fun getUserName(): String? = sharedPreferences.getString("user_name", null)
+
+    fun saveFcmToken(token: String) {
+        sharedPreferences.edit().putString("fcm_token", token).apply()
+    }
+
+    fun getFcmToken(): String? = sharedPreferences.getString("fcm_token", null)
 }

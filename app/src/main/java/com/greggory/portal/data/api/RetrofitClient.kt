@@ -12,6 +12,7 @@ object RetrofitClient {
     const val BASE_URL = "https://w-the-greggory-systems-and-strategy-firm-vik4.onrender.com/"
 
     private var authTokenProvider: (() -> String?)? = null
+    private var userIdProvider: (() -> Int)? = null
 
     /**
      * Set in stone: Initializes the global network client with a dynamic token provider.
@@ -21,33 +22,44 @@ object RetrofitClient {
     fun initialize(context: Context) {
         val prefs = com.greggory.portal.data.local.PreferencesManager(context.applicationContext)
         authTokenProvider = { prefs.getToken() }
+        userIdProvider = { prefs.getUserId() }
     }
 
     private val authInterceptor = Interceptor { chain ->
         val originalRequest = chain.request()
         val token = authTokenProvider?.invoke()
+        val userId = userIdProvider?.invoke() ?: -1
         
-        val newRequest = if (!token.isNullOrEmpty() && originalRequest.header("Authorization") == null) {
-            originalRequest.newBuilder()
-                .header("Authorization", "Bearer $token")
-                .build()
-        } else {
-            originalRequest
+        val requestBuilder = originalRequest.newBuilder()
+        
+        if (!token.isNullOrEmpty() && originalRequest.header("Authorization") == null) {
+            requestBuilder.header("Authorization", "Bearer $token")
         }
-        chain.proceed(newRequest)
+        
+        // Inject Set in Stone Routing Headers
+        requestBuilder.header("X-Greggory-Client-ID", userId.toString())
+        requestBuilder.header("X-Routing-Policy", "set-in-stone-v1")
+        
+        chain.proceed(requestBuilder.build())
     }
 
     private val logging = HttpLoggingInterceptor().apply {
-        level = HttpLoggingInterceptor.Level.BODY
+        level = if (com.greggory.portal.BuildConfig.DEBUG) {
+            HttpLoggingInterceptor.Level.BODY
+        } else {
+            HttpLoggingInterceptor.Level.NONE
+        }
     }
 
     // SSL Pinning for "Set in Stone" Security
-    // NOTE: Before production deployment, update the hash below with the actual SHA-256 of your certificate.
-    // You can get this by running: 
-    // openssl s_client -connect w-the-greggory-systems-and-strategy-firm-vik4.onrender.com:443 | openssl x509 -pubkey -noout | openssl pkey -pubin -outform der | openssl dgst -sha256 -binary | openssl enc -base64
-    private val certificatePinner = okhttp3.CertificatePinner.Builder()
-        .add("w-the-greggory-systems-and-strategy-firm-vik4.onrender.com", "sha256/AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=")
-        .build()
+    // IMPORTANT: To prevent crashes, this is only active in RELEASE builds.
+    private val certificatePinner = if (!com.greggory.portal.BuildConfig.DEBUG) {
+        okhttp3.CertificatePinner.Builder()
+            .add("w-the-greggory-systems-and-strategy-firm-vik4.onrender.com", "sha256/fizfE9JVlzlRplEx7epXfqW9enrbLvwF/LU26XTPEG4=")
+            .build()
+    } else {
+        okhttp3.CertificatePinner.DEFAULT
+    }
 
     private val httpClient = OkHttpClient.Builder()
         .addInterceptor(authInterceptor)

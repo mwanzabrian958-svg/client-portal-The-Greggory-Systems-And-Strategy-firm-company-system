@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "707021756689",
+    "project_id": "the-greggory-firm",
+    "storage_bucket": "the-greggory-firm.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:707021756689:android:b424ea46ed7729cced54b0",
+        "android_client_info": {
+          "package_name": "com.greggory.portal"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCOWsW3S4L9k0_2QO07JbvY3y-kQDNdKnA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -1,0 +1,10 @@
+# The Greggory Client Portal - Release Signing Properties
+# INSTRUCTIONS:
+# 1. Copy this file to 'signing.properties'
+# 2. Fill in your actual keystore details
+# 3. DO NOT commit 'signing.properties' to version control
+
+KEYSTORE_PATH=C:/path/to/your/greggory_production_key.jks
+KEYSTORE_PASSWORD=your_keystore_password
+KEY_ALIAS=greggory_alias
+KEY_PASSWORD=your_key_password

@@ -2,6 +2,15 @@
 
 A modern Android application built with Jetpack Compose, designed to provide clients of The Greggory Systems & Strategy Firm with a seamless, secure, and unified portal for project management, billing, and communication.
 
+## 📖 Project Documentation
+For detailed information, please refer to the following guides:
+*   [**Technical Documentation**](TECHNICAL_DOCUMENTATION.md) - Architecture, Tech Stack, & Directory Structure.
+*   [**API Reference**](API_DOCUMENTATION.md) - Endpoints, Payloads, & Routing.
+*   [**Security Policy**](SECURITY.md) - "Set in Stone" Routing & Encryption details.
+*   [**Deployment Guide**](DEPLOYMENT_GUIDE.md) - Go-Live instructions & M-Pesa setup.
+*   [**User Manual**](USER_MANUAL.md) - Client-facing guide for using the app.
+*   [**Database Schema**](database/portal-sync-schema.sql) - SQL definitions for cloud sync.
+
 ## 🚀 Key Features
 
 ### 👤 Profile Management

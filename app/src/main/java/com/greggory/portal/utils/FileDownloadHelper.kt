@@ -16,13 +16,18 @@ object FileDownloadHelper {
         description: String = "Downloading file from The Greggory Firm"
     ): Boolean {
         return try {
-            val token = PreferencesManager(context).getToken()
+            val prefs = PreferencesManager(context)
+            val token = prefs.getToken()
+            val userId = prefs.getUserId()
+            
             val request = DownloadManager.Request(Uri.parse(url))
                 .setTitle(fileName)
                 .setDescription(description)
                 .setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
                 .setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS, fileName)
                 .addRequestHeader("Authorization", "Bearer $token")
+                .addRequestHeader("X-Greggory-Client-ID", userId.toString())
+                .addRequestHeader("X-Routing-Policy", "set-in-stone-v1")
                 .setAllowedOverMetered(true)
                 .setAllowedOverRoaming(true)
 
@@ -36,5 +41,5 @@ object FileDownloadHelper {
 
     fun getReportUrl(reportId: Int): String = "${RetrofitClient.BASE_URL}api/users/my-reports/$reportId/download"
     
-    fun getInvoiceUrl(invoiceId: Int): String = "${RetrofitClient.BASE_URL}api/invoices/$invoiceId/pdf"
+    fun getInvoiceUrl(invoiceId: Int): String = "${RetrofitClient.BASE_URL}api/users/my-invoices/$invoiceId/pdf"
 }

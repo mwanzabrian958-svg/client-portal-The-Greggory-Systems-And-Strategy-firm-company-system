@@ -21,7 +21,8 @@ Access to the dashboard is protected by a mandatory biometric gateway.
 
 ### 4. Global Network Interception & Routing
 We use a centralized `OkHttp` interceptor within the `RetrofitClient` architecture:
-*   **Automatic Injection:** Every outgoing request is intercepted before transmission to add the `Authorization` and `X-Greggory-Client-ID` headers.
+*   **Automatic Injection:** Every outgoing request is intercepted before transmission to add the `Authorization`, `X-Greggory-Client-ID`, and `X-Routing-Policy` headers.
+*   **Routing Integrity Validation:** The app performs client-side validation on all incoming data objects (Projects, Invoices, Reports) using the `DataRouter` utility to ensure the `client_id` matches the authenticated session, providing a second layer of defense against accidental cross-tenant data leakage.
 *   **Server-Side Silos:** The backend uses these headers to partition queries, ensuring a client only ever sees data mapped to their specific ID in the `the_greggory_systems_and_strategy_firm_db_main` schema.
 
 ### 5. Code Hardening (ProGuard)

@@ -48,7 +48,7 @@ fun ProjectCard(project: Project) {
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold
                 )
-                StatusBadge(project.status)
+                ProjectStatusBadge(project.status)
             }
             Spacer(modifier = Modifier.height(8.dp))
             LinearProgressIndicator(
@@ -67,7 +67,7 @@ fun ProjectCard(project: Project) {
 }
 
 @Composable
-fun StatusBadge(status: String) {
+fun ProjectStatusBadge(status: String) {
     Surface(
         color = when(status.lowercase()) {
             "active" -> Color(0xFF2A9D8F)

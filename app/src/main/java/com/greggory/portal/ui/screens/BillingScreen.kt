@@ -4,6 +4,7 @@ import android.widget.Toast
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.Payment
@@ -80,20 +81,45 @@ fun BillingScreen(invoices: List<Invoice>) {
     if (showPhoneDialog) {
         AlertDialog(
             onDismissRequest = { if (!isProcessing) showPhoneDialog = false },
-            title = { Text("Confirm Payment") },
+            title = { Text("Payment Options") },
             text = {
                 Column {
+                    Text("Option 1: Quick Pay (STK Push)", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
                     Text("Pay KSH ${selectedInvoice?.amount} for Invoice #${selectedInvoice?.id}")
-                    Spacer(modifier = Modifier.height(16.dp))
+                    Spacer(modifier = Modifier.height(8.dp))
                     OutlinedTextField(
                         value = phoneNumber,
-                        onValueChange = { phoneNumber = it },
+                        onValueChange = { 
+                            if (it.all { char -> char.isDigit() } && it.length <= 12) {
+                                phoneNumber = it 
+                            }
+                        },
                         label = { Text("M-Pesa Phone Number") },
-                        placeholder = { Text("07XXXXXXXX") },
+                        placeholder = { Text("2547XXXXXXXX") },
                         leadingIcon = { Icon(Icons.Default.Phone, contentDescription = null) },
                         modifier = Modifier.fillMaxWidth(),
-                        enabled = !isProcessing
+                        enabled = !isProcessing,
+                        keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(
+                            keyboardType = androidx.compose.ui.text.input.KeyboardType.Number
+                        )
                     )
+                    
+                    Spacer(modifier = Modifier.height(16.dp))
+                    HorizontalDivider()
+                    Spacer(modifier = Modifier.height(16.dp))
+                    
+                    Text("Option 2: Manual Pay (Outside App)", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
+                    Text("Dial *334# or use M-Pesa menu:")
+                    Spacer(modifier = Modifier.height(4.dp))
+                    SelectionContainer {
+                        Column {
+                            Text("• Action: Send Money", fontWeight = FontWeight.Medium)
+                            Text("• Number: 07115525854", fontWeight = FontWeight.Medium)
+                            Text("• Amount: KSH ${selectedInvoice?.amount}", fontWeight = FontWeight.Medium)
+                            Text("• Name: The Greggory Systems", style = MaterialTheme.typography.labelSmall)
+                        }
+                    }
+
                     if (isProcessing) {
                         Spacer(modifier = Modifier.height(8.dp))
                         LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
@@ -107,9 +133,17 @@ fun BillingScreen(invoices: List<Invoice>) {
                         isProcessing = true
                         scope.launch {
                             try {
+                                // Normalize phone number to 254 format for Safaricom Production
+                                val normalizedPhone = when {
+                                    phoneNumber.startsWith("0") -> "254" + phoneNumber.substring(1)
+                                    phoneNumber.startsWith("7") || phoneNumber.startsWith("1") -> "254" + phoneNumber
+                                    phoneNumber.startsWith("254") -> phoneNumber
+                                    else -> phoneNumber
+                                }
+
                                 val response = RetrofitClient.instance.initiateSTKPush(
                                     MpesaStkPushRequest(
-                                        phoneNumber = phoneNumber,
+                                        phoneNumber = normalizedPhone,
                                         amount = selectedInvoice?.amount ?: 0.0,
                                         accountReference = selectedInvoice?.id.toString(),
                                         description = "Payment for Invoice #${selectedInvoice?.id}"
@@ -189,7 +223,7 @@ fun InvoiceCard(invoice: Invoice, onPayClick: () -> Unit, onDownloadClick: () ->
                     Text(text = "Invoice #${invoice.id}", style = MaterialTheme.typography.labelSmall)
                     Text(text = "KSH ${invoice.amount.toInt()}", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
                 }
-                StatusBadge(invoice.status)
+                InvoiceStatusBadge(invoice.status)
             }
             Spacer(modifier = Modifier.height(16.dp))
             Row(
@@ -221,7 +255,7 @@ fun InvoiceCard(invoice: Invoice, onPayClick: () -> Unit, onDownloadClick: () ->
 }
 
 @Composable
-fun StatusBadge(status: String) {
+fun InvoiceStatusBadge(status: String) {
     val color = when (status.lowercase()) {
         "paid" -> Color(0xFF2A9D8F)
         "pending" -> Color(0xFFE9C46A)

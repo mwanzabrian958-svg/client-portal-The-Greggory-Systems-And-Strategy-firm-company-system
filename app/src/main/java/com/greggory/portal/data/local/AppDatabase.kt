@@ -9,14 +9,28 @@ data class ProjectEntity(
     @PrimaryKey val id: Int,
     val name: String,
     val status: String,
-    val progress: Int
+    val progress: Int,
+    val client_id: Int
 )
 
 @Entity(tableName = "invoices")
 data class InvoiceEntity(
     @PrimaryKey val id: Int,
     val amount: Double,
-    val status: String
+    val status: String,
+    val client_id: Int
+)
+
+@Entity(tableName = "reports")
+data class ReportEntity(
+    @PrimaryKey val id: Int,
+    val title: String,
+    val summary: String,
+    val file_type: String,
+    val file_size: Long,
+    val report_date: String,
+    val project_name: String,
+    val client_id: Int
 )
 
 @Dao
@@ -43,10 +57,23 @@ interface InvoiceDao {
     suspend fun clearInvoices()
 }
 
-@Database(entities = [ProjectEntity::class, InvoiceEntity::class], version = 1, exportSchema = false)
+@Dao
+interface ReportDao {
+    @Query("SELECT * FROM reports")
+    fun getAllReports(): Flow<List<ReportEntity>>
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertReports(reports: List<ReportEntity>)
+
+    @Query("DELETE FROM reports")
+    suspend fun clearReports()
+}
+
+@Database(entities = [ProjectEntity::class, InvoiceEntity::class, ReportEntity::class], version = 1, exportSchema = false)
 abstract class AppDatabase : RoomDatabase() {
     abstract fun projectDao(): ProjectDao
     abstract fun invoiceDao(): InvoiceDao
+    abstract fun reportDao(): ReportDao
 
     companion object {
         @Volatile
@@ -67,8 +94,11 @@ abstract class AppDatabase : RoomDatabase() {
 }
 
 // Mappers to convert between API models and Database entities
-fun com.greggory.portal.data.api.Project.toEntity() = ProjectEntity(id, name, status, progress)
-fun ProjectEntity.toApi() = com.greggory.portal.data.api.Project(id, name, status, progress)
+fun com.greggory.portal.data.api.Project.toEntity() = ProjectEntity(id, name, status, progress, client_id)
+fun ProjectEntity.toApi() = com.greggory.portal.data.api.Project(id, name, status, progress, client_id)
 
-fun com.greggory.portal.data.api.Invoice.toEntity() = InvoiceEntity(id, amount, status)
-fun InvoiceEntity.toApi() = com.greggory.portal.data.api.Invoice(id, amount, status)
+fun com.greggory.portal.data.api.Invoice.toEntity() = InvoiceEntity(id, amount, status, client_id)
+fun InvoiceEntity.toApi() = com.greggory.portal.data.api.Invoice(id, amount, status, client_id)
+
+fun com.greggory.portal.data.api.Report.toEntity() = ReportEntity(id, title, summary, file_type, file_size, report_date, project_name, client_id)
+fun ReportEntity.toApi() = com.greggory.portal.data.api.Report(id, title, summary, file_type, file_size, report_date, project_name, client_id)

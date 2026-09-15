@@ -96,12 +96,23 @@ fun ForgotPasswordScreen(onBackToLogin: () -> Unit) {
                         isLoading = true
                         message = null
                         scope.launch {
-                            // In a real app, you'd have an API call for this
-                            // For now, we simulate success
-                            kotlinx.coroutines.delay(1500)
-                            isLoading = false
-                            message = "If an account exists for $email, you will receive a reset link shortly."
-                            isError = false
+                            try {
+                                val response = RetrofitClient.instance.forgotPassword(
+                                    com.greggory.portal.data.api.ForgotPasswordRequest(email)
+                                )
+                                isLoading = false
+                                if (response.isSuccessful && response.body()?.success == true) {
+                                    message = response.body()?.message ?: "If an account exists for $email, you will receive a reset link shortly."
+                                    isError = false
+                                } else {
+                                    message = response.body()?.message ?: "Failed to process request"
+                                    isError = true
+                                }
+                            } catch (e: Exception) {
+                                isLoading = false
+                                message = "Network error: ${e.localizedMessage}"
+                                isError = true
+                            }
                         }
                     } else {
                         message = "Please enter your email"

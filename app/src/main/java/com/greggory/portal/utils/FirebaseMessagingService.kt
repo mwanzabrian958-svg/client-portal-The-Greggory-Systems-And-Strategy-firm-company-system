@@ -20,7 +20,7 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
         
         // Persist token locally
         val prefs = com.greggory.portal.data.local.PreferencesManager(applicationContext)
-        // We could add a savePushToken method to prefs if needed
+        prefs.saveFcmToken(token)
         
         // Upload to server
         scope.launch {
@@ -41,9 +41,9 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
         super.onMessageReceived(message)
         Log.d("FCM", "Message received from: ${message.from}")
         
-        // Handle notification data if needed
+        // Show notification even when app is in foreground
         message.notification?.let {
-            Log.d("FCM", "Message Notification Body: ${it.body}")
+            NotificationHelper.showNotification(applicationContext, it.title, it.body)
         }
     }
 }

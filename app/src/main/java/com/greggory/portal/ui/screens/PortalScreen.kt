@@ -35,6 +35,7 @@ fun PortalScreen(onLogout: () -> Unit) {
     
     val localProjects by database.projectDao().getAllProjects().collectAsState(initial = emptyList())
     val localInvoices by database.invoiceDao().getAllInvoices().collectAsState(initial = emptyList())
+    val localReports by database.reportDao().getAllReports().collectAsState(initial = emptyList())
 
     var dashboardData by remember { mutableStateOf<com.greggory.portal.data.api.DashboardResponse?>(null) }
     var notificationsData by remember { mutableStateOf<List<Notification>>(emptyList()) }
@@ -51,7 +52,7 @@ fun PortalScreen(onLogout: () -> Unit) {
             return
         }
         isLoading = true
-            scope.launch {
+        scope.launch {
                 try {
                     val dashResponse = com.greggory.portal.data.api.RetrofitClient.instance.getDashboard()
                     if (dashResponse.isSuccessful && dashResponse.body()?.success == true) {
@@ -59,10 +60,9 @@ fun PortalScreen(onLogout: () -> Unit) {
                         
                         // Validate Set in Stone Routing Integrity
                         val userId = preferencesManager.getUserId()
-                        val isIntegrityValid = body?.projects?.all { 
-                            // In a real scenario, we'd check a client_id field in the response
-                            true 
-                        } ?: true
+                        val isIntegrityValid = body?.projects?.all { com.greggory.portal.utils.DataRouter.verifyRoutingIntegrity(it.client_id, userId) } ?: true &&
+                                             body?.invoices?.all { com.greggory.portal.utils.DataRouter.verifyRoutingIntegrity(it.client_id, userId) } ?: true &&
+                                             reportsData.all { com.greggory.portal.utils.DataRouter.verifyRoutingIntegrity(it.client_id, userId) }
 
                         if (isIntegrityValid) {
                             dashboardData = body
@@ -79,7 +79,14 @@ fun PortalScreen(onLogout: () -> Unit) {
                         }
                     }
                     notificationsData = com.greggory.portal.data.api.RetrofitClient.instance.getNotifications().body()?.notifications ?: emptyList()
-                    reportsData = com.greggory.portal.data.api.RetrofitClient.instance.getReports().body()?.reports ?: emptyList()
+                    val reportsResponse = com.greggory.portal.data.api.RetrofitClient.instance.getReports()
+                    if (reportsResponse.isSuccessful) {
+                        reportsResponse.body()?.reports?.let { reports ->
+                            reportsData = reports
+                            database.reportDao().clearReports()
+                            database.reportDao().insertReports(reports.map { it.toEntity() })
+                        }
+                    }
                 } catch (e: Exception) {
                     errorMessage = "Network error: ${e.localizedMessage}"
                 } finally {
@@ -87,7 +94,6 @@ fun PortalScreen(onLogout: () -> Unit) {
                 }
             }
         }
-    }
 
     LaunchedEffect(key1 = true) {
         refreshData()
@@ -115,6 +121,14 @@ fun PortalScreen(onLogout: () -> Unit) {
                 DrawerItem("Document Vault", Icons.Default.Folder, currentView == "Documents") {
                     currentView = "Documents"; scope.launch { drawerState.close() }
                 }
+                DrawerItem("Notifications", Icons.Default.Notifications, currentView == "Notifications") {
+                    currentView = "Notifications"; scope.launch { drawerState.close() }
+                }
+                
+                Text("ACCOUNT", style = MaterialTheme.typography.labelSmall, modifier = Modifier.padding(16.dp), color = MaterialTheme.colorScheme.primary)
+                DrawerItem("My Profile", Icons.Default.Person, currentView == "Profile") {
+                    currentView = "Profile"; scope.launch { drawerState.close() }
+                }
                 
                 Spacer(modifier = Modifier.weight(1f))
                 Divider()
@@ -123,6 +137,7 @@ fun PortalScreen(onLogout: () -> Unit) {
                         preferencesManager.clear()
                         database.projectDao().clearProjects()
                         database.invoiceDao().clearInvoices()
+                        database.reportDao().clearReports()
                         onLogout()
                     }
                 }
@@ -159,7 +174,9 @@ fun PortalScreen(onLogout: () -> Unit) {
                     "Home" -> HomeScreen(isLoading, dashboardData, localProjects, localInvoices, notificationsData)
                     "Projects" -> ProjectListScreen(dashboardData?.projects ?: localProjects.map { it.toApi() })
                     "Billing" -> BillingScreen(dashboardData?.invoices ?: localInvoices.map { it.toApi() })
-                    "Documents" -> ReportsScreen(reportsData)
+                    "Documents" -> ReportsScreen(if (reportsData.isNotEmpty()) reportsData else localReports.map { it.toApi() })
+                    "Notifications" -> NotificationsScreen(notificationsData)
+                    "Profile" -> ProfileScreen()
                     else -> Text("Section: $currentView", modifier = Modifier.align(Alignment.Center))
                 }
                 
@@ -275,7 +292,7 @@ fun InvoicesSummaryList(invoices: List<Invoice>) {
                 Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
                     Column(modifier = Modifier.weight(1f)) {
                         Text("Invoice #${invoice.id}", style = MaterialTheme.typography.bodyLarge)
-                        StatusBadge(invoice.status)
+                        InvoiceStatusBadge(invoice.status)
                     }
                     Text("KSH ${invoice.amount.toInt()}", style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Bold)
                 }

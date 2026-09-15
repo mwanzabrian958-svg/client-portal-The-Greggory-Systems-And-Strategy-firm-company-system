@@ -13,6 +13,9 @@ interface ApiService {
     @GET("api/users/client-dashboard")
     suspend fun getDashboard(): Response<DashboardResponse>
 
+    @POST("api/users/forgot-password")
+    suspend fun forgotPassword(@Body request: ForgotPasswordRequest): Response<SimpleResponse>
+
     @GET("api/user-projects")
     suspend fun getProjects(): Response<ProjectsResponse>
 
@@ -70,8 +73,8 @@ data class DashboardResponse(
     val kpiMetrics: List<KpiMetric>?
 )
 
-data class Project(val id: Int, val name: String, val status: String, val progress: Int)
-data class Invoice(val id: Int, val amount: Double, val status: String)
+data class Project(val id: Int, val name: String, val status: String, val progress: Int, val client_id: Int)
+data class Invoice(val id: Int, val amount: Double, val status: String, val client_id: Int)
 data class KpiMetric(val label: String, val value: String)
 data class ProjectsResponse(val success: Boolean, val projects: List<Project>)
 
@@ -91,9 +94,13 @@ data class Report(
     val title: String,
     val summary: String,
     val file_type: String,
+    val file_size: Long,
     val report_date: String,
-    val project_name: String
+    val project_name: String,
+    val client_id: Int
 )
+
+data class ForgotPasswordRequest(val email: String)
 
 data class ProfileUpdateRequest(val display_name: String, val phone_number: String)
 data class SimpleResponse(val success: Boolean, val message: String?)

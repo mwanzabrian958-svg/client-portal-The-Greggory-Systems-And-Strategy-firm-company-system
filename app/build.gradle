@@ -1,6 +1,7 @@
 plugins {
     id 'com.android.application'
     id 'kotlin-android'
+    id 'org.jetbrains.kotlin.plugin.compose'
     id 'kotlin-kapt'
     id 'com.google.gms.google-services'
     id 'com.google.firebase.crashlytics'
@@ -9,9 +10,6 @@ plugins {
 android {
     namespace 'com.greggory.portal'
     compileSdk 35
-
-    // Bypass file locks by using a fresh build directory
-    layout.buildDirectory.set(file("build_final_v4"))
 
     defaultConfig {
         applicationId "com.greggory.portal"
@@ -28,11 +26,21 @@ android {
 
     signingConfigs {
         release {
-            // These should be set in local.properties or environment variables
-            storeFile file(System.getenv("KEYSTORE_PATH") ?: "keystore.jks")
-            storePassword System.getenv("KEYSTORE_PASSWORD")
-            keyAlias System.getenv("KEY_ALIAS")
-            keyPassword System.getenv("KEY_PASSWORD")
+            def signingPropsFile = file("${project.rootDir}/signing.properties")
+            if (signingPropsFile.exists()) {
+                def props = new Properties()
+                props.load(new FileInputStream(signingPropsFile))
+                storeFile file(props['KEYSTORE_PATH'])
+                storePassword props['KEYSTORE_PASSWORD']
+                keyAlias props['KEY_ALIAS']
+                keyPassword props['KEY_PASSWORD']
+            } else {
+                // Fallback to environment variables (useful for CI/CD)
+                storeFile file(System.getenv("KEYSTORE_PATH") ?: "keystore.jks")
+                storePassword System.getenv("KEYSTORE_PASSWORD")
+                keyAlias System.getenv("KEY_ALIAS")
+                keyPassword System.getenv("KEY_PASSWORD")
+            }
         }
     }
 
@@ -50,13 +58,11 @@ android {
     }
     kotlinOptions {
         jvmTarget = '17'
+        freeCompilerArgs += ["-Xskip-metadata-version-check"]
     }
     buildFeatures {
         compose true
         buildConfig true
-    }
-    composeOptions {
-        kotlinCompilerExtensionVersion '1.5.1'
     }
     packagingOptions {
         resources {
@@ -66,26 +72,26 @@ android {
 }
 
 dependencies {
-    implementation 'androidx.core:core-ktx:1.12.0'
-    implementation 'androidx.lifecycle:lifecycle-runtime-ktx:2.6.2'
-    implementation 'androidx.activity:activity-compose:1.8.0'
-    implementation platform('androidx.compose:compose-bom:2023.08.00')
+    implementation 'androidx.core:core-ktx:1.15.0'
+    implementation 'androidx.lifecycle:lifecycle-runtime-ktx:2.8.7'
+    implementation 'androidx.activity:activity-compose:1.10.0'
+    implementation platform('androidx.compose:compose-bom:2024.12.01')
     implementation 'androidx.compose.ui:ui'
     implementation 'androidx.compose.ui:ui-graphics'
     implementation 'androidx.compose.ui:ui-tooling-preview'
     implementation 'androidx.compose.material3:material3'
-    implementation 'androidx.navigation:navigation-compose:2.7.4'
+    implementation 'androidx.navigation:navigation-compose:2.8.5'
     
     // Core SplashScreen API
     implementation 'androidx.core:core-splashscreen:1.0.1'
 
     // Networking
-    implementation 'com.squareup.retrofit2:retrofit:2.9.0'
-    implementation 'com.squareup.retrofit2:converter-gson:2.9.0'
-    implementation 'com.squareup.okhttp3:logging-interceptor:4.11.0'
+    implementation 'com.squareup.retrofit2:retrofit:2.11.0'
+    implementation 'com.squareup.retrofit2:converter-gson:2.11.0'
+    implementation 'com.squareup.okhttp3:logging-interceptor:4.12.0'
 
     // Image Loading
-    implementation "io.coil-kt:coil-compose:2.4.0"
+    implementation "io.coil-kt:coil-compose:2.7.0"
 
     // Icons
     implementation 'androidx.compose.material:material-icons-extended'
@@ -97,10 +103,10 @@ dependencies {
     implementation 'androidx.security:security-crypto:1.1.0-alpha06'
 
     // Firebase
-    implementation platform('com.google.firebase:firebase-bom:32.7.0')
-    implementation 'com.google.firebase:firebase-crashlytics-ktx'
-    implementation 'com.google.firebase:firebase-analytics-ktx'
-    implementation 'com.google.firebase:firebase-messaging-ktx'
+    implementation platform('com.google.firebase:firebase-bom:34.19.0')
+    implementation 'com.google.firebase:firebase-crashlytics'
+    implementation 'com.google.firebase:firebase-analytics'
+    implementation 'com.google.firebase:firebase-messaging'
 
     // Room Database
     def room_version = "2.6.1"
@@ -109,9 +115,9 @@ dependencies {
     implementation "androidx.room:room-ktx:$room_version"
 
     testImplementation 'junit:junit:4.13.2'
-    androidTestImplementation 'androidx.test.ext:junit:1.1.5'
-    androidTestImplementation 'androidx.test.espresso:espresso-core:3.5.1'
-    androidTestImplementation platform('androidx.compose:compose-bom:2023.08.00')
+    androidTestImplementation 'androidx.test.ext:junit:1.2.1'
+    androidTestImplementation 'androidx.test.espresso:espresso-core:3.6.1'
+    androidTestImplementation platform('androidx.compose:compose-bom:2024.12.01')
     androidTestImplementation 'androidx.compose.ui:ui-test-junit4'
     debugImplementation 'androidx.compose.ui:ui-tooling'
     debugImplementation 'androidx.compose.ui:ui-test-manifest'

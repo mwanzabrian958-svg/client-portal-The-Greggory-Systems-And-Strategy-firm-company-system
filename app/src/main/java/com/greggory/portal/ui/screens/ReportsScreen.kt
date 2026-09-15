@@ -49,7 +49,8 @@ fun ReportsScreen(reports: List<Report>) {
                     onDownload = {
                         downloadingReportId = report.id
                         scope.launch {
-                            val fileName = "${report.title.replace(" ", "_")}.pdf"
+                            val extension = if (report.file_type.contains("word")) "docx" else "pdf"
+                            val fileName = "${report.title.replace(" ", "_").replace("(", "").replace(")", "")}.$extension"
                             val success = FileDownloadHelper.downloadFile(
                                 context = context,
                                 url = FileDownloadHelper.getReportUrl(report.id),
@@ -57,7 +58,7 @@ fun ReportsScreen(reports: List<Report>) {
                             )
                             downloadingReportId = null
                             if (success) {
-                                Toast.makeText(context, "Report saved to Downloads", Toast.LENGTH_LONG).show()
+                                Toast.makeText(context, "Report saved to Downloads. You can open and print it from your file manager.", Toast.LENGTH_LONG).show()
                             } else {
                                 Toast.makeText(context, "Failed to download report", Toast.LENGTH_SHORT).show()
                             }
@@ -97,10 +98,18 @@ fun ReportCard(report: Report, isDownloading: Boolean, onDownload: () -> Unit) {
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.primary
                 )
-                Text(
-                    text = report.report_date,
-                    style = MaterialTheme.typography.labelSmall
-                )
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        text = report.report_date,
+                        style = MaterialTheme.typography.labelSmall
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = "${report.file_size / 1024} KB",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.outline
+                    )
+                }
             }
             if (isDownloading) {
                 CircularProgressIndicator(modifier = Modifier.size(24.dp))
