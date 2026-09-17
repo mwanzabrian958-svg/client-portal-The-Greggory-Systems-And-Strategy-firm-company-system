@@ -30,6 +30,7 @@ import coil.compose.rememberAsyncImagePainter
 import com.greggory.portal.data.api.ProfileUpdateRequest
 import com.greggory.portal.data.api.RetrofitClient
 import com.greggory.portal.data.local.PreferencesManager
+import com.greggory.portal.ui.components.ChangePasswordDialog
 import kotlinx.coroutines.launch
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.MultipartBody
@@ -75,7 +76,7 @@ fun ProfileScreen() {
                 painter = if (selectedImageUri != null) {
                     rememberAsyncImagePainter(selectedImageUri)
                 } else {
-                    rememberAsyncImagePainter("https://w-the-greggory-systems-and-strategy-firm-vik4.onrender.com/api/users/profile-photo/me")
+                    rememberAsyncImagePainter("${RetrofitClient.BASE_URL}api/users/profile-photo/me")
                 },
                 contentDescription = "Profile Photo",
                 modifier = Modifier
@@ -178,71 +179,6 @@ fun ProfileScreen() {
             ChangePasswordDialog(onDismiss = { showPasswordDialog = false })
         }
     }
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun ChangePasswordDialog(onDismiss: () -> Unit) {
-    var currentPassword by remember { mutableStateOf("") }
-    var newPassword by remember { mutableStateOf("") }
-    var confirmPassword by remember { mutableStateOf("") }
-    var isSubmitting by remember { mutableStateOf(false) }
-    val scope = rememberCoroutineScope()
-    val context = LocalContext.current
-
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text("Change Password") },
-        text = {
-            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                OutlinedTextField(
-                    value = currentPassword,
-                    onValueChange = { currentPassword = it },
-                    label = { Text("Current Password") },
-                    visualTransformation = androidx.compose.ui.text.input.PasswordVisualTransformation(),
-                    modifier = Modifier.fillMaxWidth()
-                )
-                OutlinedTextField(
-                    value = newPassword,
-                    onValueChange = { newPassword = it },
-                    label = { Text("New Password") },
-                    visualTransformation = androidx.compose.ui.text.input.PasswordVisualTransformation(),
-                    modifier = Modifier.fillMaxWidth()
-                )
-                OutlinedTextField(
-                    value = confirmPassword,
-                    onValueChange = { confirmPassword = it },
-                    label = { Text("Confirm New Password") },
-                    visualTransformation = androidx.compose.ui.text.input.PasswordVisualTransformation(),
-                    modifier = Modifier.fillMaxWidth()
-                )
-            }
-        },
-        confirmButton = {
-            Button(
-                enabled = currentPassword.isNotBlank() && newPassword.length >= 6 && newPassword == confirmPassword && !isSubmitting,
-                onClick = {
-                    isSubmitting = true
-                    scope.launch {
-                        try {
-                            val response = RetrofitClient.instance.changePassword(com.greggory.portal.data.api.ChangePasswordRequest(currentPassword, newPassword))
-                            if (response.isSuccessful) {
-                                Toast.makeText(context, "Password updated successfully", Toast.LENGTH_SHORT).show()
-                                onDismiss()
-                            } else {
-                                Toast.makeText(context, "Failed: ${response.body()?.message ?: "Check current password"}", Toast.LENGTH_SHORT).show()
-                            }
-                        } catch (e: Exception) {
-                            Toast.makeText(context, "Error: ${e.localizedMessage}", Toast.LENGTH_SHORT).show()
-                        } finally {
-                            isSubmitting = false
-                        }
-                    }
-                }
-            ) { Text("UPDATE") }
-        },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("CANCEL") } }
-    )
 }
 
 private fun uploadPhoto(

@@ -1,5 +1,9 @@
 package com.greggory.portal.ui.screens
 
+import androidx.compose.ui.draw.clip
+import androidx.compose.foundation.shape.CircleShape
+import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -16,9 +20,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import coil.compose.AsyncImage
 import com.greggory.portal.R
 import com.greggory.portal.data.api.Project
 import com.greggory.portal.data.api.Invoice
@@ -28,12 +34,14 @@ import com.greggory.portal.data.api.Message
 import com.greggory.portal.data.local.AppDatabase
 import com.greggory.portal.data.local.toApi
 import com.greggory.portal.data.local.toEntity
+import com.greggory.portal.ui.components.CustomBackground
 import kotlinx.coroutines.async
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun PortalScreen(onLogout: () -> Unit) {
+fun PortalScreen(onLogout: () -> Unit, onViewPdf: (String, String) -> Unit) {
     val context = androidx.compose.ui.platform.LocalContext.current
     val scope = rememberCoroutineScope()
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
@@ -57,6 +65,15 @@ fun PortalScreen(onLogout: () -> Unit) {
     var searchResults by remember { mutableStateOf<com.greggory.portal.data.api.SearchResults?>(null) }
     var isSearchLoading by remember { mutableStateOf(false) }
 
+    BackHandler(enabled = isSearching || currentView != "Home") {
+        if (isSearching) {
+            isSearching = false
+            searchQuery = ""
+        } else {
+            currentView = "Home"
+        }
+    }
+
     fun performSearch(query: String) {
         if (query.length < 2) {
             searchResults = null
@@ -69,7 +86,7 @@ fun PortalScreen(onLogout: () -> Unit) {
                 if (response.isSuccessful) {
                     searchResults = response.body()?.results
                 }
-            } catch (e: Exception) {
+            } catch (ignored: Exception) {
                 // handle error
             } finally {
                 isSearchLoading = false
@@ -88,56 +105,66 @@ fun PortalScreen(onLogout: () -> Unit) {
             try {
                 val userId = preferencesManager.getUserId()
                 
-                // Fetch all data in parallel
-                val dashDeferred = async { com.greggory.portal.data.api.RetrofitClient.instance.getDashboard() }
-                val reportsDeferred = async { com.greggory.portal.data.api.RetrofitClient.instance.getReports() }
-                val notifsDeferred = async { com.greggory.portal.data.api.RetrofitClient.instance.getNotifications() }
+                kotlinx.coroutines.supervisorScope {
+                    // Fetch all data in parallel
+                    val dashDeferred = async { com.greggory.portal.data.api.RetrofitClient.instance.getDashboard() }
+                    val reportsDeferred = async { com.greggory.portal.data.api.RetrofitClient.instance.getReports() }
+                    val notifsDeferred = async { com.greggory.portal.data.api.RetrofitClient.instance.getNotifications() }
 
-                val dashResponse = dashDeferred.await()
-                val reportsResponse = reportsDeferred.await()
-                val notifsResponse = notifsDeferred.await()
+                    val dashResponse = try { dashDeferred.await() } catch (ignored: Exception) { null }
+                    val reportsResponse = try { reportsDeferred.await() } catch (ignored: Exception) { null }
+                    val notifsResponse = try { notifsDeferred.await() } catch (ignored: Exception) { null }
 
-                if (dashResponse.isSuccessful && dashResponse.body()?.success == true) {
-                    val body = dashResponse.body()?.dashboard
-                    val reports = reportsResponse.body()?.reports ?: emptyList()
-                    
-                    // Validate Set in Stone Routing Integrity for all incoming data
-                    val isIntegrityValid = 
-                        (body?.projects?.all { com.greggory.portal.utils.DataRouter.verifyRoutingIntegrity(it.clientId, userId) } ?: true) &&
-                        (body?.invoices?.all { com.greggory.portal.utils.DataRouter.verifyRoutingIntegrity(it.clientId, userId) } ?: true) &&
-                        (reports.all { com.greggory.portal.utils.DataRouter.verifyRoutingIntegrity(it.clientId, userId) })
-
-                    if (isIntegrityValid) {
-                        dashboardData = dashResponse.body()
-                        reportsData = reports
-                        notificationsData = notifsResponse.body()?.notifications ?: emptyList()
+                    if (dashResponse?.isSuccessful == true && dashResponse.body()?.success == true) {
+                        val body = dashResponse.body()?.dashboard
+                        val reports = reportsResponse?.body()?.reports ?: emptyList()
                         
-                        // Sync Local DB
-                        body?.projects?.let { projects ->
-                            database.projectDao().clearProjects()
-                            database.projectDao().insertProjects(projects.map { it.toEntity() })
+                        // Validate Set in Stone Routing Integrity for all incoming data
+                        val isIntegrityValid = 
+                            (body?.projects?.all { com.greggory.portal.utils.DataRouter.verifyRoutingIntegrity(it.clientId, userId) } ?: true) &&
+                            (body?.invoices?.all { com.greggory.portal.utils.DataRouter.verifyRoutingIntegrity(it.clientId, userId) } ?: true) &&
+                            (reports.all { com.greggory.portal.utils.DataRouter.verifyRoutingIntegrity(it.clientId, userId) })
+
+                        if (isIntegrityValid) {
+                            dashboardData = dashResponse.body()
+                            reportsData = reports
+                            notificationsData = notifsResponse?.body()?.notifications ?: emptyList()
+                            
+                            // Sync Local DB
+                            body?.projects?.let { projects ->
+                                try {
+                                    database.projectDao().clearProjects()
+                                    database.projectDao().insertProjects(projects.map { it.toEntity() })
+                                } catch (ignored: Exception) { /* local db error */ }
+                            }
+                            body?.invoices?.let { invoices ->
+                                try {
+                                    database.invoiceDao().clearInvoices()
+                                    database.invoiceDao().insertInvoices(invoices.map { it.toEntity() })
+                                } catch (ignored: Exception) { /* local db error */ }
+                            }
+                            if (reports.isNotEmpty()) {
+                                try {
+                                    database.reportDao().clearReports()
+                                    database.reportDao().insertReports(reports.map { it.toEntity() })
+                                } catch (ignored: Exception) { /* local db error */ }
+                            }
+                        } else {
+                            errorMessage = "Security Error: Routing Integrity Breach Detected"
+                            scope.launch { snackbarHostState.showSnackbar(errorMessage!!) }
                         }
-                        body?.invoices?.let { invoices ->
-                            database.invoiceDao().clearInvoices()
-                            database.invoiceDao().insertInvoices(invoices.map { it.toEntity() })
-                        }
-                        if (reports.isNotEmpty()) {
-                            database.reportDao().clearReports()
-                            database.reportDao().insertReports(reports.map { it.toEntity() })
-                        }
-                    } else {
-                        errorMessage = "Security Error: Routing Integrity Breach Detected"
-                        scope.launch { snackbarHostState.showSnackbar(errorMessage!!) }
-                    }
-                } else if (dashResponse.code() == 401 || dashResponse.code() == 403) {
-                    errorMessage = "Session Expired"
+                    } else if (dashResponse?.code() == 401 || dashResponse?.code() == 403 || reportsResponse?.code() == 401 || notifsResponse?.code() == 401) {
+                        errorMessage = "Session expired. Please log in again."
                     scope.launch { 
+                        snackbarHostState.showSnackbar(errorMessage!!)
+                        kotlinx.coroutines.delay(1000)
                         preferencesManager.clear()
                         onLogout()
                     }
-                } else if (!dashResponse.isSuccessful) {
-                    errorMessage = "Server error: ${dashResponse.code()}"
-                    scope.launch { snackbarHostState.showSnackbar(errorMessage!!) }
+                    } else {
+                        errorMessage = if (dashResponse == null) "Connection timed out" else "Server error: ${dashResponse.code()}"
+                        scope.launch { snackbarHostState.showSnackbar(errorMessage!!) }
+                    }
                 }
             } catch (e: Exception) {
                 errorMessage = "Network error: ${e.localizedMessage}"
@@ -165,37 +192,31 @@ fun PortalScreen(onLogout: () -> Unit) {
                 }
                 
                 Text("DEEP DIVES", style = MaterialTheme.typography.labelSmall, modifier = Modifier.padding(16.dp), color = MaterialTheme.colorScheme.primary)
-                DrawerItem("Full Project Ledger", Icons.Default.BusinessCenter, currentView == "Projects") {
+                DrawerItem("Active Projects", Icons.Default.BusinessCenter, currentView == "Projects") {
                     currentView = "Projects"; scope.launch { drawerState.close() }
                 }
                 DrawerItem("Project Roster", Icons.Default.Groups, currentView == "Team") {
                     currentView = "Team"; scope.launch { drawerState.close() }
                 }
-                DrawerItem("Operational Tasks", Icons.Default.AssignmentTurnedIn, currentView == "Tasks") {
+                DrawerItem("Milestone Tasks", Icons.AutoMirrored.Filled.Assignment, currentView == "Tasks") {
                     currentView = "Tasks"; scope.launch { drawerState.close() }
                 }
-                DrawerItem("Financial Archive", Icons.Default.Payments, currentView == "Billing") {
+                DrawerItem("Financial Ledger", Icons.Default.Payments, currentView == "Billing") {
                     currentView = "Billing"; scope.launch { drawerState.close() }
                 }
                 DrawerItem("Document Vault", Icons.Default.Folder, currentView == "Documents") {
                     currentView = "Documents"; scope.launch { drawerState.close() }
                 }
-                DrawerItem("Explore Services", Icons.Default.AddBusiness, currentView == "Services") {
-                    currentView = "Services"; scope.launch { drawerState.close() }
-                }
-                DrawerItem("Requests & Quotes", Icons.AutoMirrored.Filled.Assignment, currentView == "Requests") {
+                DrawerItem("Requests & Quotes", Icons.Default.Assessment, currentView == "Requests") {
                     currentView = "Requests"; scope.launch { drawerState.close() }
-                }
-                DrawerItem("Client Feedback", Icons.Default.Feedback, currentView == "Feedback") {
-                    currentView = "Feedback"; scope.launch { drawerState.close() }
-                }
-                DrawerItem("Notifications", Icons.Default.Notifications, currentView == "Notifications") {
-                    currentView = "Notifications"; scope.launch { drawerState.close() }
                 }
                 
                 Text("ACCOUNT", style = MaterialTheme.typography.labelSmall, modifier = Modifier.padding(16.dp), color = MaterialTheme.colorScheme.primary)
                 DrawerItem("My Profile", Icons.Default.Person, currentView == "Profile") {
                     currentView = "Profile"; scope.launch { drawerState.close() }
+                }
+                DrawerItem("App Settings", Icons.Default.Settings, currentView == "Settings") {
+                    currentView = "Settings"; scope.launch { drawerState.close() }
                 }
                 
                 Spacer(modifier = Modifier.weight(1f))
@@ -214,28 +235,43 @@ fun PortalScreen(onLogout: () -> Unit) {
     ) {
         Scaffold(
             snackbarHost = { SnackbarHost(snackbarHostState) },
+            containerColor = Color.Transparent,
             topBar = {
                 TopAppBar(
                     title = {
-                        if (isSearching) {
-                            TextField(
-                                value = searchQuery,
-                                onValueChange = { 
-                                    searchQuery = it
-                                    performSearch(it)
-                                },
-                                placeholder = { Text("Search projects, invoices...") },
-                                singleLine = true,
-                                colors = TextFieldDefaults.colors(
-                                    focusedContainerColor = Color.Transparent,
-                                    unfocusedContainerColor = Color.Transparent,
-                                    disabledContainerColor = Color.Transparent,
-                                ),
-                                modifier = Modifier.fillMaxWidth()
-                            )
-                        } else {
-                            Text(if(currentView == "Home") "MISSION CONTROL" else currentView.uppercase(), fontWeight = FontWeight.Bold)
-                        }
+                        OutlinedTextField(
+                            value = searchQuery,
+                            onValueChange = { query ->
+                                searchQuery = query
+                                isSearching = query.isNotEmpty()
+                                performSearch(query)
+                            },
+                            placeholder = { Text("Search...", style = MaterialTheme.typography.bodyMedium) },
+                            singleLine = true,
+                            leadingIcon = { Icon(Icons.Default.Search, contentDescription = null, modifier = Modifier.size(20.dp)) },
+                            trailingIcon = {
+                                if (searchQuery.isNotEmpty()) {
+                                    IconButton(onClick = { 
+                                        searchQuery = ""
+                                        isSearching = false
+                                        searchResults = null 
+                                    }) {
+                                        Icon(Icons.Default.Close, contentDescription = "Clear", modifier = Modifier.size(16.dp))
+                                    }
+                                }
+                            },
+                            shape = CircleShape,
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                                unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
+                                focusedBorderColor = Color.Transparent,
+                                unfocusedBorderColor = Color.Transparent,
+                            ),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(48.dp)
+                                .padding(horizontal = 8.dp)
+                        )
                     },
                     navigationIcon = {
                         IconButton(onClick = { scope.launch { drawerState.open() } }) {
@@ -243,23 +279,43 @@ fun PortalScreen(onLogout: () -> Unit) {
                         }
                     },
                     actions = {
-                        IconButton(onClick = { isSearching = !isSearching; if(!isSearching) searchQuery = "" }) {
-                            Icon(if(isSearching) Icons.Default.Close else Icons.Default.Search, contentDescription = "Search")
-                        }
-                        if (currentView == "Home") {
-                            IconButton(onClick = { refreshData() }) {
-                                Icon(Icons.Default.Refresh, contentDescription = "Refresh")
-                            }
+                        val userName = preferencesManager.getUserName() ?: "U"
+                        val initials = userName.split(" ").mapNotNull { it.firstOrNull()?.uppercase() }.take(2).joinToString("")
+                        
+                        Box(
+                            modifier = Modifier
+                                .padding(end = 12.dp)
+                                .size(36.dp)
+                                .clip(CircleShape)
+                                .background(MaterialTheme.colorScheme.primary)
+                                .clickable { currentView = "Profile" },
+                            contentAlignment = Alignment.Center
+                        ) {
+                            AsyncImage(
+                                model = "${com.greggory.portal.data.api.RetrofitClient.BASE_URL}api/users/profile-photo/me",
+                                contentDescription = "Profile",
+                                modifier = Modifier.fillMaxSize(),
+                                contentScale = ContentScale.Crop,
+                                error = null // Fallback to text below
+                            )
+                            Text(
+                                text = initials,
+                                style = MaterialTheme.typography.labelMedium,
+                                color = MaterialTheme.colorScheme.onPrimary,
+                                fontWeight = FontWeight.Bold
+                            )
                         }
                     },
                     colors = TopAppBarDefaults.topAppBarColors(
-                        containerColor = MaterialTheme.colorScheme.surface,
+                        containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.7f),
                         titleContentColor = MaterialTheme.colorScheme.primary
                     )
                 )
             }
         ) { padding ->
             Box(modifier = Modifier.fillMaxSize().padding(padding)) {
+                CustomBackground()
+
                 if (isSearching) {
                     SearchScreen(searchQuery, searchResults, isSearchLoading)
                 } else {
@@ -275,13 +331,23 @@ fun PortalScreen(onLogout: () -> Unit) {
                         "Projects" -> ProjectListScreen(dashboardData?.dashboard?.projects ?: localProjects.map { it.toApi() })
                         "Team" -> TeamScreen(dashboardData?.dashboard?.teamMembers ?: emptyList())
                         "Tasks" -> TasksScreen(dashboardData?.dashboard?.tasks ?: emptyList())
-                        "Billing" -> BillingScreen(dashboardData?.dashboard?.invoices ?: localInvoices.map { it.toApi() })
-                        "Documents" -> ReportsScreen(if (reportsData.isNotEmpty()) reportsData else localReports.map { it.toApi() })
+                        "Billing" -> BillingScreen(
+                            invoices = dashboardData?.dashboard?.invoices ?: localInvoices.map { it.toApi() },
+                            onViewPdf = onViewPdf
+                        )
+                        "Documents" -> ReportsScreen(
+                            reports = if (reportsData.isNotEmpty()) reportsData else localReports.map { it.toApi() },
+                            onViewPdf = onViewPdf
+                        )
                         "Services" -> JobServicesScreen()
                         "Requests" -> RequestsScreen()
                         "Feedback" -> FeedbackScreen()
                         "Notifications" -> NotificationsScreen(notificationsData)
                         "Profile" -> ProfileScreen()
+                        "Settings" -> SettingsScreen(
+                            onLogout = onLogout,
+                            onNavigateToProfile = { currentView = "Profile" }
+                        )
                         else -> Text("Section: $currentView", modifier = Modifier.align(Alignment.Center))
                     }
                 }
@@ -328,6 +394,10 @@ fun HomeScreen(
     val displayInvoices = dashboardData?.dashboard?.invoices ?: localInvoices.map { it.toApi() }
 
     Column(modifier = Modifier.fillMaxSize().padding(16.dp).verticalScroll(rememberScrollState())) {
+        if (isLoading && dashboardData == null) {
+            LinearProgressIndicator(modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp))
+        }
+        
         // Mission Briefing Section
         dashboardData?.dashboard?.user?.missionBriefing?.let { briefing ->
             Card(
@@ -342,7 +412,7 @@ fun HomeScreen(
             }
         }
 
-        HomeKpiSection(dashboardData, displayProjects, displayInvoices)
+        HomeKpiSection(dashboardData, onNavigate)
 
         Spacer(modifier = Modifier.height(24.dp))
         SectionHeader("Quick Actions", Icons.Default.FlashOn)
@@ -350,9 +420,10 @@ fun HomeScreen(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            QuickActionCard("Request Job", Icons.Default.AddCircle, Modifier.weight(1f)) { onNavigate("Services") }
-            QuickActionCard("Pay Invoice", Icons.Default.Payment, Modifier.weight(1f)) { onNavigate("Billing") }
-            QuickActionCard("Feedback", Icons.Default.RateReview, Modifier.weight(1f)) { onNavigate("Feedback") }
+            val modifier = Modifier.weight(1f)
+            QuickActionCard("Request Job", Icons.Default.AddCircle, modifier) { onNavigate("Services") }
+            QuickActionCard("Pay Invoice", Icons.Default.Payment, modifier) { onNavigate("Billing") }
+            QuickActionCard("Feedback", Icons.Default.RateReview, modifier) { onNavigate("Feedback") }
         }
         
         // Budget & Financial Forecast
@@ -380,18 +451,21 @@ fun HomeScreen(
                             .height(40.dp),
                         verticalAlignment = Alignment.Bottom
                     ) {
-                        val maxVal = maxOf(budget.planned, budget.spent)
+                        val maxVal = maxOf(budget.planned, budget.spent).coerceAtLeast(1.0)
+                        val plannedRatio = (budget.planned / maxVal).toFloat()
+                        val spentRatio = (budget.spent / maxVal).toFloat()
+                        
                         Box(
                             modifier = Modifier
                                 .weight(1f)
-                                .fillMaxHeight((budget.planned / maxVal).toFloat())
+                                .fillMaxHeight(plannedRatio)
                                 .background(MaterialTheme.colorScheme.surfaceVariant, MaterialTheme.shapes.extraSmall)
                         )
                         Spacer(modifier = Modifier.width(8.dp))
                         Box(
                             modifier = Modifier
                                 .weight(1f)
-                                .fillMaxHeight((budget.spent / maxVal).toFloat())
+                                .fillMaxHeight(spentRatio)
                                 .background(MaterialTheme.colorScheme.primary, MaterialTheme.shapes.extraSmall)
                         )
                     }
@@ -403,26 +477,33 @@ fun HomeScreen(
 
                     Spacer(modifier = Modifier.height(12.dp))
                     LinearProgressIndicator(
-                        progress = { (budget.spent / budget.planned).toFloat().coerceIn(0f, 1f) },
+                        progress = { (budget.spent / budget.planned.coerceAtLeast(1.0)).toFloat().coerceIn(0f, 1f) },
                         modifier = Modifier.fillMaxWidth().height(8.dp),
                         color = if (budget.variance > 0) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary
                     )
-                    Text("Variance: ${budget.variance}%", style = MaterialTheme.typography.labelSmall, modifier = Modifier.align(Alignment.End))
+                    Box(modifier = Modifier.fillMaxWidth()) {
+                        Text(
+                            text = "Variance: ${budget.variance}%",
+                            style = MaterialTheme.typography.labelSmall,
+                            modifier = Modifier.align(Alignment.CenterEnd)
+                        )
+                    }
                 }
             }
         }
 
         Spacer(modifier = Modifier.height(24.dp))
         SectionHeader("Active Projects", Icons.Default.BusinessCenter)
-        ProjectsSummaryList(displayProjects.take(3))
+        ProjectsSummaryList(displayProjects.take(3), onNavigate)
         
+        // Section Header "Milestone Tasks" with AutoMirrored icon
         Spacer(modifier = Modifier.height(24.dp))
-        SectionHeader("Milestone Tasks", Icons.Default.Assignment)
-        TasksSummaryList(dashboardData?.dashboard?.tasks?.take(3) ?: emptyList())
+        SectionHeader("Milestone Tasks", Icons.AutoMirrored.Filled.Assignment)
+        TasksSummaryList(dashboardData?.dashboard?.tasks?.take(3) ?: emptyList(), onNavigate)
 
         Spacer(modifier = Modifier.height(24.dp))
         SectionHeader("Recent Invoices", Icons.Default.Payments)
-        InvoicesSummaryList(displayInvoices.take(3))
+        InvoicesSummaryList(displayInvoices.take(3), onNavigate)
         Spacer(modifier = Modifier.height(24.dp))
         SectionHeader("Latest Updates", Icons.Default.Notifications)
         
@@ -432,7 +513,7 @@ fun HomeScreen(
             Spacer(modifier = Modifier.height(8.dp))
         }
 
-        if (notifications.isEmpty() && (dashboardData?.dashboard?.messages.isNullOrEmpty())) {
+        if (notifications.isEmpty() && (dashboardData?.dashboard?.messages).isNullOrEmpty()) {
             Text("No recent updates", style = MaterialTheme.typography.bodySmall)
         }
     }
@@ -442,7 +523,7 @@ fun HomeScreen(
 fun MessageFeedItem(message: Message) {
     Card(
         modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = if (message.unread) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f) else MaterialTheme.colorScheme.surface)
+        colors = CardDefaults.cardColors(containerColor = if (message.unread) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f) else MaterialTheme.colorScheme.surface.copy(alpha = 0.5f))
     ) {
         Column(modifier = Modifier.padding(12.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -457,21 +538,24 @@ fun MessageFeedItem(message: Message) {
 }
 
 @Composable
-fun HomeKpiSection(dashboardData: com.greggory.portal.data.api.DashboardResponse?, projects: List<Project>, invoices: List<Invoice>) {
+fun HomeKpiSection(dashboardData: com.greggory.portal.data.api.DashboardResponse?, onNavigate: (String) -> Unit) {
     val summary = dashboardData?.dashboard?.businessSummary
     
     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-        KpiCard("Active Projects", summary?.activeProjects?.toString() ?: "0", Modifier.weight(1f))
-        KpiCard("Open Invoices", summary?.openInvoices?.toString() ?: "0", Modifier.weight(1f))
+        val kpiModifier = Modifier.weight(1f)
+        KpiCard("Active Projects", summary?.activeProjects?.toString() ?: "0", kpiModifier.clickable { onNavigate("Projects") })
+        KpiCard("Open Invoices", summary?.openInvoices?.toString() ?: "0", kpiModifier.clickable { onNavigate("Billing") })
     }
     Spacer(modifier = Modifier.height(8.dp))
     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-        KpiCard("Open Messages", summary?.openMessages?.toString() ?: "0", Modifier.weight(1f))
-        KpiCard("Next Milestone", summary?.nextMilestone ?: "Syncing...", Modifier.weight(1f))
+        val kpiModifier = Modifier.weight(1f)
+        KpiCard("Open Messages", summary?.openMessages?.toString() ?: "0", kpiModifier)
+        KpiCard("Next Milestone", summary?.nextMilestone ?: "Syncing...", kpiModifier.clickable { onNavigate("Tasks") })
     }
 
     dashboardData?.dashboard?.kpiMetrics?.forEach { metric ->
-        Spacer(modifier = Modifier.height(8.dp)); KpiCard(metric.label, metric.value, Modifier.fillMaxWidth())
+        Spacer(modifier = Modifier.height(8.dp))
+        KpiCard(metric.label, metric.value, Modifier.fillMaxWidth())
     }
 }
 
@@ -485,14 +569,19 @@ fun SectionHeader(title: String, icon: ImageVector) {
 }
 
 @Composable
-fun ProjectsSummaryList(projects: List<Project>) {
+fun ProjectsSummaryList(projects: List<Project>, onNavigate: (String) -> Unit) {
     if (projects.isEmpty()) {
         Text("No active projects", style = MaterialTheme.typography.bodySmall)
     } else {
         projects.forEach { project ->
-            Card(modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))) {
+            Card(
+                onClick = { onNavigate("Projects") },
+                modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
+            ) {
                 Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Column(modifier = Modifier.weight(1f)) {
+                    val contentModifier = Modifier.weight(1f)
+                    Column(modifier = contentModifier) {
                         Text(project.name, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Medium)
                         Text(project.status, style = MaterialTheme.typography.labelSmall)
                     }
@@ -504,14 +593,19 @@ fun ProjectsSummaryList(projects: List<Project>) {
 }
 
 @Composable
-fun TasksSummaryList(tasks: List<com.greggory.portal.data.api.Task>) {
+fun TasksSummaryList(tasks: List<com.greggory.portal.data.api.Task>, onNavigate: (String) -> Unit) {
     if (tasks.isEmpty()) {
         Text("No active milestones", style = MaterialTheme.typography.bodySmall)
     } else {
         tasks.forEach { task ->
-            Card(modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))) {
+            Card(
+                onClick = { onNavigate("Tasks") },
+                modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
+            ) {
                 Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Column(modifier = Modifier.weight(1f)) {
+                    val contentModifier = Modifier.weight(1f)
+                    Column(modifier = contentModifier) {
                         Text(task.title, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold)
                         Text(task.project, style = MaterialTheme.typography.labelSmall)
                     }
@@ -523,14 +617,19 @@ fun TasksSummaryList(tasks: List<com.greggory.portal.data.api.Task>) {
 }
 
 @Composable
-fun InvoicesSummaryList(invoices: List<Invoice>) {
+fun InvoicesSummaryList(invoices: List<Invoice>, onNavigate: (String) -> Unit) {
     if (invoices.isEmpty()) {
         Text("No pending invoices", style = MaterialTheme.typography.bodySmall)
     } else {
         invoices.forEach { invoice ->
-            Card(modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))) {
+            Card(
+                onClick = { onNavigate("Billing") },
+                modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
+            ) {
                 Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Column(modifier = Modifier.weight(1f)) {
+                    val contentModifier = Modifier.weight(1f)
+                    Column(modifier = contentModifier) {
                         Text("Invoice #${invoice.id}", style = MaterialTheme.typography.bodyLarge)
                         InvoiceStatusBadge(invoice.status)
                     }
@@ -543,7 +642,7 @@ fun InvoicesSummaryList(invoices: List<Invoice>) {
 
 @Composable
 fun NotificationItem(notification: Notification) {
-    Card(modifier = Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)) {
+    Card(modifier = Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.5f))) {
         Column(modifier = Modifier.padding(12.dp)) {
             Text(notification.title, style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold)
             Text(notification.message, style = MaterialTheme.typography.bodySmall, maxLines = 2)
@@ -572,7 +671,7 @@ fun QuickActionCard(label: String, icon: ImageVector, modifier: Modifier = Modif
 
 @Composable
 fun KpiCard(label: String, value: String, modifier: Modifier = Modifier) {
-    Card(modifier = modifier, colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)) {
+    Card(modifier = modifier, colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.6f))) {
         Column(modifier = Modifier.padding(16.dp)) {
             Text(text = label, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onPrimaryContainer)
             Text(text = value, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onPrimaryContainer)

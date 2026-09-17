@@ -22,8 +22,17 @@ import androidx.compose.ui.tooling.preview.Preview
 import com.greggory.portal.ui.theme.GreggoryPortalTheme
 
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.platform.LocalContext
 import com.greggory.portal.R
+import com.greggory.portal.data.api.RetrofitClient
+import com.greggory.portal.data.api.LoginRequest
+import com.greggory.portal.data.api.PushTokenRequest
+import com.greggory.portal.data.api.LoginResponse
+import com.greggory.portal.data.local.PreferencesManager
+import com.google.firebase.messaging.FirebaseMessaging
+import com.google.gson.Gson
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.tasks.await
 
 @Composable
 fun LoginScreen(
@@ -105,7 +114,7 @@ fun LoginScreen(
         var errorMessage by remember { mutableStateOf<String?>(null) }
         var isLoading by remember { mutableStateOf(false) }
         val scope = rememberCoroutineScope()
-        val context = androidx.compose.ui.platform.LocalContext.current
+        val context = LocalContext.current
 
         if (errorMessage != null) {
             Text(
@@ -123,15 +132,15 @@ fun LoginScreen(
                     errorMessage = null
                     scope.launch {
                         try {
-                            val response = com.greggory.portal.data.api.RetrofitClient.instance.login(
-                                com.greggory.portal.data.api.LoginRequest(email, password)
+                            val response = RetrofitClient.instance.login(
+                                LoginRequest(email, password)
                             )
                             isLoading = false
                             if (response.isSuccessful && response.body() != null) {
                                 val body = response.body()!!
                                 val token = body.token
                                 if (token != null) {
-                                    val prefs = com.greggory.portal.data.local.PreferencesManager(context)
+                                    val prefs = PreferencesManager(context)
                                     prefs.saveToken(token)
                                     // Backend returns user details at top level for login success
                                     prefs.saveUserInfo(
@@ -140,6 +149,19 @@ fun LoginScreen(
                                         body.firstName,
                                         body.phone ?: ""
                                     )
+                                    
+                                    // Register FCM Token for Push Notifications
+                                    try {
+                                        val fcmToken = FirebaseMessaging.getInstance().getToken().await()
+                                        prefs.saveFcmToken(fcmToken)
+                                        RetrofitClient.instance.updatePushToken(
+                                            PushTokenRequest(fcmToken)
+                                        )
+                                    } catch (e: Exception) {
+                                        // Non-critical: failure to register token shouldn't block login
+                                        android.util.Log.e("FCM", "Failed to register token on login", e)
+                                    }
+
                                     onLoginSuccess()
                                 } else {
                                     errorMessage = body.message ?: body.error ?: "Invalid response from server"
@@ -148,7 +170,7 @@ fun LoginScreen(
                                 // Extract error message from body if possible
                                 val errorBody = response.errorBody()?.string()
                                 val errorMsg = try {
-                                    val json = com.google.gson.Gson().fromJson(errorBody, com.greggory.portal.data.api.LoginResponse::class.java)
+                                    val json = Gson().fromJson(errorBody, LoginResponse::class.java)
                                     json.error ?: json.message
                                 } catch (e: Exception) {
                                     null

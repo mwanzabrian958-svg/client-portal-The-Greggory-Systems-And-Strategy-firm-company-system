@@ -8,6 +8,9 @@ import com.greggory.portal.ui.screens.LoginScreen
 import com.greggory.portal.ui.screens.PortalScreen
 import com.greggory.portal.ui.screens.SignupScreen
 import com.greggory.portal.ui.screens.ForgotPasswordScreen
+import com.greggory.portal.ui.screens.PdfViewerScreen
+import androidx.navigation.NavType
+import androidx.navigation.navArgument
 
 @Composable
 fun AppNavigation(navController: NavHostController, startDestination: String = Screen.Login.route) {
@@ -47,11 +50,31 @@ fun AppNavigation(navController: NavHostController, startDestination: String = S
             )
         }
         composable(Screen.Portal.route) {
-            PortalScreen(onLogout = {
-                navController.navigate(Screen.Login.route) {
-                    popUpTo(Screen.Portal.route) { inclusive = true }
+            PortalScreen(
+                onLogout = {
+                    navController.navigate(Screen.Login.route) {
+                        popUpTo(Screen.Portal.route) { inclusive = true }
+                    }
+                },
+                onViewPdf = { url, title ->
+                    navController.navigate(Screen.PdfViewer.createRoute(java.net.URLEncoder.encode(url, "UTF-8"), title))
                 }
-            })
+            )
+        }
+        composable(
+            route = Screen.PdfViewer.route,
+            arguments = listOf(
+                navArgument("url") { type = NavType.StringType },
+                navArgument("title") { type = NavType.StringType }
+            )
+        ) { backStackEntry ->
+            val url = backStackEntry.arguments?.getString("url") ?: ""
+            val title = backStackEntry.arguments?.getString("title") ?: "Document"
+            PdfViewerScreen(
+                url = java.net.URLDecoder.decode(url, "UTF-8"),
+                title = title,
+                onBack = { navController.popBackStack() }
+            )
         }
     }
 }

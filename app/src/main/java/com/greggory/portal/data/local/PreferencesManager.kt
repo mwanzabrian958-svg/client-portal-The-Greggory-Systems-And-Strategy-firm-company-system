@@ -49,4 +49,35 @@ class PreferencesManager(context: Context) {
     }
 
     fun getFcmToken(): String? = sharedPreferences.getString("fcm_token", null)
+
+    fun saveBackgroundType(type: String) {
+        sharedPreferences.edit().putString("bg_type", type).apply()
+    }
+
+    fun getBackgroundType(): String = sharedPreferences.getString("bg_type", "color") ?: "color"
+
+    fun saveBackgroundUri(uri: String) {
+        sharedPreferences.edit().putString("bg_uri", uri).apply()
+    }
+
+    fun getBackgroundUri(): String? = sharedPreferences.getString("bg_uri", null)
+
+    fun saveBackgroundSource(source: String) {
+        sharedPreferences.edit().putString("bg_source", source).apply()
+    }
+
+    fun getBackgroundSource(): String = sharedPreferences.getString("bg_source", "none") ?: "none"
+
+    // New Settings
+    fun saveThemeMode(mode: String) { sharedPreferences.edit().putString("theme_mode", mode).apply() }
+    fun getThemeMode(): String = sharedPreferences.getString("theme_mode", "system") ?: "system"
+
+    fun saveBiometricEnabled(enabled: Boolean) { sharedPreferences.edit().putBoolean("biometric_enabled", enabled).apply() }
+    fun isBiometricEnabled(): Boolean = sharedPreferences.getBoolean("biometric_enabled", false)
+
+    fun saveNotificationPref(key: String, enabled: Boolean) { sharedPreferences.edit().putBoolean("notif_$key", enabled).apply() }
+    fun getNotificationPref(key: String): Boolean = sharedPreferences.getBoolean("notif_$key", true)
+
+    fun saveCurrency(currency: String) { sharedPreferences.edit().putString("currency", currency).apply() }
+    fun getCurrency(): String = sharedPreferences.getString("currency", "KSH") ?: "KSH"
 }

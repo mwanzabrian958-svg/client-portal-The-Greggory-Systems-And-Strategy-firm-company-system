@@ -9,7 +9,7 @@ import retrofit2.converter.gson.GsonConverterFactory
 
 object RetrofitClient {
     // Live Production Backend - Wired to Render Cloud & Aiven MySQL
-    const val BASE_URL = "https://w-the-greggory-systems-and-strategy-firm-vik4.onrender.com/"
+    const val BASE_URL = "https://the-greggory-systems-and-strategy-firm-jz7i.onrender.com/"
 
     private var authTokenProvider: (() -> String?)? = null
     private var userIdProvider: (() -> Int)? = null
@@ -55,13 +55,16 @@ object RetrofitClient {
     // IMPORTANT: To prevent crashes, this is only active in RELEASE builds.
     private val certificatePinner = if (!com.greggory.portal.BuildConfig.DEBUG) {
         okhttp3.CertificatePinner.Builder()
-            .add("w-the-greggory-systems-and-strategy-firm-vik4.onrender.com", "sha256/fizfE9JVlzlRplEx7epXfqW9enrbLvwF/LU26XTPEG4=")
+            .add("the-greggory-systems-and-strategy-firm-jz7i.onrender.com", "sha256/fizfE9JVlzlRplEx7epXfqW9enrbLvwF/LU26XTPEG4=")
             .build()
     } else {
         okhttp3.CertificatePinner.DEFAULT
     }
 
     private val httpClient = OkHttpClient.Builder()
+        .connectTimeout(60, java.util.concurrent.TimeUnit.SECONDS)
+        .readTimeout(60, java.util.concurrent.TimeUnit.SECONDS)
+        .writeTimeout(60, java.util.concurrent.TimeUnit.SECONDS)
         .addInterceptor(authInterceptor)
         .addInterceptor(logging)
         .certificatePinner(certificatePinner)

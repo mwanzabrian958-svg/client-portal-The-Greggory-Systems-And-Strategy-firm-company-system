@@ -19,7 +19,7 @@ import com.greggory.portal.utils.FileDownloadHelper
 import kotlinx.coroutines.launch
 
 @Composable
-fun ReportsScreen(reports: List<Report>) {
+fun ReportsScreen(reports: List<Report>, onViewPdf: (String, String) -> Unit) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     var downloadingReportId by remember { mutableStateOf<Int?>(null) }
@@ -124,20 +124,24 @@ fun ReportsScreen(reports: List<Report>) {
                     report = report,
                     isDownloading = downloadingReportId == report.id,
                     onDownload = {
-                        downloadingReportId = report.id
-                        scope.launch {
-                            val extension = if (report.file_type.contains("word")) "docx" else "pdf"
-                            val fileName = "${report.title.replace(" ", "_").replace("(", "").replace(")", "")}.$extension"
-                            val success = FileDownloadHelper.downloadFile(
-                                context = context,
-                                url = FileDownloadHelper.getReportUrl(report.id),
-                                fileName = fileName
-                            )
-                            downloadingReportId = null
-                            if (success) {
-                                Toast.makeText(context, "Report saved to Downloads. You can open and print it from your file manager.", Toast.LENGTH_LONG).show()
-                            } else {
-                                Toast.makeText(context, "Failed to download report", Toast.LENGTH_SHORT).show()
+                        if (report.file_type.contains("pdf")) {
+                            onViewPdf(FileDownloadHelper.getReportUrl(report.id), report.title)
+                        } else {
+                            downloadingReportId = report.id
+                            scope.launch {
+                                val extension = if (report.file_type.contains("word")) "docx" else "pdf"
+                                val fileName = "${report.title.replace(" ", "_").replace("(", "").replace(")", "")}.$extension"
+                                val success = FileDownloadHelper.downloadFile(
+                                    context = context,
+                                    url = FileDownloadHelper.getReportUrl(report.id),
+                                    fileName = fileName
+                                )
+                                downloadingReportId = null
+                                if (success) {
+                                    Toast.makeText(context, "Report saved to Downloads. You can open and print it from your file manager.", Toast.LENGTH_LONG).show()
+                                } else {
+                                    Toast.makeText(context, "Failed to download report", Toast.LENGTH_SHORT).show()
+                                }
                             }
                         }
                     }

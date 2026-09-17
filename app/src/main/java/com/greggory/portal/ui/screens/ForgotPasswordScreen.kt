@@ -11,7 +11,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.text.style.TextAlign
 import com.greggory.portal.data.api.RetrofitClient
+import com.greggory.portal.data.api.ForgotPasswordRequest
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -65,7 +67,7 @@ fun ForgotPasswordScreen(onBackToLogin: () -> Unit) {
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(horizontal = 16.dp),
-                textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                textAlign = TextAlign.Center
             )
 
             Spacer(modifier = Modifier.height(32.dp))
@@ -98,7 +100,7 @@ fun ForgotPasswordScreen(onBackToLogin: () -> Unit) {
                         scope.launch {
                             try {
                                 val response = RetrofitClient.instance.forgotPassword(
-                                    com.greggory.portal.data.api.ForgotPasswordRequest(email)
+                                    ForgotPasswordRequest(email)
                                 )
                                 isLoading = false
                                 if (response.isSuccessful && response.body()?.success == true) {

@@ -25,7 +25,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 @Composable
-fun BillingScreen(invoices: List<Invoice>) {
+fun BillingScreen(invoices: List<Invoice>, onViewPdf: (String, String) -> Unit) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
@@ -64,18 +64,10 @@ fun BillingScreen(invoices: List<Invoice>) {
                         showPhoneDialog = true
                     },
                     onDownloadClick = {
-                        val fileName = "Invoice_${invoice.id}.pdf"
-                        val success = FileDownloadHelper.downloadFile(
-                            context = context,
-                            url = FileDownloadHelper.getInvoiceUrl(invoice.id),
-                            fileName = fileName,
-                            description = "Downloading Invoice #${invoice.id}"
+                        onViewPdf(
+                            FileDownloadHelper.getInvoiceUrl(invoice.id),
+                            "Invoice #${invoice.id}"
                         )
-                        if (success) {
-                            Toast.makeText(context, "Invoice download started", Toast.LENGTH_SHORT).show()
-                        } else {
-                            Toast.makeText(context, "Failed to start download", Toast.LENGTH_SHORT).show()
-                        }
                     },
                     onReportClick = {
                         selectedInvoice = invoice
@@ -285,7 +277,7 @@ private suspend fun pollPaymentStatus(checkoutRequestId: String, snackbarHostSta
 fun InvoiceCard(invoice: Invoice, onPayClick: () -> Unit, onDownloadClick: () -> Unit, onReportClick: () -> Unit) {
     Card(
         modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.5f))
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Row(

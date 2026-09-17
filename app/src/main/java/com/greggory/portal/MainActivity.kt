@@ -15,6 +15,7 @@ import androidx.fragment.app.FragmentActivity
 import androidx.navigation.compose.rememberNavController
 import com.greggory.portal.data.local.PreferencesManager
 import com.greggory.portal.ui.navigation.AppNavigation
+import com.greggory.portal.ui.navigation.Screen
 import com.greggory.portal.ui.theme.GreggoryPortalTheme
 import com.greggory.portal.utils.BiometricHelper
 import com.greggory.portal.utils.NotificationHelper
@@ -37,7 +38,14 @@ class MainActivity : FragmentActivity() {
         val startDestination = if (hasToken) "portal" else "login"
 
         setContent {
-            GreggoryPortalTheme {
+            val themeMode = remember { mutableStateOf(prefs.getThemeMode()) }
+            val darkTheme = when (themeMode.value) {
+                "light" -> false
+                "dark" -> true
+                else -> androidx.compose.foundation.isSystemInDarkTheme()
+            }
+
+            GreggoryPortalTheme(darkTheme = darkTheme) {
                 Surface(
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
@@ -56,19 +64,41 @@ class MainActivity : FragmentActivity() {
                     }
 
                     LaunchedEffect(Unit) {
-                        if (hasToken && BiometricHelper.isBiometricAvailable(this@MainActivity)) {
-                            BiometricHelper.showBiometricPrompt(
-                                activity = this@MainActivity,
-                                onSuccess = {
-                                    isAuthenticated = true
-                                },
-                                onError = { 
-                                    // If biometric fails, clear token and force login for security
-                                    prefs.clear()
-                                    finalStartDestination = "login"
-                                    isAuthenticated = true
+                        // Handle Deep Link if present
+                        intent?.data?.let { uri ->
+                            val path = uri.path ?: ""
+                            if (path.startsWith("/project/")) {
+                                val projectId = path.substringAfter("/project/").toIntOrNull()
+                                if (projectId != null) {
+                                    finalStartDestination = Screen.Portal.route // Navigate to portal then handle inside
                                 }
-                            )
+                            } else if (path.startsWith("/invoice/")) {
+                                val invoiceId = path.substringAfter("/invoice/").toIntOrNull()
+                                if (invoiceId != null) {
+                                    finalStartDestination = Screen.Portal.route
+                                }
+                            }
+                        }
+
+                        val isBiometricEnabled = prefs.isBiometricEnabled()
+                        
+                        if (hasToken && isBiometricEnabled && BiometricHelper.isBiometricAvailable(this@MainActivity)) {
+                            try {
+                                BiometricHelper.showBiometricPrompt(
+                                    activity = this@MainActivity,
+                                    onSuccess = {
+                                        isAuthenticated = true
+                                    },
+                                    onError = { 
+                                        // If biometric fails or is cancelled, clear token and force login for security
+                                        prefs.clear()
+                                        finalStartDestination = "login"
+                                        isAuthenticated = true
+                                    }
+                                )
+                            } catch (e: Exception) {
+                                isAuthenticated = true
+                            }
                         } else {
                             isAuthenticated = true
                         }

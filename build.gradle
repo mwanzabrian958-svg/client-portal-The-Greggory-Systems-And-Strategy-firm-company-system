@@ -6,9 +6,10 @@ buildscript {
     repositories {
         google()
         mavenCentral()
+        maven { url 'https://jitpack.io' }
     }
     dependencies {
-        classpath 'com.android.tools.build:gradle:8.13.2'
+        classpath 'com.android.tools.build:gradle:8.7.3'
         classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:2.0.21"
         classpath "org.jetbrains.kotlin:compose-compiler-gradle-plugin:2.0.21"
         classpath 'com.google.gms:google-services:4.4.1'
@@ -21,6 +22,7 @@ allprojects {
     repositories {
         google()
         mavenCentral()
+        maven { url 'https://jitpack.io' }
     }
     // Redirect build directory outside OneDrive to prevent file-locking and snapshotting errors
     buildDir = "C:/android-builds/The-Greggory-Client-Portal/${project.name}"

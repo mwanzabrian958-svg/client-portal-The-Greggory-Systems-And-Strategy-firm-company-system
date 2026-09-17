@@ -35,9 +35,11 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
+import com.google.gson.Gson
 import com.greggory.portal.R
 import com.greggory.portal.data.api.RegisterRequest
 import com.greggory.portal.data.api.RetrofitClient
+import com.greggory.portal.data.api.SimpleResponse
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -193,8 +195,14 @@ fun SignupScreen(onSignupSuccess: () -> Unit, onBackToLogin: () -> Unit) {
                 onValueChange = { confirmPassword = it },
                 label = { Text("Confirm Password") },
                 modifier = Modifier.fillMaxWidth(),
-                visualTransformation = PasswordVisualTransformation(),
+                visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+                trailingIcon = {
+                    val image = if (passwordVisible) Icons.Filled.Visibility else Icons.Filled.VisibilityOff
+                    IconButton(onClick = { passwordVisible = !passwordVisible }) {
+                        Icon(imageVector = image, contentDescription = null)
+                    }
+                },
                 singleLine = true
             )
 
@@ -265,7 +273,7 @@ fun SignupScreen(onSignupSuccess: () -> Unit, onBackToLogin: () -> Unit) {
                             } else {
                                 val errorBody = response.errorBody()?.string()
                                 val errorMsg = try {
-                                    val json = com.google.gson.Gson().fromJson(errorBody, com.greggory.portal.data.api.SimpleResponse::class.java)
+                                    val json = Gson().fromJson(errorBody, SimpleResponse::class.java)
                                     json.message
                                 } catch (e: Exception) {
                                     null
@@ -296,13 +304,34 @@ fun SignupScreen(onSignupSuccess: () -> Unit, onBackToLogin: () -> Unit) {
 
 private suspend fun getBase64FromUri(context: Context, uri: Uri): String? = withContext(Dispatchers.IO) {
     try {
-        val inputStream: InputStream? = context.contentResolver.openInputStream(uri)
-        val bitmap = BitmapFactory.decodeStream(inputStream)
+        val options = BitmapFactory.Options().apply {
+            inJustDecodeBounds = true
+        }
+        context.contentResolver.openInputStream(uri)?.use { 
+            BitmapFactory.decodeStream(it, null, options)
+        }
+        
+        // Target max size 500x500 for Base64 efficiency
+        var scale = 1
+        while (options.outWidth / scale / 2 >= 500 && options.outHeight / scale / 2 >= 500) {
+            scale *= 2
+        }
+
+        val decodeOptions = BitmapFactory.Options().apply {
+            inSampleSize = scale
+        }
+        
+        val bitmap = context.contentResolver.openInputStream(uri)?.use { 
+            BitmapFactory.decodeStream(it, null, decodeOptions)
+        }
+        
+        if (bitmap == null) return@withContext null
+        
         val outputStream = ByteArrayOutputStream()
-        // Compress to keep size manageable for Base64
-        bitmap.compress(Bitmap.CompressFormat.JPEG, 70, outputStream)
+        // Compress to keep size manageable for Base64 (Render cloud upload)
+        bitmap.compress(Bitmap.CompressFormat.JPEG, 60, outputStream)
         val byteArray = outputStream.toByteArray()
-        Base64.encodeToString(byteArray, Base64.DEFAULT)
+        Base64.encodeToString(byteArray, Base64.NO_WRAP)
     } catch (e: Exception) {
         null
     }
