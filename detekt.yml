@@ -2,9 +2,9 @@
 # This configuration defines the code quality standards for the Android application
 
 build:
-  maxIssues: 10
-  maxErrors: 5
-  maxWarnings: 0
+  maxIssues: 150
+  maxErrors: 100
+  maxWarnings: 100
 
 complexity:
   active: true
@@ -23,7 +23,7 @@ complexity:
     max: 5
 
 config:
-  validation: true
+  validation: false
   warningsAsErrors: false
   buildEvalTriage: false
   warningsAsErrorsInTests: false

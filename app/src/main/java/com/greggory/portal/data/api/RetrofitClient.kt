@@ -11,37 +11,61 @@ object RetrofitClient {
     // Live Production Backend - Wired to Render Cloud & Aiven MySQL
     const val BASE_URL = "https://the-greggory-systems-and-strategy-firm-jz7i.onrender.com/"
 
-    private var authTokenProvider: (() -> String?)? = null
-    private var userIdProvider: (() -> Int)? = null
+    private var appContext: Context? = null
 
     /**
-     * Set in stone: Initializes the global network client with a dynamic token provider.
-     * This guarantees that every request automatically carries the DB-generated token,
-     * ensuring uniform routing of client data across any device or access point.
+     * Set in stone: Initializes the global network client.
      */
     fun initialize(context: Context) {
-        val prefs = com.greggory.portal.data.local.PreferencesManager.getInstance(context)
-        authTokenProvider = { prefs.getToken() }
-        userIdProvider = { prefs.getUserId() }
+        appContext = context.applicationContext
     }
 
     private val authInterceptor = Interceptor { chain ->
         val originalRequest = chain.request()
-        val token = authTokenProvider?.invoke()
-        val userId = userIdProvider?.invoke() ?: -1
+        
+        // Always dynamically get the singleton instance using the application context
+        val context = appContext
+        val (token, userId) = if (context != null) {
+            val prefs = com.greggory.portal.data.local.PreferencesManager.getInstance(context)
+            Pair(prefs.getToken(), prefs.getUserId())
+        } else {
+            Pair(null, -1)
+        }
         
         val requestBuilder = originalRequest.newBuilder()
         
-        // Always use the latest token from PreferencesManager Singleton
+        // Identification header for the "Company Pipeline" load balancer
+        requestBuilder.header("User-Agent", "GreggoryClientPortal/1.0.0 (Android; " + android.os.Build.VERSION.RELEASE + ")")
+        
+        // Always use the latest token from PreferencesManager dynamically
         if (!token.isNullOrEmpty()) {
             requestBuilder.header("Authorization", "Bearer $token")
         }
         
-        // Inject Set in Stone Routing Headers
+        // Inject Set in Stone Routing Headers (Critical for Load Balancing & Data Partitioning)
         requestBuilder.header("X-Greggory-Client-ID", userId.toString())
         requestBuilder.header("X-Routing-Policy", "set-in-stone-v1")
         
         chain.proceed(requestBuilder.build())
+    }
+
+    /**
+     * Retry Interceptor: Handles transient "Company Pipeline" glitches (502, 503, 504).
+     * This ensures high availability even when the backend is scaling or redeploying.
+     */
+    private val retryInterceptor = Interceptor { chain ->
+        val request = chain.request()
+        var response = chain.proceed(request)
+        var tryCount = 0
+        val maxLimit = 3
+
+        while (!response.isSuccessful && (response.code in 502..504) && tryCount < maxLimit) {
+            tryCount++
+            Thread.sleep(1000L * tryCount)
+            response.close()
+            response = chain.proceed(request)
+        }
+        response
     }
 
     private val logging = HttpLoggingInterceptor().apply {
@@ -66,6 +90,7 @@ object RetrofitClient {
         .connectTimeout(60, java.util.concurrent.TimeUnit.SECONDS)
         .readTimeout(60, java.util.concurrent.TimeUnit.SECONDS)
         .writeTimeout(60, java.util.concurrent.TimeUnit.SECONDS)
+        .addInterceptor(retryInterceptor)
         .addInterceptor(authInterceptor)
         .addInterceptor(logging)
         .certificatePinner(certificatePinner)

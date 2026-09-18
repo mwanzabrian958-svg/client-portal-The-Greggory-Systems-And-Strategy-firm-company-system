@@ -127,13 +127,15 @@ fun LoginScreen(
 
         Button(
             onClick = {
-                if (email.isNotEmpty() && password.isNotEmpty()) {
+                val cleanEmail = email.trim().lowercase()
+                val cleanPassword = password.trim()
+                if (cleanEmail.isNotEmpty() && cleanPassword.isNotEmpty()) {
                     isLoading = true
                     errorMessage = null
                     scope.launch {
                         try {
                             val response = RetrofitClient.instance.login(
-                                LoginRequest(email, password)
+                                LoginRequest(cleanEmail, cleanPassword)
                             )
                             isLoading = false
                             if (response.isSuccessful && response.body() != null) {
@@ -150,9 +152,13 @@ fun LoginScreen(
                                         body.phone ?: ""
                                     )
                                     
+                                    // Trigger immediate re-init of Retrofit with the new token
+                                    RetrofitClient.initialize(context)
+                                    
                                     // Register FCM Token for Push Notifications
                                     try {
-                                        val fcmToken = FirebaseMessaging.getInstance().getToken().await()
+                                        @Suppress("DEPRECATION")
+                                        val fcmToken = FirebaseMessaging.getInstance().token.await()
                                         prefs.saveFcmToken(fcmToken)
                                         RetrofitClient.instance.updatePushToken(
                                             PushTokenRequest(fcmToken)

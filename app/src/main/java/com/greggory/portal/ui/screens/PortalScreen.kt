@@ -115,54 +115,68 @@ fun PortalScreen(onLogout: () -> Unit, onViewPdf: (String, String) -> Unit) {
                     val reportsResponse = try { reportsDeferred.await() } catch (ignored: Exception) { null }
                     val notifsResponse = try { notifsDeferred.await() } catch (ignored: Exception) { null }
 
+                    var sessionExpired = false
+
+                    // 1. Process Dashboard Response
                     if (dashResponse?.isSuccessful == true && dashResponse.body()?.success == true) {
                         val body = dashResponse.body()?.dashboard
-                        val reports = reportsResponse?.body()?.reports ?: emptyList()
-                        
-                        // Validate Set in Stone Routing Integrity for all incoming data
-                        val isIntegrityValid = 
+                        val isDashIntegrityValid = 
                             (body?.projects?.all { DataRouter.verifyRoutingIntegrity(it.clientId, userId) } ?: true) &&
-                            (body?.invoices?.all { DataRouter.verifyRoutingIntegrity(it.clientId, userId) } ?: true) &&
-                            (reports.all { DataRouter.verifyRoutingIntegrity(it.clientId, userId) })
+                            (body?.invoices?.all { DataRouter.verifyRoutingIntegrity(it.clientId, userId) } ?: true)
 
-                        if (isIntegrityValid) {
+                        if (isDashIntegrityValid) {
                             dashboardData = dashResponse.body()
-                            reportsData = reports
-                            notificationsData = notifsResponse?.body()?.notifications ?: emptyList()
-                            
-                            // Sync Local DB
                             body?.projects?.let { projects ->
                                 try {
                                     database.projectDao().clearProjects()
                                     database.projectDao().insertProjects(projects.map { it.toEntity() })
-                                } catch (ignored: Exception) { /* local db error */ }
+                                } catch (ignored: Exception) {}
                             }
                             body?.invoices?.let { invoices ->
                                 try {
                                     database.invoiceDao().clearInvoices()
                                     database.invoiceDao().insertInvoices(invoices.map { it.toEntity() })
-                                } catch (ignored: Exception) { /* local db error */ }
-                            }
-                            if (reports.isNotEmpty()) {
-                                try {
-                                    database.reportDao().clearReports()
-                                    database.reportDao().insertReports(reports.map { it.toEntity() })
-                                } catch (ignored: Exception) { /* local db error */ }
+                                } catch (ignored: Exception) {}
                             }
                         } else {
-                            errorMessage = "Security Error: Routing Integrity Breach Detected"
-                            scope.launch { snackbarHostState.showSnackbar(errorMessage!!) }
+                            errorMessage = "Security Error: Dashboard Routing Integrity Breach Detected"
                         }
-                    } else if (dashResponse?.code() == 401 || dashResponse?.code() == 403 || reportsResponse?.code() == 401 || notifsResponse?.code() == 401) {
-                        errorMessage = "Session expired. Please log in again."
-                    scope.launch { 
-                        snackbarHostState.showSnackbar(errorMessage!!)
-                        kotlinx.coroutines.delay(1000)
-                        preferencesManager.clear()
-                        onLogout()
                     }
-                    } else {
-                        errorMessage = if (dashResponse == null) "Connection timed out" else "Server error: ${dashResponse.code()}"
+
+                    // 2. Process Reports Response
+                    if (reportsResponse?.isSuccessful == true && reportsResponse.body()?.success == true) {
+                        val reports = reportsResponse.body()?.reports ?: emptyList()
+                        val isReportsIntegrityValid = reports.all { DataRouter.verifyRoutingIntegrity(it.clientId, userId) }
+                        if (isReportsIntegrityValid) {
+                            reportsData = reports
+                            try {
+                                database.reportDao().clearReports()
+                                database.reportDao().insertReports(reports.map { it.toEntity() })
+                            } catch (ignored: Exception) {}
+                        } else {
+                            errorMessage = "Security Error: Reports Routing Integrity Breach Detected"
+                        }
+                    }
+
+                    // 3. Process Notifications Response
+                    if (notifsResponse?.isSuccessful == true) {
+                        notificationsData = notifsResponse.body()?.notifications ?: emptyList()
+                    }
+
+                    // Global validation: only treat token as fully expired if all attempts uniformly return 401
+                    if (dashResponse?.code() == 401 && reportsResponse?.code() == 401) {
+                        sessionExpired = true
+                    }
+
+                    if (sessionExpired) {
+                        errorMessage = "Session expired. Please log in again."
+                        scope.launch { 
+                            snackbarHostState.showSnackbar(errorMessage!!)
+                            kotlinx.coroutines.delay(1000)
+                            preferencesManager.clear()
+                            onLogout()
+                        }
+                    } else if (errorMessage != null) {
                         scope.launch { snackbarHostState.showSnackbar(errorMessage!!) }
                     }
                 }
@@ -211,6 +225,9 @@ fun PortalScreen(onLogout: () -> Unit, onViewPdf: (String, String) -> Unit) {
                 }
                 DrawerItem("Requests & Quotes", Icons.Default.Assessment, currentView == "Requests") {
                     currentView = "Requests"; scope.launch { drawerState.close() }
+                }
+                DrawerItem("Support Inbox", Icons.Default.Email, currentView == "Messages") {
+                    currentView = "Messages"; scope.launch { drawerState.close() }
                 }
                 
                 Text("ACCOUNT", style = MaterialTheme.typography.labelSmall, modifier = Modifier.padding(16.dp), color = MaterialTheme.colorScheme.primary)
@@ -357,6 +374,7 @@ fun PortalScreen(onLogout: () -> Unit, onViewPdf: (String, String) -> Unit) {
                             )
                             "Services" -> JobServicesScreen()
                             "Requests" -> RequestsScreen()
+                            "Messages" -> MessagesScreen(messages = dashboardData?.dashboard?.messages ?: emptyList())
                             "Feedback" -> FeedbackScreen()
                             "Notifications" -> NotificationsScreen(notificationsData)
                             "Profile" -> ProfileScreen()
