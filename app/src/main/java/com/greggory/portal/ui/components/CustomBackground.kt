@@ -14,16 +14,18 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.media3.common.MediaItem
 import androidx.media3.common.Player
+import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.ExoPlayer
+import androidx.media3.ui.AspectRatioFrameLayout
 import androidx.media3.ui.PlayerView
 import coil.compose.AsyncImage
 import com.greggory.portal.data.local.PreferencesManager
 
-@OptIn(androidx.media3.common.util.UnstableApi::class)
+@OptIn(UnstableApi::class)
 @Composable
 fun CustomBackground(modifier: Modifier = Modifier) {
     val context = LocalContext.current
-    val prefs = remember { PreferencesManager(context) }
+    val prefs = remember { PreferencesManager.getInstance(context) }
     
     val bgType = prefs.getBackgroundType()
     val bgUri = prefs.getBackgroundUri()
@@ -56,7 +58,7 @@ fun CustomBackground(modifier: Modifier = Modifier) {
     }
 }
 
-@OptIn(androidx.media3.common.util.UnstableApi::class)
+@OptIn(UnstableApi::class)
 @Composable
 fun VideoPlayer(uri: Uri) {
     val context = LocalContext.current
@@ -79,7 +81,7 @@ fun VideoPlayer(uri: Uri) {
         factory = {
             PlayerView(context).apply {
                 useController = false
-                resizeMode = androidx.media3.ui.AspectRatioFrameLayout.RESIZE_MODE_ZOOM
+                resizeMode = AspectRatioFrameLayout.RESIZE_MODE_ZOOM
                 player = exoPlayer
             }
         },

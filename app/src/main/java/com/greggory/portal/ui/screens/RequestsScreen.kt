@@ -19,6 +19,8 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.greggory.portal.data.api.*
+import com.greggory.portal.data.local.PreferencesManager
+import com.greggory.portal.utils.DataRouter
 import kotlinx.coroutines.launch
 
 @Composable
@@ -49,6 +51,7 @@ fun RequestsScreen() {
 fun QuotesList() {
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
+    val prefs = remember { PreferencesManager.getInstance(context) }
     var quotes by remember { mutableStateOf<List<Quote>>(emptyList()) }
     var isLoading by remember { mutableStateOf(false) }
 
@@ -57,7 +60,18 @@ fun QuotesList() {
         scope.launch {
             try {
                 val response = RetrofitClient.instance.getQuotes()
-                if (response.isSuccessful) quotes = response.body()?.quotes ?: emptyList()
+                if (response.isSuccessful) {
+                    val body = response.body()
+                    val userId = prefs.getUserId()
+                    if (body != null) {
+                        // Integrity check
+                        if (body.quotes.all { DataRouter.verifyRoutingIntegrity(it.clientId, userId) }) {
+                            quotes = body.quotes
+                        } else {
+                            Toast.makeText(context, "Security Alert: Routing Integrity Failure", Toast.LENGTH_LONG).show()
+                        }
+                    }
+                }
             } catch (e: Exception) {} finally { isLoading = false }
         }
     }
@@ -117,6 +131,7 @@ fun QuoteCard(quote: Quote, onDecision: (String) -> Unit) {
 fun SignatureRequestsList() {
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
+    val prefs = remember { PreferencesManager.getInstance(context) }
     var requests by remember { mutableStateOf<List<SignatureRequest>>(emptyList()) }
     var isLoading by remember { mutableStateOf(false) }
 
@@ -125,7 +140,17 @@ fun SignatureRequestsList() {
         scope.launch {
             try {
                 val response = RetrofitClient.instance.getSignatureRequests()
-                if (response.isSuccessful) requests = response.body()?.requests ?: emptyList()
+                if (response.isSuccessful) {
+                    val body = response.body()
+                    val userId = prefs.getUserId()
+                    if (body != null) {
+                        if (body.requests.all { DataRouter.verifyRoutingIntegrity(it.clientId, userId) }) {
+                            requests = body.requests
+                        } else {
+                            Toast.makeText(context, "Security Alert: Routing Integrity Failure", Toast.LENGTH_LONG).show()
+                        }
+                    }
+                }
             } catch (e: Exception) {} finally { isLoading = false }
         }
     }
@@ -186,6 +211,7 @@ fun SignatureCard(req: SignatureRequest, onDecision: (String) -> Unit) {
 fun ChangeRequestsList() {
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
+    val prefs = remember { PreferencesManager.getInstance(context) }
     var requests by remember { mutableStateOf<List<ChangeRequest>>(emptyList()) }
     var isLoading by remember { mutableStateOf(false) }
     var showAddDialog by remember { mutableStateOf(false) }
@@ -195,7 +221,17 @@ fun ChangeRequestsList() {
         scope.launch {
             try {
                 val response = RetrofitClient.instance.getChangeRequests()
-                if (response.isSuccessful) requests = response.body()?.requests ?: emptyList()
+                if (response.isSuccessful) {
+                    val body = response.body()
+                    val userId = prefs.getUserId()
+                    if (body != null) {
+                        if (body.requests.all { DataRouter.verifyRoutingIntegrity(it.clientId, userId) }) {
+                            requests = body.requests
+                        } else {
+                            Toast.makeText(context, "Security Alert: Routing Integrity Failure", Toast.LENGTH_LONG).show()
+                        }
+                    }
+                }
             } catch (e: Exception) {} finally { isLoading = false }
         }
     }

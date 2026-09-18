@@ -5,7 +5,7 @@ import android.content.SharedPreferences
 import androidx.security.crypto.EncryptedSharedPreferences
 import androidx.security.crypto.MasterKey
 
-class PreferencesManager(context: Context) {
+class PreferencesManager private constructor(context: Context) {
     private val masterKey = MasterKey.Builder(context)
         .setKeyScheme(MasterKey.KeyScheme.AES256_GCM)
         .build()
@@ -18,8 +18,19 @@ class PreferencesManager(context: Context) {
         EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
     )
 
+    companion object {
+        @Volatile
+        private var INSTANCE: PreferencesManager? = null
+
+        fun getInstance(context: Context): PreferencesManager {
+            return INSTANCE ?: synchronized(this) {
+                INSTANCE ?: PreferencesManager(context.applicationContext).also { INSTANCE = it }
+            }
+        }
+    }
+
     fun saveToken(token: String) {
-        sharedPreferences.edit().putString("auth_token", token).apply()
+        sharedPreferences.edit().putString("auth_token", token).commit()
     }
 
     fun getToken(): String? {
@@ -27,7 +38,7 @@ class PreferencesManager(context: Context) {
     }
 
     fun clear() {
-        sharedPreferences.edit().clear().apply()
+        sharedPreferences.edit().clear().commit()
     }
 
     fun saveUserInfo(userId: Int, email: String, name: String, phone: String? = null) {
@@ -36,7 +47,7 @@ class PreferencesManager(context: Context) {
             putString("user_email", email)
             putString("user_name", name)
             putString("user_phone", phone)
-        }.apply()
+        }.commit()
     }
 
     fun getUserId(): Int = sharedPreferences.getInt("user_id", -1)

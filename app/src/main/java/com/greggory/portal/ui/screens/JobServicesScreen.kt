@@ -7,11 +7,17 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.greggory.portal.data.local.PreferencesManager
+import android.content.Intent
+import android.net.Uri
+import android.widget.Toast
 
 data class ServiceItem(
     val title: String,
@@ -22,6 +28,9 @@ data class ServiceItem(
 
 @Composable
 fun JobServicesScreen() {
+    val context = LocalContext.current
+    val prefs = remember { PreferencesManager.getInstance(context) }
+
     val services = listOf(
         ServiceItem(
             "Website Development",
@@ -107,7 +116,21 @@ fun JobServicesScreen() {
                         style = MaterialTheme.typography.bodySmall
                     )
                     Spacer(modifier = Modifier.height(12.dp))
-                    Button(onClick = { /* Handle Request */ }, modifier = Modifier.fillMaxWidth()) {
+                    Button(
+                        onClick = { 
+                            try {
+                                val intent = Intent(Intent.ACTION_SENDTO).apply {
+                                    data = Uri.parse("mailto:strategy@greggory.com")
+                                    putExtra(Intent.EXTRA_SUBJECT, "Consultation Request: ${prefs.getUserName()}")
+                                    putExtra(Intent.EXTRA_TEXT, "Hello Greggory Strategy Team,\n\nI would like to request a consultation regarding a new project for my firm.")
+                                }
+                                context.startActivity(intent)
+                            } catch (e: Exception) {
+                                Toast.makeText(context, "No email app found.", Toast.LENGTH_SHORT).show()
+                            }
+                        }, 
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
                         Text("Request Consultation")
                     }
                 }

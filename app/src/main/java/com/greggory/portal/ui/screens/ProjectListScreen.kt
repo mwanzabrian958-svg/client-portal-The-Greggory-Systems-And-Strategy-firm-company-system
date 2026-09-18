@@ -6,18 +6,22 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Description
 import androidx.compose.material.icons.filled.Timeline
+import androidx.compose.material.icons.filled.CloudDownload
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.greggory.portal.data.api.Project
+import com.greggory.portal.utils.FileDownloadHelper
 
 @Composable
-fun ProjectListScreen(projects: List<Project>) {
+fun ProjectListScreen(projects: List<Project>, onViewPdf: (String, String) -> Unit) {
     var selectedProjectForRoadmap by remember { mutableStateOf<Project?>(null) }
+    var selectedProjectForProposal by remember { mutableStateOf<Project?>(null) }
 
     Box(modifier = Modifier.fillMaxSize()) {
         LazyColumn(
@@ -36,7 +40,8 @@ fun ProjectListScreen(projects: List<Project>) {
             items(projects) { project ->
                 ProjectCard(
                     project = project,
-                    onViewRoadmap = { selectedProjectForRoadmap = project }
+                    onViewRoadmap = { selectedProjectForRoadmap = project },
+                    onViewProposal = { selectedProjectForProposal = project }
                 )
             }
         }
@@ -47,11 +52,19 @@ fun ProjectListScreen(projects: List<Project>) {
                 onDismiss = { selectedProjectForRoadmap = null }
             )
         }
+
+        if (selectedProjectForProposal != null) {
+            ProjectProposalDialog(
+                project = selectedProjectForProposal!!,
+                onDismiss = { selectedProjectForProposal = null },
+                onViewPdf = onViewPdf
+            )
+        }
     }
 }
 
 @Composable
-fun ProjectCard(project: Project, onViewRoadmap: () -> Unit) {
+fun ProjectCard(project: Project, onViewRoadmap: () -> Unit, onViewProposal: () -> Unit) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.5f))
@@ -91,7 +104,7 @@ fun ProjectCard(project: Project, onViewRoadmap: () -> Unit) {
             Spacer(modifier = Modifier.height(12.dp))
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 OutlinedButton(
-                    onClick = { /* Navigate to relevant proposal in documents */ },
+                    onClick = onViewProposal,
                     modifier = Modifier.weight(1f),
                     contentPadding = PaddingValues(0.dp)
                 ) {
@@ -111,6 +124,84 @@ fun ProjectCard(project: Project, onViewRoadmap: () -> Unit) {
             }
         }
     }
+}
+
+@Composable
+fun ProjectProposalDialog(project: Project, onDismiss: () -> Unit, onViewPdf: (String, String) -> Unit) {
+    val context = LocalContext.current
+    
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Registration Agreement") },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Text(
+                    text = "View or download the Client Registration Agreement for '${project.name}'.",
+                    style = MaterialTheme.typography.bodyMedium
+                )
+                
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
+                ) {
+                    Column(modifier = Modifier.padding(12.dp)) {
+                        Text("Electric Copy (PDF)", fontWeight = FontWeight.Bold)
+                        Text("For instant viewing and review.", style = MaterialTheme.typography.labelSmall)
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            Button(
+                                onClick = { 
+                                    onViewPdf(FileDownloadHelper.getReportUrl(-1), "Agreement: ${project.name}")
+                                    onDismiss()
+                                },
+                                modifier = Modifier.weight(1f)
+                            ) {
+                                Text("VIEW")
+                            }
+                            OutlinedIconButton(onClick = {
+                                FileDownloadHelper.downloadFile(
+                                    context = context,
+                                    url = FileDownloadHelper.getReportUrl(-1),
+                                    fileName = "GSSF_Agreement_${project.name}.pdf"
+                                )
+                            }) {
+                                Icon(Icons.Default.CloudDownload, contentDescription = "Download")
+                            }
+                        }
+                    }
+                }
+
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
+                ) {
+                    Column(modifier = Modifier.padding(12.dp)) {
+                        Text("Editable Copy (Word)", fontWeight = FontWeight.Bold)
+                        Text("Download to fill in manually for hard copy.", style = MaterialTheme.typography.labelSmall)
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Button(
+                            onClick = { 
+                                FileDownloadHelper.downloadFile(
+                                    context = context,
+                                    url = FileDownloadHelper.getReportUrl(-2),
+                                    fileName = "GSSF_Agreement_${project.name}.docx"
+                                )
+                                onDismiss()
+                            },
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Icon(Icons.Default.CloudDownload, contentDescription = null)
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text("DOWNLOAD DOCX")
+                        }
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onDismiss) { Text("CANCEL") }
+        }
+    )
 }
 
 @Composable

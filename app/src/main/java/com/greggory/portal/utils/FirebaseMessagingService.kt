@@ -19,7 +19,7 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
         Log.d("FCM", "New token generated: $token")
         
         // Persist token locally
-        val prefs = com.greggory.portal.data.local.PreferencesManager(applicationContext)
+        val prefs = com.greggory.portal.data.local.PreferencesManager.getInstance(applicationContext)
         prefs.saveFcmToken(token)
         
         // Upload to server

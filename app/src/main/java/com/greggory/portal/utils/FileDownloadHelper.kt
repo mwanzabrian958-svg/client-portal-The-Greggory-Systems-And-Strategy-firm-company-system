@@ -16,7 +16,7 @@ object FileDownloadHelper {
         description: String = "Downloading file from The Greggory Firm"
     ): Boolean {
         return try {
-            val prefs = PreferencesManager(context)
+            val prefs = PreferencesManager.getInstance(context)
             val token = prefs.getToken()
             val userId = prefs.getUserId()
             

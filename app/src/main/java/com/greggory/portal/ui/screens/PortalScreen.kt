@@ -15,6 +15,8 @@ import androidx.compose.material.icons.automirrored.filled.Logout
 import androidx.compose.material.icons.automirrored.filled.TrendingUp
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
+import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -23,18 +25,15 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.platform.LocalContext
 import coil.compose.AsyncImage
 import com.greggory.portal.R
-import com.greggory.portal.data.api.Project
-import com.greggory.portal.data.api.Invoice
-import com.greggory.portal.data.api.Notification
-import com.greggory.portal.data.api.Report
-import com.greggory.portal.data.api.Message
-import com.greggory.portal.data.local.AppDatabase
-import com.greggory.portal.data.local.toApi
-import com.greggory.portal.data.local.toEntity
+import com.greggory.portal.data.api.*
+import com.greggory.portal.data.local.*
 import com.greggory.portal.ui.components.CustomBackground
+import com.greggory.portal.utils.DataRouter
 import kotlinx.coroutines.async
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -42,10 +41,10 @@ import kotlinx.coroutines.launch
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PortalScreen(onLogout: () -> Unit, onViewPdf: (String, String) -> Unit) {
-    val context = androidx.compose.ui.platform.LocalContext.current
+    val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
-    val preferencesManager = remember { com.greggory.portal.data.local.PreferencesManager(context) }
+    val preferencesManager = remember { PreferencesManager.getInstance(context) }
     val database = remember { AppDatabase.getDatabase(context) }
     val snackbarHostState = remember { SnackbarHostState() }
     
@@ -53,16 +52,17 @@ fun PortalScreen(onLogout: () -> Unit, onViewPdf: (String, String) -> Unit) {
     val localInvoices by database.invoiceDao().getAllInvoices().collectAsState(initial = emptyList())
     val localReports by database.reportDao().getAllReports().collectAsState(initial = emptyList())
 
-    var dashboardData by remember { mutableStateOf<com.greggory.portal.data.api.DashboardResponse?>(null) }
+    var dashboardData by remember { mutableStateOf<DashboardResponse?>(null) }
     var notificationsData by remember { mutableStateOf<List<Notification>>(emptyList()) }
     var reportsData by remember { mutableStateOf<List<Report>>(emptyList()) }
     var isLoading by remember { mutableStateOf(false) }
+    var isRefreshing by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
     
     var currentView by remember { mutableStateOf("Home") }
     var searchQuery by remember { mutableStateOf("") }
     var isSearching by remember { mutableStateOf(false) }
-    var searchResults by remember { mutableStateOf<com.greggory.portal.data.api.SearchResults?>(null) }
+    var searchResults by remember { mutableStateOf<SearchResults?>(null) }
     var isSearchLoading by remember { mutableStateOf(false) }
 
     BackHandler(enabled = isSearching || currentView != "Home") {
@@ -82,7 +82,7 @@ fun PortalScreen(onLogout: () -> Unit, onViewPdf: (String, String) -> Unit) {
         isSearchLoading = true
         scope.launch {
             try {
-                val response = com.greggory.portal.data.api.RetrofitClient.instance.search(query)
+                val response = RetrofitClient.instance.search(query)
                 if (response.isSuccessful) {
                     searchResults = response.body()?.results
                 }
@@ -94,22 +94,22 @@ fun PortalScreen(onLogout: () -> Unit, onViewPdf: (String, String) -> Unit) {
         }
     }
 
-    fun refreshData() {
+    fun refreshData(isManual: Boolean = false) {
         val token = preferencesManager.getToken()
         if (token == null) {
             onLogout()
             return
         }
-        isLoading = true
+        if (isManual) isRefreshing = true else isLoading = true
         scope.launch {
             try {
                 val userId = preferencesManager.getUserId()
                 
                 kotlinx.coroutines.supervisorScope {
                     // Fetch all data in parallel
-                    val dashDeferred = async { com.greggory.portal.data.api.RetrofitClient.instance.getDashboard() }
-                    val reportsDeferred = async { com.greggory.portal.data.api.RetrofitClient.instance.getReports() }
-                    val notifsDeferred = async { com.greggory.portal.data.api.RetrofitClient.instance.getNotifications() }
+                    val dashDeferred = async { RetrofitClient.instance.getDashboard() }
+                    val reportsDeferred = async { RetrofitClient.instance.getReports() }
+                    val notifsDeferred = async { RetrofitClient.instance.getNotifications() }
 
                     val dashResponse = try { dashDeferred.await() } catch (ignored: Exception) { null }
                     val reportsResponse = try { reportsDeferred.await() } catch (ignored: Exception) { null }
@@ -121,9 +121,9 @@ fun PortalScreen(onLogout: () -> Unit, onViewPdf: (String, String) -> Unit) {
                         
                         // Validate Set in Stone Routing Integrity for all incoming data
                         val isIntegrityValid = 
-                            (body?.projects?.all { com.greggory.portal.utils.DataRouter.verifyRoutingIntegrity(it.clientId, userId) } ?: true) &&
-                            (body?.invoices?.all { com.greggory.portal.utils.DataRouter.verifyRoutingIntegrity(it.clientId, userId) } ?: true) &&
-                            (reports.all { com.greggory.portal.utils.DataRouter.verifyRoutingIntegrity(it.clientId, userId) })
+                            (body?.projects?.all { DataRouter.verifyRoutingIntegrity(it.clientId, userId) } ?: true) &&
+                            (body?.invoices?.all { DataRouter.verifyRoutingIntegrity(it.clientId, userId) } ?: true) &&
+                            (reports.all { DataRouter.verifyRoutingIntegrity(it.clientId, userId) })
 
                         if (isIntegrityValid) {
                             dashboardData = dashResponse.body()
@@ -171,11 +171,13 @@ fun PortalScreen(onLogout: () -> Unit, onViewPdf: (String, String) -> Unit) {
                 scope.launch { snackbarHostState.showSnackbar(errorMessage!!) }
             } finally {
                 isLoading = false
+                isRefreshing = false
             }
         }
     }
 
     LaunchedEffect(key1 = true) {
+        delay(100) // Small buffer to ensure Prefs Singleton is settled after login navigation
         refreshData()
     }
 
@@ -292,7 +294,7 @@ fun PortalScreen(onLogout: () -> Unit, onViewPdf: (String, String) -> Unit) {
                             contentAlignment = Alignment.Center
                         ) {
                             AsyncImage(
-                                model = "${com.greggory.portal.data.api.RetrofitClient.BASE_URL}api/users/profile-photo/me",
+                                model = "${RetrofitClient.BASE_URL}api/users/profile-photo/me",
                                 contentDescription = "Profile",
                                 modifier = Modifier.fillMaxSize(),
                                 contentScale = ContentScale.Crop,
@@ -317,10 +319,21 @@ fun PortalScreen(onLogout: () -> Unit, onViewPdf: (String, String) -> Unit) {
                 CustomBackground()
 
                 if (isSearching) {
-                    SearchScreen(searchQuery, searchResults, isSearchLoading)
+                    SearchScreen(
+                        query = searchQuery,
+                        results = searchResults,
+                        isLoading = isSearchLoading,
+                        onViewPdf = onViewPdf,
+                        onNavigate = { currentView = it }
+                    )
                 } else {
-                    when (currentView) {
-                        "Home" -> HomeScreen(
+                    PullToRefreshBox(
+                        isRefreshing = isRefreshing,
+                        onRefresh = { refreshData(isManual = true) },
+                        modifier = Modifier.fillMaxSize()
+                    ) {
+                        when (currentView) {
+                            "Home" -> HomeScreen(
                         isLoading = isLoading, 
                         dashboardData = dashboardData, 
                         localProjects = localProjects, 
@@ -328,32 +341,53 @@ fun PortalScreen(onLogout: () -> Unit, onViewPdf: (String, String) -> Unit) {
                         notifications = notificationsData,
                         onNavigate = { currentView = it }
                     )
-                        "Projects" -> ProjectListScreen(dashboardData?.dashboard?.projects ?: localProjects.map { it.toApi() })
-                        "Team" -> TeamScreen(dashboardData?.dashboard?.teamMembers ?: emptyList())
-                        "Tasks" -> TasksScreen(dashboardData?.dashboard?.tasks ?: emptyList())
-                        "Billing" -> BillingScreen(
-                            invoices = dashboardData?.dashboard?.invoices ?: localInvoices.map { it.toApi() },
+                            "Projects" -> ProjectListScreen(
+                            projects = dashboardData?.dashboard?.projects ?: localProjects.map { it.toApi() },
                             onViewPdf = onViewPdf
                         )
-                        "Documents" -> ReportsScreen(
-                            reports = if (reportsData.isNotEmpty()) reportsData else localReports.map { it.toApi() },
-                            onViewPdf = onViewPdf
-                        )
-                        "Services" -> JobServicesScreen()
-                        "Requests" -> RequestsScreen()
-                        "Feedback" -> FeedbackScreen()
-                        "Notifications" -> NotificationsScreen(notificationsData)
-                        "Profile" -> ProfileScreen()
-                        "Settings" -> SettingsScreen(
-                            onLogout = onLogout,
-                            onNavigateToProfile = { currentView = "Profile" }
-                        )
-                        else -> Text("Section: $currentView", modifier = Modifier.align(Alignment.Center))
+                            "Team" -> TeamScreen(dashboardData?.dashboard?.teamMembers ?: emptyList())
+                            "Tasks" -> TasksScreen(dashboardData?.dashboard?.tasks ?: emptyList())
+                            "Billing" -> BillingScreen(
+                                invoices = dashboardData?.dashboard?.invoices ?: localInvoices.map { it.toApi() },
+                                onViewPdf = onViewPdf
+                            )
+                            "Documents" -> ReportsScreen(
+                                reports = if (reportsData.isNotEmpty()) reportsData else localReports.map { it.toApi() },
+                                onViewPdf = onViewPdf
+                            )
+                            "Services" -> JobServicesScreen()
+                            "Requests" -> RequestsScreen()
+                            "Feedback" -> FeedbackScreen()
+                            "Notifications" -> NotificationsScreen(notificationsData)
+                            "Profile" -> ProfileScreen()
+                            "Settings" -> SettingsScreen(
+                                onLogout = onLogout,
+                                onNavigateToProfile = { currentView = "Profile" }
+                            )
+                            else -> Text("Section: $currentView", modifier = Modifier.align(Alignment.Center))
+                        }
                     }
                 }
                 
                 if (isLoading && currentView == "Home" && dashboardData == null) {
                     LinearProgressIndicator(modifier = Modifier.fillMaxWidth().align(Alignment.TopCenter))
+                }
+
+                if (errorMessage != null && dashboardData == null && !isLoading) {
+                    Column(
+                        modifier = Modifier.align(Alignment.Center).padding(32.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Icon(Icons.Default.CloudOff, contentDescription = null, modifier = Modifier.size(64.dp), tint = MaterialTheme.colorScheme.outline)
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Text(errorMessage!!, textAlign = TextAlign.Center, style = MaterialTheme.typography.bodyMedium)
+                        Spacer(modifier = Modifier.height(24.dp))
+                        Button(onClick = { refreshData() }) {
+                            Icon(Icons.Default.Refresh, contentDescription = null)
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text("Retry Sync")
+                        }
+                    }
                 }
             }
         }
@@ -384,9 +418,9 @@ fun DrawerItem(label: String, icon: ImageVector, selected: Boolean, onClick: () 
 @Composable
 fun HomeScreen(
     isLoading: Boolean,
-    dashboardData: com.greggory.portal.data.api.DashboardResponse?,
-    localProjects: List<com.greggory.portal.data.local.ProjectEntity>,
-    localInvoices: List<com.greggory.portal.data.local.InvoiceEntity>,
+    dashboardData: DashboardResponse?,
+    localProjects: List<ProjectEntity>,
+    localInvoices: List<InvoiceEntity>,
     notifications: List<Notification>,
     onNavigate: (String) -> Unit
 ) {
@@ -470,9 +504,9 @@ fun HomeScreen(
                         )
                     }
                     Row(modifier = Modifier.fillMaxWidth()) {
-                        Text("PLANNED", modifier = Modifier.weight(1f), style = MaterialTheme.typography.labelSmall, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
+                        Text("PLANNED", modifier = Modifier.weight(1f), style = MaterialTheme.typography.labelSmall, textAlign = TextAlign.Center)
                         Spacer(modifier = Modifier.width(8.dp))
-                        Text("SPENT", modifier = Modifier.weight(1f), style = MaterialTheme.typography.labelSmall, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
+                        Text("SPENT", modifier = Modifier.weight(1f), style = MaterialTheme.typography.labelSmall, textAlign = TextAlign.Center)
                     }
 
                     Spacer(modifier = Modifier.height(12.dp))
@@ -538,7 +572,7 @@ fun MessageFeedItem(message: Message) {
 }
 
 @Composable
-fun HomeKpiSection(dashboardData: com.greggory.portal.data.api.DashboardResponse?, onNavigate: (String) -> Unit) {
+fun HomeKpiSection(dashboardData: DashboardResponse?, onNavigate: (String) -> Unit) {
     val summary = dashboardData?.dashboard?.businessSummary
     
     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -593,7 +627,7 @@ fun ProjectsSummaryList(projects: List<Project>, onNavigate: (String) -> Unit) {
 }
 
 @Composable
-fun TasksSummaryList(tasks: List<com.greggory.portal.data.api.Task>, onNavigate: (String) -> Unit) {
+fun TasksSummaryList(tasks: List<Task>, onNavigate: (String) -> Unit) {
     if (tasks.isEmpty()) {
         Text("No active milestones", style = MaterialTheme.typography.bodySmall)
     } else {

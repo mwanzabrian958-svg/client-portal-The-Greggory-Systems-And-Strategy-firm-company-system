@@ -1,5 +1,6 @@
 package com.greggory.portal.ui.screens
 
+import android.content.Intent
 import android.net.Uri
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -27,9 +28,12 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.fragment.app.FragmentActivity
 import coil.compose.AsyncImage
 import com.greggory.portal.R
+import com.greggory.portal.data.api.RetrofitClient
 import com.greggory.portal.data.local.AppDatabase
 import com.greggory.portal.data.local.PreferencesManager
 import com.greggory.portal.ui.components.ChangePasswordDialog
@@ -40,7 +44,7 @@ import kotlinx.coroutines.launch
 fun SettingsScreen(onLogout: () -> Unit, onNavigateToProfile: () -> Unit) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
-    val prefs = remember { PreferencesManager(context) }
+    val prefs = remember { PreferencesManager.getInstance(context) }
     val database = remember { AppDatabase.getDatabase(context) }
     
     val userName = prefs.getUserName() ?: "Client User"
@@ -120,7 +124,7 @@ fun SettingsScreen(onLogout: () -> Unit, onNavigateToProfile: () -> Unit) {
                     contentAlignment = Alignment.Center
                 ) {
                     AsyncImage(
-                        model = "${com.greggory.portal.data.api.RetrofitClient.BASE_URL}api/users/profile-photo/me",
+                        model = "${RetrofitClient.BASE_URL}api/users/profile-photo/me",
                         contentDescription = "Profile Photo",
                         modifier = Modifier.fillMaxSize(),
                         contentScale = ContentScale.Crop,
@@ -208,7 +212,7 @@ fun SettingsScreen(onLogout: () -> Unit, onNavigateToProfile: () -> Unit) {
             if (enabled) {
                 if (BiometricHelper.isBiometricAvailable(context)) {
                     BiometricHelper.showBiometricPrompt(
-                        activity = context as androidx.fragment.app.FragmentActivity,
+                        activity = context as FragmentActivity,
                         onSuccess = {
                             biometricEnabled = true
                             prefs.saveBiometricEnabled(true)
@@ -279,9 +283,9 @@ fun SettingsScreen(onLogout: () -> Unit, onNavigateToProfile: () -> Unit) {
         }
         SettingsClickItem("Contact Strategy Lead", "Priority support access", Icons.Default.HeadsetMic) { 
             try {
-                val intent = android.content.Intent(android.content.Intent.ACTION_SENDTO).apply {
-                    data = android.net.Uri.parse("mailto:strategy@greggory.com")
-                    putExtra(android.content.Intent.EXTRA_SUBJECT, "Portal Support Request: ${prefs.getUserName()}")
+                val intent = Intent(Intent.ACTION_SENDTO).apply {
+                    data = Uri.parse("mailto:strategy@greggory.com")
+                    putExtra(Intent.EXTRA_SUBJECT, "Portal Support Request: ${prefs.getUserName()}")
                 }
                 context.startActivity(intent)
             } catch (e: Exception) {

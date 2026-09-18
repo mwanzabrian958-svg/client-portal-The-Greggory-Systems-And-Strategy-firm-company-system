@@ -25,6 +25,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import coil.compose.rememberAsyncImagePainter
 import com.greggory.portal.data.api.ProfileUpdateRequest
@@ -41,7 +42,7 @@ import java.io.File
 fun ProfileScreen() {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
-    val prefs = remember { PreferencesManager(context) }
+    val prefs = remember { PreferencesManager.getInstance(context) }
     
     var firstName by remember { mutableStateOf(prefs.getUserName() ?: "") }
     var email by remember { mutableStateOf(prefs.getUserEmail() ?: "") }
@@ -165,7 +166,7 @@ fun ProfileScreen() {
         HorizontalDivider()
         Spacer(modifier = Modifier.height(24.dp))
 
-        Text("Security", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, modifier = Modifier.fillMaxWidth(), textAlign = androidx.compose.ui.text.style.TextAlign.Start)
+        Text("Security", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.Start)
         Spacer(modifier = Modifier.height(16.dp))
         
         var showPasswordDialog by remember { mutableStateOf(false) }

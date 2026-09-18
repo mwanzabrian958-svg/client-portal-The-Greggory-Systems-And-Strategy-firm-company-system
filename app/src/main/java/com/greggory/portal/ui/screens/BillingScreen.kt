@@ -17,9 +17,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import com.greggory.portal.data.api.Invoice
-import com.greggory.portal.data.api.MpesaStkPushRequest
-import com.greggory.portal.data.api.RetrofitClient
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.ui.text.input.KeyboardType
+import com.greggory.portal.data.api.*
 import com.greggory.portal.utils.FileDownloadHelper
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -100,8 +100,8 @@ fun BillingScreen(invoices: List<Invoice>, onViewPdf: (String, String) -> Unit) 
                         leadingIcon = { Icon(Icons.Default.Phone, contentDescription = null) },
                         modifier = Modifier.fillMaxWidth(),
                         enabled = !isProcessing,
-                        keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(
-                            keyboardType = androidx.compose.ui.text.input.KeyboardType.Number
+                        keyboardOptions = KeyboardOptions(
+                            keyboardType = KeyboardType.Number
                         )
                     )
                     
@@ -217,7 +217,7 @@ fun BillingScreen(invoices: List<Invoice>, onViewPdf: (String, String) -> Unit) 
                         scope.launch {
                             try {
                                 val response = RetrofitClient.instance.reportManualPayment(
-                                    com.greggory.portal.data.api.PaymentReportRequest(
+                                    PaymentReportRequest(
                                         invoiceId = selectedInvoice?.id.toString(),
                                         mpesaMessage = mpesaFeedbackMessage.trim()
                                     )

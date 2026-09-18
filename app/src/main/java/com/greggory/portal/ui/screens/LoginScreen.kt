@@ -140,7 +140,7 @@ fun LoginScreen(
                                 val body = response.body()!!
                                 val token = body.token
                                 if (token != null) {
-                                    val prefs = PreferencesManager(context)
+                                    val prefs = PreferencesManager.getInstance(context)
                                     prefs.saveToken(token)
                                     // Backend returns user details at top level for login success
                                     prefs.saveUserInfo(

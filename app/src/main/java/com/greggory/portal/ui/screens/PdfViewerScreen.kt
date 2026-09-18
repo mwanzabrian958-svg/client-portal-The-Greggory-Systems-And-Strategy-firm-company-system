@@ -1,13 +1,7 @@
 package com.greggory.portal.ui.screens
 
-import android.graphics.Bitmap
-import android.graphics.pdf.PdfRenderer
-import android.os.ParcelFileDescriptor
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.*
@@ -15,10 +9,9 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.asImageBitmap
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.unit.dp
+import androidx.compose.ui.viewinterop.AndroidView
+import com.github.barteksc.pdfviewer.PDFView
 import com.greggory.portal.data.local.PreferencesManager
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -42,7 +35,7 @@ fun PdfViewerScreen(url: String, title: String, onBack: () -> Unit) {
             try {
                 withContext(Dispatchers.IO) {
                     val client = OkHttpClient()
-                    val prefs = PreferencesManager(context)
+                    val prefs = com.greggory.portal.data.local.PreferencesManager.getInstance(context)
                     val token = prefs.getToken()
                     val userId = prefs.getUserId()
                     
@@ -98,54 +91,22 @@ fun PdfViewerScreen(url: String, title: String, onBack: () -> Unit) {
 
 @Composable
 fun PdfViewContainer(file: File) {
-    val context = LocalContext.current
-    val renderer = remember(file) {
-        val fileDescriptor = ParcelFileDescriptor.open(file, ParcelFileDescriptor.MODE_READ_ONLY)
-        PdfRenderer(fileDescriptor)
-    }
-    
-    val pageCount = renderer.pageCount
-
-    LazyColumn(
-        modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(8.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp)
-    ) {
-        items((0 until pageCount).toList()) { index ->
-            PdfPageItem(renderer, index)
-        }
-    }
-    
-    DisposableEffect(renderer) {
-        onDispose {
-            renderer.close()
-        }
-    }
-}
-
-@Composable
-fun PdfPageItem(renderer: PdfRenderer, index: Int) {
-    val bitmap = remember(renderer, index) {
-        val page = renderer.openPage(index)
-        // Adjust width to screen and maintain aspect ratio
-        // For simplicity, we use a fixed high-quality width and let Image scale it
-        val width = 1200
-        val height = (width * page.height / page.width)
-        val b = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
-        page.render(b, null, null, PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY)
-        page.close()
-        b
-    }
-
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        elevation = CardDefaults.cardElevation(4.dp)
-    ) {
-        Image(
-            bitmap = bitmap.asImageBitmap(),
-            contentDescription = "Page ${index + 1}",
-            modifier = Modifier.fillMaxWidth(),
-            contentScale = ContentScale.FillWidth
-        )
-    }
+    AndroidView(
+        factory = { context ->
+            PDFView(context, null).apply {
+                fromFile(file)
+                    .enableSwipe(true)
+                    .swipeHorizontal(false)
+                    .enableDoubletap(true)
+                    .defaultPage(0)
+                    .enableAnnotationRendering(false)
+                    .password(null)
+                    .scrollHandle(null)
+                    .enableAntialiasing(true)
+                    .spacing(10)
+                    .load()
+            }
+        },
+        modifier = Modifier.fillMaxSize()
+    )
 }

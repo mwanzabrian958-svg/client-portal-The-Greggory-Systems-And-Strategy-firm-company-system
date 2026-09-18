@@ -125,6 +125,7 @@ data class Quote(
     val amount: Double,
     val description: String,
     val status: String,
+    @SerializedName("user_id") val clientId: Int = 0,
     @SerializedName("created_at") val createdAt: String
 ) {
     val project_name: String get() = projectName
@@ -137,6 +138,7 @@ data class SignatureRequest(
     @SerializedName("document_name") val documentName: String,
     @SerializedName("project_name") val projectName: String,
     val status: String,
+    @SerializedName("user_id") val clientId: Int = 0,
     @SerializedName("created_at") val createdAt: String
 ) {
     val document_name: String get() = documentName
@@ -154,6 +156,7 @@ data class ChangeRequest(
     val title: String,
     val description: String,
     val status: String,
+    @SerializedName("user_id") val clientId: Int = 0,
     @SerializedName("created_at") val createdAt: String
 ) {
     val project_name: String get() = projectName

@@ -4,6 +4,7 @@ import android.os.Bundle
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
@@ -33,7 +34,7 @@ class MainActivity : FragmentActivity() {
         
         NotificationHelper.requestPermission(this, requestPermissionLauncher)
         
-        val prefs = PreferencesManager(this)
+        val prefs = PreferencesManager.getInstance(this)
         val hasToken = prefs.getToken() != null
         val startDestination = if (hasToken) "portal" else "login"
 
@@ -42,7 +43,7 @@ class MainActivity : FragmentActivity() {
             val darkTheme = when (themeMode.value) {
                 "light" -> false
                 "dark" -> true
-                else -> androidx.compose.foundation.isSystemInDarkTheme()
+                else -> isSystemInDarkTheme()
             }
 
             GreggoryPortalTheme(darkTheme = darkTheme) {

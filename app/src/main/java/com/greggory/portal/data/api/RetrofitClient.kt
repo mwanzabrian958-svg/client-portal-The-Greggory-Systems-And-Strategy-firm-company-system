@@ -20,7 +20,7 @@ object RetrofitClient {
      * ensuring uniform routing of client data across any device or access point.
      */
     fun initialize(context: Context) {
-        val prefs = com.greggory.portal.data.local.PreferencesManager(context.applicationContext)
+        val prefs = com.greggory.portal.data.local.PreferencesManager.getInstance(context)
         authTokenProvider = { prefs.getToken() }
         userIdProvider = { prefs.getUserId() }
     }
@@ -32,7 +32,8 @@ object RetrofitClient {
         
         val requestBuilder = originalRequest.newBuilder()
         
-        if (!token.isNullOrEmpty() && originalRequest.header("Authorization") == null) {
+        // Always use the latest token from PreferencesManager Singleton
+        if (!token.isNullOrEmpty()) {
             requestBuilder.header("Authorization", "Bearer $token")
         }
         

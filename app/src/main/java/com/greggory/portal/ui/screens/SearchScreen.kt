@@ -9,9 +9,16 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.greggory.portal.data.api.SearchResults
+import com.greggory.portal.utils.FileDownloadHelper
 
 @Composable
-fun SearchScreen(query: String, results: SearchResults?, isLoading: Boolean) {
+fun SearchScreen(
+    query: String, 
+    results: SearchResults?, 
+    isLoading: Boolean,
+    onViewPdf: (String, String) -> Unit,
+    onNavigate: (String) -> Unit
+) {
     if (isLoading) {
         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
             CircularProgressIndicator()
@@ -45,14 +52,38 @@ fun SearchScreen(query: String, results: SearchResults?, isLoading: Boolean) {
         results?.projects?.takeIf { it.isNotEmpty() }?.let { projects ->
             item { Text("PROJECTS", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary) }
             items(projects) { project ->
-                ProjectCard(project, onViewRoadmap = {})
+                ProjectCard(
+                    project = project, 
+                    onViewRoadmap = { onNavigate("Projects") },
+                    onViewProposal = { onNavigate("Projects") }
+                )
+            }
+        }
+
+        results?.documents?.takeIf { it.isNotEmpty() }?.let { reports ->
+            item { Text("DOCUMENTS", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary) }
+            items(reports) { report ->
+                ReportCard(report, isDownloading = false, onDownload = {
+                    if (report.file_type.contains("pdf")) {
+                        onViewPdf(FileDownloadHelper.getReportUrl(report.id), report.title)
+                    } else {
+                        onNavigate("Documents")
+                    }
+                })
             }
         }
 
         results?.invoices?.takeIf { it.isNotEmpty() }?.let { invoices ->
             item { Text("INVOICES", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary) }
             items(invoices) { invoice ->
-                InvoiceCard(invoice, onPayClick = {}, onDownloadClick = {}, onReportClick = {})
+                InvoiceCard(
+                    invoice = invoice, 
+                    onPayClick = { onNavigate("Billing") }, 
+                    onDownloadClick = {
+                        onViewPdf(FileDownloadHelper.getInvoiceUrl(invoice.id), "Invoice #${invoice.id}")
+                    }, 
+                    onReportClick = { onNavigate("Billing") }
+                )
             }
         }
 
