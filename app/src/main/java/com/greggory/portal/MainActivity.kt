@@ -11,6 +11,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.fragment.app.FragmentActivity
 import androidx.navigation.compose.rememberNavController
@@ -32,78 +33,11 @@ class MainActivity : FragmentActivity() {
         installSplashScreen()
         super.onCreate(savedInstanceState)
         
-        NotificationHelper.requestPermission(this, requestPermissionLauncher)
-        
-        val prefs = PreferencesManager.getInstance(this)
-        val hasToken = prefs.getToken() != null
-        val startDestination = if (hasToken) "portal" else "login"
-
         setContent {
-            val themeMode = remember { mutableStateOf(prefs.getThemeMode()) }
-            val darkTheme = when (themeMode.value) {
-                "light" -> false
-                "dark" -> true
-                else -> isSystemInDarkTheme()
-            }
-
-            GreggoryPortalTheme(darkTheme = darkTheme) {
-                Surface(
-                    modifier = Modifier.fillMaxSize(),
-                    color = MaterialTheme.colorScheme.background
-                ) {
+            GreggoryPortalTheme {
+                Surface(modifier = Modifier.fillMaxSize()) {
                     val navController = rememberNavController()
-                    
-                    // Show Biometric prompt if token exists and biometric is available
-                    var isAuthenticated by remember { mutableStateOf(!hasToken) }
-                    var finalStartDestination by remember { mutableStateOf(startDestination) }
-                    
-                    if (isAuthenticated) {
-                        AppNavigation(navController = navController, startDestination = finalStartDestination)
-                    } else {
-                        // Routing Screen (Black/Brand background while biometric loads)
-                        Box(modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background))
-                    }
-
-                    LaunchedEffect(Unit) {
-                        // Handle Deep Link if present
-                        intent?.data?.let { uri ->
-                            val path = uri.path ?: ""
-                            if (path.startsWith("/project/")) {
-                                val projectId = path.substringAfter("/project/").toIntOrNull()
-                                if (projectId != null) {
-                                    finalStartDestination = Screen.Portal.route // Navigate to portal then handle inside
-                                }
-                            } else if (path.startsWith("/invoice/")) {
-                                val invoiceId = path.substringAfter("/invoice/").toIntOrNull()
-                                if (invoiceId != null) {
-                                    finalStartDestination = Screen.Portal.route
-                                }
-                            }
-                        }
-
-                        val isBiometricEnabled = prefs.isBiometricEnabled()
-                        
-                        if (hasToken && isBiometricEnabled && BiometricHelper.isBiometricAvailable(this@MainActivity)) {
-                            try {
-                                BiometricHelper.showBiometricPrompt(
-                                    activity = this@MainActivity,
-                                    onSuccess = {
-                                        isAuthenticated = true
-                                    },
-                                    onError = { 
-                                        // If biometric fails or is cancelled, clear token and force login for security
-                                        prefs.clear()
-                                        finalStartDestination = "login"
-                                        isAuthenticated = true
-                                    }
-                                )
-                            } catch (e: Exception) {
-                                isAuthenticated = true
-                            }
-                        } else {
-                            isAuthenticated = true
-                        }
-                    }
+                    AppNavigation(navController = navController, startDestination = "login")
                 }
             }
         }

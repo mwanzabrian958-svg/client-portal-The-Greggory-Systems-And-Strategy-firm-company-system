@@ -10,13 +10,20 @@ class PreferencesManager private constructor(context: Context) {
         .setKeyScheme(MasterKey.KeyScheme.AES256_GCM)
         .build()
 
-    private val sharedPreferences: SharedPreferences = EncryptedSharedPreferences.create(
-        context,
-        "GreggoryPrefsSecure",
-        masterKey,
-        EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
-        EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
-    )
+    private val sharedPreferences: SharedPreferences = try {
+        EncryptedSharedPreferences.create(
+            context,
+            "GreggoryPrefsEncrypted",
+            masterKey,
+            EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
+            EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
+        )
+    } catch (e: Exception) {
+        context.getSharedPreferences(
+            "GreggoryPrefsSecure",
+            Context.MODE_PRIVATE
+        )
+    }
 
     companion object {
         @Volatile

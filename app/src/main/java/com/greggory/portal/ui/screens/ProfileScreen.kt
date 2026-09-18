@@ -17,11 +17,15 @@ import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Phone
+import androidx.compose.material.icons.filled.AccountBalanceWallet
+import androidx.compose.material.icons.filled.TrendingUp
+import androidx.compose.material.icons.filled.History
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
@@ -178,6 +182,37 @@ fun ProfileScreen() {
 
         if (showPasswordDialog) {
             ChangePasswordDialog(onDismiss = { showPasswordDialog = false })
+        }
+
+        Spacer(modifier = Modifier.height(32.dp))
+        Text("Strategic Relationship", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.Start)
+        Spacer(modifier = Modifier.height(16.dp))
+
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
+        ) {
+            Column(modifier = Modifier.padding(16.dp)) {
+                RelationshipStatItem("Total Projects", "4 Active / 12 Total", Icons.Default.History)
+                Spacer(modifier = Modifier.height(12.dp))
+                RelationshipStatItem("Financial Standing", "Good (No Overdue)", Icons.Default.AccountBalanceWallet)
+                Spacer(modifier = Modifier.height(12.dp))
+                RelationshipStatItem("System Efficiency", "+22% Improvement", Icons.Default.TrendingUp)
+            }
+        }
+        
+        Spacer(modifier = Modifier.height(48.dp))
+    }
+}
+
+@Composable
+fun RelationshipStatItem(label: String, value: String, icon: ImageVector) {
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Icon(icon, contentDescription = null, modifier = Modifier.size(20.dp), tint = MaterialTheme.colorScheme.primary)
+        Spacer(modifier = Modifier.width(12.dp))
+        Column {
+            Text(label, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.outline)
+            Text(value, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold)
         }
     }
 }

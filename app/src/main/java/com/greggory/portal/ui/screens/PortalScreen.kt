@@ -1,5 +1,6 @@
 package com.greggory.portal.ui.screens
 
+import android.widget.Toast
 import androidx.compose.ui.draw.clip
 import androidx.compose.foundation.shape.CircleShape
 import androidx.activity.compose.BackHandler
@@ -40,7 +41,7 @@ import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun PortalScreen(onLogout: () -> Unit, onViewPdf: (String, String) -> Unit) {
+fun PortalScreen(onLogout: () -> Unit, onViewPdf: (String, String) -> Unit, onViewProject: (Int) -> Unit) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
@@ -64,9 +65,13 @@ fun PortalScreen(onLogout: () -> Unit, onViewPdf: (String, String) -> Unit) {
     var isSearching by remember { mutableStateOf(false) }
     var searchResults by remember { mutableStateOf<SearchResults?>(null) }
     var isSearchLoading by remember { mutableStateOf(false) }
+    
+    var selectedProjectId by remember { mutableStateOf<Int?>(null) }
 
-    BackHandler(enabled = isSearching || currentView != "Home") {
-        if (isSearching) {
+    BackHandler(enabled = isSearching || currentView != "Home" || selectedProjectId != null) {
+        if (selectedProjectId != null) {
+            selectedProjectId = null
+        } else if (isSearching) {
             isSearching = false
             searchQuery = ""
         } else {
@@ -84,7 +89,21 @@ fun PortalScreen(onLogout: () -> Unit, onViewPdf: (String, String) -> Unit) {
             try {
                 val response = RetrofitClient.instance.search(query)
                 if (response.isSuccessful) {
-                    searchResults = response.body()?.results
+                    val results = response.body()?.results
+                    val userId = preferencesManager.getUserId()
+                    
+                    // Validate search results integrity
+                    val isSearchValid = 
+                        (results?.projects?.all { DataRouter.verifyRoutingIntegrity(it.clientId, userId) } ?: true) &&
+                        (results?.invoices?.all { DataRouter.verifyRoutingIntegrity(it.clientId, userId) } ?: true) &&
+                        (results?.documents?.all { DataRouter.verifyRoutingIntegrity(it.clientId, userId) } ?: true)
+
+                    if (isSearchValid) {
+                        searchResults = results
+                    } else {
+                        errorMessage = "Search Security Breach: Results blocked."
+                        scope.launch { snackbarHostState.showSnackbar(errorMessage!!) }
+                    }
                 }
             } catch (ignored: Exception) {
                 // handle error
@@ -356,11 +375,13 @@ fun PortalScreen(onLogout: () -> Unit, onViewPdf: (String, String) -> Unit) {
                         localProjects = localProjects, 
                         localInvoices = localInvoices, 
                         notifications = notificationsData,
-                        onNavigate = { currentView = it }
+                        onNavigate = { currentView = it },
+                        onViewProject = { selectedProjectId = it }
                     )
                             "Projects" -> ProjectListScreen(
                             projects = dashboardData?.dashboard?.projects ?: localProjects.map { it.toApi() },
-                            onViewPdf = onViewPdf
+                            onViewPdf = onViewPdf,
+                            onViewDetails = { selectedProjectId = it.id }
                         )
                             "Team" -> TeamScreen(dashboardData?.dashboard?.teamMembers ?: emptyList())
                             "Tasks" -> TasksScreen(dashboardData?.dashboard?.tasks ?: emptyList())
@@ -374,7 +395,12 @@ fun PortalScreen(onLogout: () -> Unit, onViewPdf: (String, String) -> Unit) {
                             )
                             "Services" -> JobServicesScreen()
                             "Requests" -> RequestsScreen()
-                            "Messages" -> MessagesScreen(messages = dashboardData?.dashboard?.messages ?: emptyList())
+                            "Messages" -> ChatScreen(
+                                messages = dashboardData?.dashboard?.messages ?: emptyList(),
+                                onSendMessage = { text ->
+                                    Toast.makeText(context, "Message Sent: $text", Toast.LENGTH_SHORT).show()
+                                }
+                            )
                             "Feedback" -> FeedbackScreen()
                             "Notifications" -> NotificationsScreen(notificationsData)
                             "Profile" -> ProfileScreen()
@@ -384,6 +410,15 @@ fun PortalScreen(onLogout: () -> Unit, onViewPdf: (String, String) -> Unit) {
                             )
                             else -> Text("Section: $currentView", modifier = Modifier.align(Alignment.Center))
                         }
+                    }
+
+                    if (selectedProjectId != null) {
+                        val project = dashboardData?.dashboard?.projects?.find { it.id == selectedProjectId }
+                        ProjectDetailsScreen(
+                            project = project,
+                            team = dashboardData?.dashboard?.teamMembers ?: emptyList(),
+                            onBack = { selectedProjectId = null }
+                        )
                     }
                 }
                 
@@ -440,7 +475,8 @@ fun HomeScreen(
     localProjects: List<ProjectEntity>,
     localInvoices: List<InvoiceEntity>,
     notifications: List<Notification>,
-    onNavigate: (String) -> Unit
+    onNavigate: (String) -> Unit,
+    onViewProject: (Int) -> Unit
 ) {
     val displayProjects = dashboardData?.dashboard?.projects ?: localProjects.map { it.toApi() }
     val displayInvoices = dashboardData?.dashboard?.invoices ?: localInvoices.map { it.toApi() }
@@ -546,7 +582,7 @@ fun HomeScreen(
 
         Spacer(modifier = Modifier.height(24.dp))
         SectionHeader("Active Projects", Icons.Default.BusinessCenter)
-        ProjectsSummaryList(displayProjects.take(3), onNavigate)
+        ProjectsSummaryList(displayProjects.take(3), onNavigate, onViewProject)
         
         // Section Header "Milestone Tasks" with AutoMirrored icon
         Spacer(modifier = Modifier.height(24.dp))
@@ -621,13 +657,17 @@ fun SectionHeader(title: String, icon: ImageVector) {
 }
 
 @Composable
-fun ProjectsSummaryList(projects: List<Project>, onNavigate: (String) -> Unit) {
+fun ProjectsSummaryList(
+    projects: List<Project>, 
+    onNavigate: (String) -> Unit,
+    onViewProject: (Int) -> Unit
+) {
     if (projects.isEmpty()) {
         Text("No active projects", style = MaterialTheme.typography.bodySmall)
     } else {
         projects.forEach { project ->
             Card(
-                onClick = { onNavigate("Projects") },
+                onClick = { onViewProject(project.id) },
                 modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp),
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
             ) {

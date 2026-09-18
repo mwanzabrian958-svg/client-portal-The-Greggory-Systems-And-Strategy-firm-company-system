@@ -9,6 +9,7 @@ import com.greggory.portal.ui.screens.PortalScreen
 import com.greggory.portal.ui.screens.SignupScreen
 import com.greggory.portal.ui.screens.ForgotPasswordScreen
 import com.greggory.portal.ui.screens.PdfViewerScreen
+import com.greggory.portal.ui.screens.ProjectDetailsScreen
 import androidx.navigation.NavType
 import androidx.navigation.navArgument
 
@@ -58,6 +59,9 @@ fun AppNavigation(navController: NavHostController, startDestination: String = S
                 },
                 onViewPdf = { url, title ->
                     navController.navigate(Screen.PdfViewer.createRoute(java.net.URLEncoder.encode(url, "UTF-8"), title))
+                },
+                onViewProject = { projectId ->
+                    // Navigation handled via state inside PortalScreen for instant data availability
                 }
             )
         }

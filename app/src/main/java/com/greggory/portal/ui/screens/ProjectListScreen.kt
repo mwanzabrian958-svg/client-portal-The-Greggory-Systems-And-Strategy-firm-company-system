@@ -1,5 +1,7 @@
 package com.greggory.portal.ui.screens
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -7,6 +9,13 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Description
 import androidx.compose.material.icons.filled.Timeline
 import androidx.compose.material.icons.filled.CloudDownload
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.sp
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -19,7 +28,11 @@ import com.greggory.portal.data.api.Project
 import com.greggory.portal.utils.FileDownloadHelper
 
 @Composable
-fun ProjectListScreen(projects: List<Project>, onViewPdf: (String, String) -> Unit) {
+fun ProjectListScreen(
+    projects: List<Project>, 
+    onViewPdf: (String, String) -> Unit,
+    onViewDetails: (Project) -> Unit = {}
+) {
     var selectedProjectForRoadmap by remember { mutableStateOf<Project?>(null) }
     var selectedProjectForProposal by remember { mutableStateOf<Project?>(null) }
 
@@ -41,7 +54,8 @@ fun ProjectListScreen(projects: List<Project>, onViewPdf: (String, String) -> Un
                 ProjectCard(
                     project = project,
                     onViewRoadmap = { selectedProjectForRoadmap = project },
-                    onViewProposal = { selectedProjectForProposal = project }
+                    onViewProposal = { selectedProjectForProposal = project },
+                    onClick = { onViewDetails(project) }
                 )
             }
         }
@@ -64,9 +78,16 @@ fun ProjectListScreen(projects: List<Project>, onViewPdf: (String, String) -> Un
 }
 
 @Composable
-fun ProjectCard(project: Project, onViewRoadmap: () -> Unit, onViewProposal: () -> Unit) {
+fun ProjectCard(
+    project: Project, 
+    onViewRoadmap: () -> Unit, 
+    onViewProposal: () -> Unit,
+    onClick: () -> Unit = {}
+) {
     Card(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { onClick() },
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.5f))
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
@@ -208,30 +229,94 @@ fun ProjectProposalDialog(project: Project, onDismiss: () -> Unit, onViewPdf: (S
 fun ProjectRoadmapDialog(project: Project, onDismiss: () -> Unit) {
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("${project.name} Roadmap") },
+        title = { 
+            Column {
+                Text("${project.name}", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                Text("Strategic Execution Roadmap", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary)
+            }
+        },
         text = {
-            Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                RoadmapStep("Discovery & Audit", "Completed", true)
-                RoadmapStep("Strategy Development", "Completed", true)
-                RoadmapStep("Implementation Phase", "In Progress", false)
-                RoadmapStep("Review & Testing", "Pending", false)
-                RoadmapStep("Final Handover", "Pending", false)
+            Column(
+                modifier = Modifier.verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                val currentStep = when {
+                    project.progress < 20 -> 0
+                    project.progress < 40 -> 1
+                    project.progress < 70 -> 2
+                    project.progress < 90 -> 3
+                    else -> 4
+                }
+
+                RoadmapStep("Discovery & Audit", "Analysis of existing infrastructure and pain points.", currentStep >= 0, currentStep == 0)
+                RoadmapStep("Strategy Development", "Crafting the unique solution architecture.", currentStep >= 1, currentStep == 1)
+                RoadmapStep("Implementation Phase", "Active engineering and systems deployment.", currentStep >= 2, currentStep == 2)
+                RoadmapStep("Review & Testing", "Quality assurance and performance optimization.", currentStep >= 3, currentStep == 3)
+                RoadmapStep("Final Handover", "Training, documentation, and go-live.", currentStep >= 4, currentStep == 4)
+                
+                if (project.progress > 0) {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        text = "Current Progress: ${project.progress}%",
+                        style = MaterialTheme.typography.labelMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.fillMaxWidth(),
+                        textAlign = TextAlign.Center
+                    )
+                }
             }
         },
         confirmButton = {
-            TextButton(onClick = onDismiss) { Text("CLOSE") }
+            Button(onClick = onDismiss) { Text("GOT IT") }
         }
     )
 }
 
 @Composable
-fun RoadmapStep(title: String, status: String, isDone: Boolean) {
-    Row(verticalAlignment = Alignment.CenterVertically) {
-        RadioButton(selected = isDone, onClick = null, enabled = false)
-        Spacer(modifier = Modifier.width(8.dp))
+fun RoadmapStep(title: String, description: String, isDone: Boolean, isCurrent: Boolean) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.Top
+    ) {
+        Box(
+            modifier = Modifier
+                .size(24.dp)
+                .clip(CircleShape)
+                .background(
+                    if (isDone) MaterialTheme.colorScheme.primary 
+                    else if (isCurrent) MaterialTheme.colorScheme.secondary 
+                    else MaterialTheme.colorScheme.surfaceVariant
+                ),
+            contentAlignment = Alignment.Center
+        ) {
+            if (isDone) {
+                Icon(Icons.Default.Check, contentDescription = null, modifier = Modifier.size(16.dp), tint = Color.White)
+            } else if (isCurrent) {
+                Box(modifier = Modifier.size(8.dp).clip(CircleShape).background(Color.White))
+            }
+        }
+        
+        Spacer(modifier = Modifier.width(12.dp))
+        
         Column {
-            Text(title, style = MaterialTheme.typography.bodyLarge, fontWeight = if (isDone) FontWeight.Normal else FontWeight.Bold)
-            Text(status, style = MaterialTheme.typography.labelSmall, color = if (isDone) Color.Gray else MaterialTheme.colorScheme.primary)
+            Text(
+                text = title, 
+                style = MaterialTheme.typography.bodyLarge, 
+                fontWeight = if (isCurrent) FontWeight.Bold else FontWeight.Normal,
+                color = if (isDone || isCurrent) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.outline
+            )
+            Text(
+                text = description, 
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.outline
+            )
+            if (isCurrent) {
+                Spacer(modifier = Modifier.height(4.dp))
+                Badge(containerColor = MaterialTheme.colorScheme.secondaryContainer) {
+                    Text("ACTIVE PHASE", modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp), fontSize = 10.sp)
+                }
+            }
         }
     }
 }

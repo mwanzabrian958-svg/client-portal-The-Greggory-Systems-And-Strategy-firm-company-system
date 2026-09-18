@@ -41,6 +41,12 @@ interface ApiService {
         @Part photo: okhttp3.MultipartBody.Part
     ): Response<ImageUploadResponse>
 
+    @Multipart
+    @POST("api/reports/upload-asset")
+    suspend fun uploadAsset(
+        @Part asset: okhttp3.MultipartBody.Part
+    ): Response<SimpleResponse>
+
     @Streaming
     @GET("api/users/my-reports/{id}/download")
     suspend fun downloadReport(@Path("id") reportId: Int): Response<okhttp3.ResponseBody>
@@ -261,6 +267,7 @@ data class TeamMember(
     val role: String,
     val duties: String,
     val email: String?,
+    val phone: String? = null,
     @SerializedName("project_name") val projectName: String?
 )
 
