@@ -14,9 +14,25 @@ import com.greggory.portal.ui.screens.ProjectDetailsScreen
 import androidx.navigation.NavType
 import androidx.navigation.navArgument
 
+import androidx.compose.ui.Modifier
+import androidx.compose.foundation.layout.Column
+import androidx.compose.runtime.LaunchedEffect
+import com.greggory.portal.ui.components.NetworkStatusBar
+import com.greggory.portal.utils.SessionEventBus
+
 @Composable
 fun AppNavigation(navController: NavHostController, startDestination: String = Screen.Login.route) {
-    NavHost(navController = navController, startDestination = startDestination) {
+    LaunchedEffect(Unit) {
+        SessionEventBus.unauthorizedEvents.collect {
+            navController.navigate(Screen.Login.route) {
+                popUpTo(0) { inclusive = true }
+            }
+        }
+    }
+
+    Column {
+        NetworkStatusBar()
+        NavHost(navController = navController, startDestination = startDestination, modifier = Modifier.weight(1f)) {
         composable(Screen.Onboarding.route) {
             OnboardingScreen(
                 onOnboardingComplete = {

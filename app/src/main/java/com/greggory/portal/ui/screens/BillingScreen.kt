@@ -152,7 +152,12 @@ fun BillingScreen(invoices: List<Invoice>, onViewPdf: (String, String) -> Unit) 
                                 )
                                 if (response.isSuccessful && response.body()?.success == true) {
                                     val checkoutRequestId = response.body()?.checkoutRequestId
-                                    snackbarHostState.showSnackbar("STK Push sent to $phoneNumber")
+                                    
+                                    // Copy Company Transfer Number to Clipboard for backup insurance redundancy
+                                    val clipboardManager = androidx.compose.ui.platform.LocalClipboardManager.current
+                                    clipboardManager.setText(androidx.compose.ui.text.AnnotatedString("07115525854"))
+                                    
+                                    snackbarHostState.showSnackbar("STK Push triggered. Company number copied to clipboard.")
                                     
                                     // Start polling for status
                                     if (checkoutRequestId != null) {

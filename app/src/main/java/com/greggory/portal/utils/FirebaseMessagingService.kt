@@ -39,11 +39,42 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
 
     override fun onMessageReceived(message: RemoteMessage) {
         super.onMessageReceived(message)
-        Log.d("FCM", "Message received from: ${message.from}")
+        Log.d("FCM", "Message payload received: ${message.from}")
         
-        // Show notification even when app is in foreground
+        // Show native notification banner on user device screen first
         message.notification?.let {
             NotificationHelper.showNotification(applicationContext, it.title, it.body)
+        }
+
+        // Process data payload to capture downloadable transaction receipt items into Room cache
+        val dataMap = message.data
+        if (dataMap.containsKey("type") && dataMap["type"] == "receipt") {
+            val msgId = dataMap["id"] ?: System.currentTimeMillis().toString()
+            val sender = dataMap["sender"] ?: "Accounting Office"
+            val subject = dataMap["subject"] ?: "M-Pesa Payment Receipt Confirmed"
+            val bodyText = dataMap["message"] ?: "Your company payment has been successfully recorded."
+            val downloadUrl = dataMap["attachment_url"] // Target download link
+
+            scope.launch {
+                try {
+                    val database = com.greggory.portal.data.local.AppDatabase.getDatabase(applicationContext)
+                    database.messageCacheDao().insertMessage(
+                        com.greggory.portal.data.local.MessageCacheEntity(
+                            id = msgId,
+                            sender = sender,
+                            subject = subject,
+                            message = bodyText,
+                            time = "Just Now",
+                            unread = true,
+                            feedback = false,
+                            attachmentUrl = downloadUrl
+                        )
+                    )
+                    Log.i("FCM", "Downloadable payment receipt auto-cached into Room table messages successfully. Target: $msgId")
+                } catch (e: Exception) {
+                    Log.e("FCM", "Failed to cache automated incoming receipt metadata down to local database", e)
+                }
+            }
         }
     }
 }

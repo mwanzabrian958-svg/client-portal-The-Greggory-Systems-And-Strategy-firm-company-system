@@ -116,7 +116,10 @@ fun PortalScreen(onLogout: () -> Unit, onViewPdf: (String, String) -> Unit, onVi
     fun refreshData(isManual: Boolean = false) {
         val token = preferencesManager.getToken()
         if (token == null) {
-            onLogout()
+            scope.launch {
+                try { database.clearAllTables() } catch (ignored: Exception) {}
+                onLogout()
+            }
             return
         }
         if (isManual) isRefreshing = true else isLoading = true
@@ -125,18 +128,20 @@ fun PortalScreen(onLogout: () -> Unit, onViewPdf: (String, String) -> Unit, onVi
                 val userId = preferencesManager.getUserId()
                 
                 kotlinx.coroutines.supervisorScope {
-                    // Fetch all data in parallel
+                    // Fetch all data in parallel (Dashboard, Reports, Notifications, and messages for offline reconciliation)
                     val dashDeferred = async { RetrofitClient.instance.getDashboard() }
                     val reportsDeferred = async { RetrofitClient.instance.getReports() }
                     val notifsDeferred = async { RetrofitClient.instance.getNotifications() }
+                    val messagesDeferred = async { RetrofitClient.instance.getFeedback() } // Serves as sync fallback
 
                     val dashResponse = try { dashDeferred.await() } catch (ignored: Exception) { null }
                     val reportsResponse = try { reportsDeferred.await() } catch (ignored: Exception) { null }
                     val notifsResponse = try { notifsDeferred.await() } catch (ignored: Exception) { null }
+                    val messagesResponse = try { messagesDeferred.await() } catch (ignored: Exception) { null }
 
                     var sessionExpired = false
 
-                    // 1. Process Dashboard Response
+                    // 1. Process Dashboard Response and sync with Local Cache
                     if (dashResponse?.isSuccessful == true && dashResponse.body()?.success == true) {
                         val body = dashResponse.body()?.dashboard
                         val isDashIntegrityValid = 
@@ -155,6 +160,25 @@ fun PortalScreen(onLogout: () -> Unit, onViewPdf: (String, String) -> Unit, onVi
                                 try {
                                     database.invoiceDao().clearInvoices()
                                     database.invoiceDao().insertInvoices(invoices.map { it.toEntity() })
+                                } catch (ignored: Exception) {}
+                            }
+                            // Reconcile and Sync missing messages/receipt items into Room Cache
+                            body?.messages?.let { apiMessages ->
+                                try {
+                                    val messageEntities = apiMessages.map { msg ->
+                                        MessageCacheEntity(
+                                            id = msg.id,
+                                            sender = msg.sender,
+                                            subject = msg.subject,
+                                            message = msg.message,
+                                            time = msg.time,
+                                            unread = msg.unread,
+                                            feedback = msg.feedback ?: false,
+                                            attachmentUrl = null
+                                        )
+                                    }
+                                    database.messageCacheDao().clearMessages()
+                                    database.messageCacheDao().insertMessages(messageEntities)
                                 } catch (ignored: Exception) {}
                             }
                         } else {
@@ -192,6 +216,7 @@ fun PortalScreen(onLogout: () -> Unit, onViewPdf: (String, String) -> Unit, onVi
                         scope.launch { 
                             snackbarHostState.showSnackbar(errorMessage!!)
                             kotlinx.coroutines.delay(1000)
+                            try { database.clearAllTables() } catch (ignored: Exception) {}
                             preferencesManager.clear()
                             onLogout()
                         }
@@ -261,10 +286,8 @@ fun PortalScreen(onLogout: () -> Unit, onViewPdf: (String, String) -> Unit, onVi
                 HorizontalDivider()
                 DrawerItem("Logout", Icons.AutoMirrored.Filled.Logout, false) {
                     scope.launch {
+                        try { database.clearAllTables() } catch (ignored: Exception) {}
                         preferencesManager.clear()
-                        database.projectDao().clearProjects()
-                        database.invoiceDao().clearInvoices()
-                        database.reportDao().clearReports()
                         onLogout()
                     }
                 }

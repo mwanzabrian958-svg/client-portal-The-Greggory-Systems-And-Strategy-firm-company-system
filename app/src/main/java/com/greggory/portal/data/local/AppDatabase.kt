@@ -33,6 +33,18 @@ data class ReportEntity(
     val client_id: Int
 )
 
+@Entity(tableName = "messages")
+data class MessageCacheEntity(
+    @PrimaryKey val id: String,
+    val sender: String,
+    val subject: String,
+    val message: String,
+    val time: String,
+    val unread: Boolean,
+    val feedback: Boolean,
+    val attachmentUrl: String? = null // For downloadable receipts or documentation items
+)
+
 @Dao
 interface ProjectDao {
     @Query("SELECT * FROM projects")
@@ -69,11 +81,27 @@ interface ReportDao {
     suspend fun clearReports()
 }
 
-@Database(entities = [ProjectEntity::class, InvoiceEntity::class, ReportEntity::class], version = 1, exportSchema = false)
+@Dao
+interface MessageCacheDao {
+    @Query("SELECT * FROM messages ORDER BY id DESC")
+    fun getAllMessages(): Flow<List<MessageCacheEntity>>
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertMessage(message: MessageCacheEntity)
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertMessages(messages: List<MessageCacheEntity>)
+
+    @Query("DELETE FROM messages")
+    suspend fun clearMessages()
+}
+
+@Database(entities = [ProjectEntity::class, InvoiceEntity::class, ReportEntity::class, MessageCacheEntity::class], version = 2, exportSchema = false)
 abstract class AppDatabase : RoomDatabase() {
     abstract fun projectDao(): ProjectDao
     abstract fun invoiceDao(): InvoiceDao
     abstract fun reportDao(): ReportDao
+    abstract fun messageCacheDao(): MessageCacheDao
 
     companion object {
         @Volatile
@@ -85,7 +113,9 @@ abstract class AppDatabase : RoomDatabase() {
                     context.applicationContext,
                     AppDatabase::class.java,
                     "greggory_portal_database"
-                ).build()
+                )
+                .fallbackToDestructiveMigration() // Smooth schema adjustment strategy
+                .build()
                 INSTANCE = instance
                 instance
             }

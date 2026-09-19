@@ -50,12 +50,22 @@ object RetrofitClient {
     }
 
     /**
-     * Retry Interceptor: Handles transient "Company Pipeline" glitches (502, 503, 504).
-     * This ensures high availability even when the backend is scaling or redeploying.
+     * Retry Interceptor: Handles transient "Company Pipeline" glitches (502, 503, 504),
+     * and triggers automatic session expulsion redirects on 401 token authentication rejections.
      */
     private val retryInterceptor = Interceptor { chain ->
         val request = chain.request()
         var response = chain.proceed(request)
+        
+        if (response.code == 401) {
+            // Expelled session: Wipe state and redirect instantly
+            appContext?.let { ctx ->
+                com.greggory.portal.data.local.PreferencesManager.getInstance(ctx).clear()
+            }
+            com.greggory.portal.utils.SessionEventBus.triggerUnauthorizedLogout()
+            return@Interceptor response
+        }
+
         var tryCount = 0
         val maxLimit = 3
 
