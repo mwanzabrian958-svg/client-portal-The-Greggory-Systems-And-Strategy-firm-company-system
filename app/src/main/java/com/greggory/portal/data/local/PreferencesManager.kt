@@ -103,4 +103,12 @@ class PreferencesManager private constructor(context: Context) {
         sharedPreferences.edit().putBoolean("first_launch_completed", completed).apply()
     }
     fun isFirstLaunch(): Boolean = !sharedPreferences.getBoolean("first_launch_completed", false)
+
+    fun registerListener(listener: SharedPreferences.OnSharedPreferenceChangeListener) {
+        sharedPreferences.registerOnSharedPreferenceChangeListener(listener)
+    }
+
+    fun unregisterListener(listener: SharedPreferences.OnSharedPreferenceChangeListener) {
+        sharedPreferences.unregisterOnSharedPreferenceChangeListener(listener)
+    }
 }

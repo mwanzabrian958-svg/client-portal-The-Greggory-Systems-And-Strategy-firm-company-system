@@ -21,7 +21,7 @@ import com.greggory.portal.ui.components.NetworkStatusBar
 import com.greggory.portal.utils.SessionEventBus
 
 @Composable
-fun AppNavigation(navController: NavHostController, startDestination: String = Screen.Login.route) {
+fun AppNavigation(navController: NavHostController, startDestination: String = Screen.Portal.route) {
     LaunchedEffect(Unit) {
         SessionEventBus.unauthorizedEvents.collect {
             navController.navigate(Screen.Login.route) {

@@ -1,5 +1,6 @@
 package com.greggory.portal
 
+import android.content.SharedPreferences
 import android.os.Bundle
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
@@ -30,27 +31,57 @@ class MainActivity : FragmentActivity() {
         // Permission result handled by system
     }
 
+    private lateinit var prefs: PreferencesManager
+    private val themeModeState = mutableStateOf("system")
+
+    private val prefListener = SharedPreferences.OnSharedPreferenceChangeListener { sharedPreferences, key ->
+        if (key == "theme_mode") {
+            themeModeState.value = sharedPreferences.getString("theme_mode", "system") ?: "system"
+        }
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         installSplashScreen()
         super.onCreate(savedInstanceState)
         
+        prefs = PreferencesManager.getInstance(this)
+        themeModeState.value = prefs.getThemeMode()
+        prefs.registerListener(prefListener)
+        
+        NotificationHelper.requestPermission(this, requestPermissionLauncher)
+        
         setContent {
             val context = LocalContext.current
+            val systemInDarkTheme = isSystemInDarkTheme()
+            
+            val themeMode by remember { themeModeState }
+            
+            val darkTheme = when (themeMode) {
+                "light" -> false
+                "dark" -> true
+                else -> systemInDarkTheme
+            }
+
             val startDestination = remember {
-                val prefs = PreferencesManager.getInstance(context)
-                if (prefs.isFirstLaunch()) {
+                val p = PreferencesManager.getInstance(context)
+                if (p.isFirstLaunch()) {
                     Screen.Onboarding.route
                 } else {
                     Screen.Login.route
                 }
             }
 
-            GreggoryPortalTheme {
-                Surface(modifier = Modifier.fillMaxSize()) {
+            GreggoryPortalTheme(darkTheme = darkTheme) {
+                Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
                     val navController = rememberNavController()
                     AppNavigation(navController = navController, startDestination = startDestination)
                 }
             }
         }
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        prefs.unregisterListener(prefListener)
     }
 }
