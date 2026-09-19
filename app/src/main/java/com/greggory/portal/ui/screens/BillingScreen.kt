@@ -27,6 +27,7 @@ import kotlinx.coroutines.launch
 @Composable
 fun BillingScreen(invoices: List<Invoice>, onViewPdf: (String, String) -> Unit) {
     val context = LocalContext.current
+    val clipboardManager = androidx.compose.ui.platform.LocalClipboardManager.current
     val scope = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
     var selectedInvoice by remember { mutableStateOf<Invoice?>(null) }
@@ -154,7 +155,6 @@ fun BillingScreen(invoices: List<Invoice>, onViewPdf: (String, String) -> Unit) 
                                     val checkoutRequestId = response.body()?.checkoutRequestId
                                     
                                     // Copy Company Transfer Number to Clipboard for backup insurance redundancy
-                                    val clipboardManager = androidx.compose.ui.platform.LocalClipboardManager.current
                                     clipboardManager.setText(androidx.compose.ui.text.AnnotatedString("07115525854"))
                                     
                                     snackbarHostState.showSnackbar("STK Push triggered. Company number copied to clipboard.")

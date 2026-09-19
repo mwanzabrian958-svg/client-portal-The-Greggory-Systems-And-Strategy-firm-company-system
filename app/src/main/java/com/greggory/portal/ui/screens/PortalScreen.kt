@@ -34,6 +34,7 @@ import com.greggory.portal.R
 import com.greggory.portal.data.api.*
 import com.greggory.portal.data.local.*
 import com.greggory.portal.ui.components.CustomBackground
+import com.greggory.portal.ui.components.SectionHeader
 import com.greggory.portal.utils.DataRouter
 import kotlinx.coroutines.async
 import kotlinx.coroutines.delay
@@ -667,15 +668,6 @@ fun HomeKpiSection(dashboardData: DashboardResponse?, onNavigate: (String) -> Un
     dashboardData?.dashboard?.kpiMetrics?.forEach { metric ->
         Spacer(modifier = Modifier.height(8.dp))
         KpiCard(metric.label, metric.value, Modifier.fillMaxWidth())
-    }
-}
-
-@Composable
-fun SectionHeader(title: String, icon: ImageVector) {
-    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(bottom = 12.dp)) {
-        Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
-        Spacer(modifier = Modifier.width(8.dp))
-        Text(text = title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
     }
 }
 

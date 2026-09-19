@@ -31,6 +31,7 @@ import coil.compose.AsyncImage
 import com.greggory.portal.data.api.Project
 import com.greggory.portal.data.api.RetrofitClient
 import com.greggory.portal.data.api.TeamMember
+import com.greggory.portal.ui.components.*
 
 data class DevelopmentMedia(
     val id: Int,
@@ -181,226 +182,34 @@ fun ProjectDetailsScreen(
 }
 
 @Composable
-fun ContactExpertDialog(expert: TeamMember, onDismiss: () -> Unit) {
-    val context = LocalContext.current
-    val phoneNumber = expert.phone ?: "254711525854" // Default if null
-    val clipboardManager = androidx.compose.ui.platform.LocalClipboardManager.current
-
-    LaunchedEffect(phoneNumber) {
-        clipboardManager.setText(androidx.compose.ui.text.AnnotatedString(phoneNumber))
-        android.widget.Toast.makeText(context, "Phone number copied to clipboard", android.widget.Toast.LENGTH_SHORT).show()
-    }
-
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(Icons.Default.ContactSupport, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
-                Spacer(modifier = Modifier.width(8.dp))
-                Text("Contact Strategy Expert")
-            }
-        },
-        text = {
-            Column {
-                Text(
-                    text = "How would you like to connect with ${expert.name} regarding your project strategy?",
-                    style = MaterialTheme.typography.bodyMedium
-                )
-                Spacer(modifier = Modifier.height(16.dp))
-                
-                Card(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable {
-                            val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://api.whatsapp.com/send?phone=$phoneNumber"))
-                            context.startActivity(intent)
-                            onDismiss()
-                        },
-                    colors = CardDefaults.cardColors(containerColor = Color(0xFF25D366).copy(alpha = 0.1f))
-                ) {
-                    Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
-                        Icon(Icons.Default.Chat, contentDescription = null, tint = Color(0xFF25D366))
-                        Spacer(modifier = Modifier.width(16.dp))
-                        Column {
-                            Text("Open WhatsApp Chat", fontWeight = FontWeight.Bold, color = Color(0xFF25D366))
-                            Text("Fast response for strategy updates.", style = MaterialTheme.typography.labelSmall)
-                        }
-                    }
-                }
-
-                Spacer(modifier = Modifier.height(8.dp))
-
-                Card(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable {
-                            val intent = Intent(Intent.ACTION_SENDTO, Uri.parse("smsto:$phoneNumber"))
-                            context.startActivity(intent)
-                            onDismiss()
-                        },
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondary.copy(alpha = 0.1f))
-                ) {
-                    Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
-                        Icon(Icons.Default.Chat, contentDescription = null, tint = MaterialTheme.colorScheme.secondary)
-                        Spacer(modifier = Modifier.width(16.dp))
-                        Column {
-                            Text("Start Chat in SMS", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.secondary)
-                            Text("Send a direct text message.", style = MaterialTheme.typography.labelSmall)
-                        }
-                    }
-                }
-
-                Spacer(modifier = Modifier.height(8.dp))
-
-                Card(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable {
-                            val intent = Intent(Intent.ACTION_DIAL, Uri.parse("tel:$phoneNumber"))
-                            context.startActivity(intent)
-                            onDismiss()
-                        },
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f))
-                ) {
-                    Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
-                        Icon(Icons.Default.Phone, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
-                        Spacer(modifier = Modifier.width(16.dp))
-                        Column {
-                            Text("Call Expert Directly", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
-                            Text("Instant voice consultation.", style = MaterialTheme.typography.labelSmall)
-                        }
-                    }
-                }
-            }
-        },
-        confirmButton = {
-            TextButton(onClick = onDismiss) {
-                Text("CLOSE")
-            }
-        }
-    )
-}
-
-@Composable
-fun SectionHeader(title: String, icon: ImageVector) {
-    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(bottom = 12.dp)) {
-        Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
-        Spacer(modifier = Modifier.width(8.dp))
-        Text(text = title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-    }
-}
-
-@Composable
-fun RoadmapStep(title: String, description: String, isDone: Boolean, isCurrent: Boolean) {
-    Row(
-        modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp),
-        verticalAlignment = Alignment.Top
-    ) {
-        Box(
-            modifier = Modifier
-                .size(24.dp)
-                .clip(CircleShape)
-                .background(
-                    if (isDone) MaterialTheme.colorScheme.primary 
-                    else if (isCurrent) MaterialTheme.colorScheme.secondary 
-                    else MaterialTheme.colorScheme.surfaceVariant
-                ),
-            contentAlignment = Alignment.Center
-        ) {
-            if (isDone) {
-                Icon(Icons.Default.Check, contentDescription = null, modifier = Modifier.size(16.dp), tint = Color.White)
-            } else if (isCurrent) {
-                Box(modifier = Modifier.size(8.dp).clip(CircleShape).background(Color.White))
-            }
-        }
-        
-        Spacer(modifier = Modifier.width(12.dp))
-        
-        Column {
-            Text(
-                text = title, 
-                style = MaterialTheme.typography.bodyLarge, 
-                fontWeight = if (isCurrent) FontWeight.Bold else FontWeight.Normal,
-                color = if (isDone || isCurrent) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.outline
-            )
-            Text(
-                text = description, 
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.outline
-            )
-            if (isCurrent) {
-                Spacer(modifier = Modifier.height(4.dp))
-                Badge(containerColor = MaterialTheme.colorScheme.secondaryContainer) {
-                    Text("ACTIVE PHASE", modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp), fontSize = 10.sp)
-                }
-            }
-        }
-    }
-}
-
-@Composable
-fun ProjectStatusBadge(status: String) {
-    Surface(
-        color = when(status.lowercase()) {
-            "active" -> Color(0xFF2A9D8F)
-            "completed" -> Color(0xFF415A77)
-            else -> Color(0xFFE0C097)
-        },
-        shape = MaterialTheme.shapes.small
-    ) {
-        Text(
-            text = status.uppercase(),
-            modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp),
-            style = MaterialTheme.typography.labelSmall,
-            color = Color.White
-        )
-    }
-}
-
-@Composable
-fun TeamMemberCard(member: TeamMember, onClick: () -> Unit = {}) {
+fun MediaCard(media: DevelopmentMedia) {
     Card(
         modifier = Modifier
-            .fillMaxWidth()
-            .clickable { onClick() },
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+            .width(200.dp)
+            .height(250.dp),
+        shape = RoundedCornerShape(12.dp)
     ) {
-        Row(
-            modifier = Modifier.padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Box(
-                modifier = Modifier
-                    .size(56.dp)
-                    .clip(CircleShape)
-                    .background(MaterialTheme.colorScheme.primaryContainer),
-                contentAlignment = Alignment.Center
-            ) {
+        Column {
+            Box(modifier = Modifier.fillMaxWidth().height(150.dp)) {
                 AsyncImage(
-                    model = "${RetrofitClient.BASE_URL}api/users/profile-photo/${member.id}",
-                    contentDescription = member.name,
+                    model = media.url,
+                    contentDescription = media.caption,
                     modifier = Modifier.fillMaxSize(),
-                    contentScale = ContentScale.Crop,
-                    error = null // Falls back to the Icon below if loading fails
+                    contentScale = ContentScale.Crop
                 )
-                // Fallback icon if image is not available
-                Icon(
-                    Icons.Default.Person, 
-                    contentDescription = null, 
-                    tint = MaterialTheme.colorScheme.onPrimaryContainer,
-                    modifier = Modifier.size(32.dp)
-                )
-            }
-            Spacer(modifier = Modifier.width(16.dp))
-            Column(modifier = Modifier.weight(1f)) {
-                Text(member.name, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                Text(member.role, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary)
-                Text(member.duties, style = MaterialTheme.typography.bodySmall)
-            }
-            if (!member.email.isNullOrEmpty()) {
-                IconButton(onClick = { /* Handle Email */ }) {
-                    Icon(Icons.Default.Email, contentDescription = "Email", tint = MaterialTheme.colorScheme.outline)
+                if (media.type == "video") {
+                    Icon(
+                        Icons.Default.PlayCircle,
+                        contentDescription = "Play",
+                        tint = Color.White,
+                        modifier = Modifier.align(Alignment.Center).size(48.dp)
+                    )
                 }
+            }
+            Column(modifier = Modifier.padding(12.dp)) {
+                Text(media.caption, style = MaterialTheme.typography.bodySmall, maxLines = 2)
+                Spacer(modifier = Modifier.weight(1f))
+                Text(media.date, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.outline)
             }
         }
     }
