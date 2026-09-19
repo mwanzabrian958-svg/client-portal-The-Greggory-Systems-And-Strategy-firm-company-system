@@ -17,7 +17,9 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.foundation.text.ClickableText
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.*
@@ -29,10 +31,14 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
+import androidx.compose.ui.text.style.TextDecoration
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import com.google.gson.Gson
@@ -56,6 +62,7 @@ fun SignupScreen(onSignupSuccess: () -> Unit, onBackToLogin: () -> Unit) {
     var confirmPassword by remember { mutableStateOf("") }
     var passwordVisible by remember { mutableStateOf(false) }
     var agreeToTerms by remember { mutableStateOf(false) }
+    var showTermsDialog by remember { mutableStateOf(false) }
     
     var selectedImageUri by remember { mutableStateOf<Uri?>(null) }
     val launcher = rememberLauncherForActivityResult(
@@ -216,9 +223,29 @@ fun SignupScreen(onSignupSuccess: () -> Unit, onBackToLogin: () -> Unit) {
                     checked = agreeToTerms,
                     onCheckedChange = { agreeToTerms = it }
                 )
-                Text(
-                    text = "I agree to the Terms of Use and Privacy Policy",
-                    style = MaterialTheme.typography.bodySmall
+                
+                val annotatedText = buildAnnotatedString {
+                    append("I agree to the ")
+                    pushStringAnnotation(tag = "TERMS", annotation = "terms")
+                    withStyle(style = SpanStyle(
+                        color = MaterialTheme.colorScheme.primary,
+                        fontWeight = FontWeight.Bold,
+                        textDecoration = TextDecoration.Underline
+                    )) {
+                        append("Terms of Use and Privacy Policy")
+                    }
+                    pop()
+                }
+
+                ClickableText(
+                    text = annotatedText,
+                    style = MaterialTheme.typography.bodySmall.copy(color = MaterialTheme.typography.bodySmall.color),
+                    onClick = { offset ->
+                        annotatedText.getStringAnnotations(tag = "TERMS", start = offset, end = offset)
+                            .firstOrNull()?.let {
+                                showTermsDialog = true
+                            }
+                    }
                 )
             }
 
@@ -297,6 +324,128 @@ fun SignupScreen(onSignupSuccess: () -> Unit, onBackToLogin: () -> Unit) {
                 } else {
                     Text("SIGN UP", fontWeight = FontWeight.Bold)
                 }
+            }
+        }
+
+        if (showTermsDialog) {
+            TermsAndPrivacyDialog(onDismiss = { showTermsDialog = false })
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun TermsAndPrivacyDialog(onDismiss: () -> Unit) {
+    androidx.compose.ui.window.Dialog(
+        onDismissRequest = onDismiss,
+        properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false)
+    ) {
+        Scaffold(
+            topBar = {
+                TopAppBar(
+                    title = { Text("Terms & Privacy Policy", style = MaterialTheme.typography.titleMedium) },
+                    actions = {
+                        IconButton(onClick = onDismiss) {
+                            Icon(Icons.Default.Close, contentDescription = "Close")
+                        }
+                    }
+                )
+            }
+        ) { padding ->
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(padding)
+                    .padding(20.dp)
+                    .verticalScroll(rememberScrollState())
+            ) {
+                Text(
+                    text = "Terms of Use",
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.primary
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = "Welcome to The Greggory Systems & Strategy Firm. By accessing this portal, you agree to be bound by these terms. This portal is intended for authorized clients only. You are responsible for maintaining the confidentiality of your credentials and for all activities that occur under your account.",
+                    style = MaterialTheme.typography.bodyMedium
+                )
+                
+                Spacer(modifier = Modifier.height(16.dp))
+                Text(
+                    text = "1. Professional Services",
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.Bold
+                )
+                Text(
+                    text = "The information provided via this portal is part of our strategic consulting services. While we strive for accuracy, business strategies involve inherent risks. Clients are advised to validate all data points through official consultation sessions.",
+                    style = MaterialTheme.typography.bodySmall
+                )
+
+                Spacer(modifier = Modifier.height(16.dp))
+                Text(
+                    text = "2. Financial Transactions",
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.Bold
+                )
+                Text(
+                    text = "All M-Pesa payments initiated through this app are subject to Safaricom's terms and conditions. The Greggory Firm is not liable for network delays caused by third-party telecommunications providers.",
+                    style = MaterialTheme.typography.bodySmall
+                )
+
+                Spacer(modifier = Modifier.height(24.dp))
+                Text(
+                    text = "Privacy Policy",
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.primary
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = "Your privacy is our priority. This section explains how we handle your data.",
+                    style = MaterialTheme.typography.bodyMedium
+                )
+
+                Spacer(modifier = Modifier.height(16.dp))
+                Text(
+                    text = "1. Data Collection",
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.Bold
+                )
+                Text(
+                    text = "We collect your name, email, phone number, and project-related data to provide a tailored experience. Profile photos are used solely for portal personalization.",
+                    style = MaterialTheme.typography.bodySmall
+                )
+
+                Spacer(modifier = Modifier.height(16.dp))
+                Text(
+                    text = "2. Data Security & Routing",
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.Bold
+                )
+                Text(
+                    text = "We implement 'Set in Stone' routing policies. Your data is isolated at the database level and encrypted using AES-256 GCM. We do not sell your personal information to third parties.",
+                    style = MaterialTheme.typography.bodySmall
+                )
+
+                Spacer(modifier = Modifier.height(16.dp))
+                Text(
+                    text = "3. AI Telemetry",
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.Bold
+                )
+                Text(
+                    text = "Our autonomous monitoring engine collects system performance data. All PII (Personally Identifiable Information) is automatically redacted before transmission to our firm's analysts.",
+                    style = MaterialTheme.typography.bodySmall
+                )
+
+                Spacer(modifier = Modifier.height(32.dp))
+                Text(
+                    text = "Last updated: October 2023",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = Color.Gray
+                )
+                Spacer(modifier = Modifier.height(16.dp))
             }
         }
     }

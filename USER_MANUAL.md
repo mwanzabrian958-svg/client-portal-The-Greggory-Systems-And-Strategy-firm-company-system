@@ -6,8 +6,9 @@ Welcome to your mission control. This application is designed to give you comple
 
 ## 🏁 Getting Started
 
-### 1. Secure Login
-*   Open the app and log in using your registered email and password.
+### 1. Secure Login & Registration
+*   **Account Creation:** Fill in your details on the Sign-Up screen.
+*   **Legal Agreement:** You must review and agree to our **Terms of Use and Privacy Policy**. Tap the highlighted link above the "Sign Up" button to read the full document.
 *   **Biometric Activation:** On your first successful login, you will be prompted to enable Fingerprint or Face ID. This ensures your project data remains private even if your phone is unlocked.
 
 ### 2. The Dashboard (Mission Control)
@@ -30,12 +31,21 @@ We have simplified the payment process using M-Pesa integration.
 ### Quick Pay (STK Push)
 1. Go to **Financial Archive**.
 2. Tap the **PAY** button on any pending invoice.
-3. Enter your M-Pesa phone number.
+3. Enter your M-Pesa phone number. The app will automatically copy the company transfer number to your clipboard as a backup.
 4. You will receive a prompt on your phone to enter your M-Pesa PIN.
-5. Once confirmed, your invoice status will update to **PAID** instantly.
+5. **Auto-Verification:** Once Safaricom sends you the confirmation message, the app will automatically detect it and sync the record to the firm's database. No manual input is required.
+6. A downloadable digital receipt will appear in your **Support Inbox** shortly after.
 
 ### Manual Payment
-*   If you prefer manual payment, the app provides the firm's Paybill/Number details directly in the payment dialog for easy copy-pasting.
+*   If you prefer manual payment, the app provides the firm's Paybill/Number details directly in the payment dialog. You can also manually submit a transaction code if the auto-interceptor is disabled on your device.
+
+---
+
+## 📶 Connectivity & Offline Mode
+The portal is designed for high-availability.
+*   **Offline Mode:** If you lose internet access, a red status bar will appear. You can still view all your project details and financial history, which are stored in a secure local vault.
+*   **Automatic Sync:** The app will silently refresh and reconcile all records as soon as you are back online.
+
 
 ---
 

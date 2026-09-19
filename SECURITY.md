@@ -19,19 +19,34 @@ Access to the dashboard is protected by a mandatory biometric gateway.
 *   **Implementation:** Uses the `androidx.biometric` library to verify Fingerprint, Face, or Device Credential.
 *   **Routing Lock:** The UI remains in a blank "Secured" state until authentication is successful, preventing screen-scraping of project data during app transitions.
 
-### 4. Global Network Interception & Routing
+### 4. Privacy Transparency & Legal Consent
+*   **Integrated Policy:** The application provides a full-page Privacy Policy accessible directly from the registration screen.
+*   **Explicit Consent:** User registration is locked until explicit agreement to the security and data handling policies is recorded.
+*   **Telemetry Disclosure:** Transparent disclosure of how the AI Telemetry engine operates, including PII redaction processes, is provided to the user before account creation.
+
+### 5. Global Network Interception & Routing
 We use a centralized `OkHttp` interceptor within the `RetrofitClient` architecture:
 *   **Automatic Injection:** Every outgoing request is intercepted before transmission to add the `Authorization`, `X-Greggory-Client-ID`, and `X-Routing-Policy` headers.
 *   **Routing Integrity Validation:** The app performs client-side validation on all incoming data objects (Projects, Invoices, Reports) using the `DataRouter` utility to ensure the `client_id` matches the authenticated session, providing a second layer of defense against accidental cross-tenant data leakage.
 *   **Server-Side Silos:** The backend uses these headers to partition queries, ensuring a client only ever sees data mapped to their specific ID in the `the_greggory_systems_and_strategy_firm_db_main` schema.
 
-### 5. Code Hardening (ProGuard)
+### 5. Automated Data Sanitation
+The app features an autonomous AI monitor (`AiIssueMonitor`) that protects PII (Personally Identifiable Information).
+*   **Log Redaction:** Before any telemetry or crash reports are sent to the firm's pipeline, a sanitation engine scrubs sensitive fields like `password`, `token`, `bearer`, and `mpesa` codes using high-performance regex filters.
+
+### 6. Session Guard & Nuclear Wipe
+The application ensures that data never lingers on an inactive device.
+*   **401 Enforcement:** Upon any unauthorized network response, the app immediately triggers an expulsion sequence.
+*   **Database Purge:** During logout or session expulsion, the `database.clearAllTables()` command is executed, permanently deleting all cached projects, invoices, and strategy communications from the physical disk.
+
+### 7. Code Hardening (ProGuard)
 The app is built with **R8/ProGuard** enabled in release mode.
-*   **Obfuscation:** Internal routing logic and API endpoint structures are obfuscated to prevent reverse engineering.
+*   **Obfuscation:** Internal routing logic, "Set in Stone" policies, and API endpoint structures are obfuscated to prevent reverse engineering.
 *   **Shrinking:** Unused code and resources are removed to reduce the attack surface.
 
 ## Backend Infrastructure
-*   **Production API:** `https://w-the-greggory-systems-and-strategy-firm-vik4.onrender.com`
+*   **Production API:** `https://the-greggory-systems-and-strategy-firm-jz7i.onrender.com/`
 *   **Encryption:** Mandatory TLS 1.3 for all data in transit.
 *   **Database:** Aiven Cloud MySQL with enforced SSL connections.
 *   **Persistence:** Tokens follow a strict `7-day` rotation policy.
+

@@ -13,8 +13,9 @@ For detailed information, please refer to the following guides:
 
 ## 🚀 Key Features
 
-### 👤 Profile Management
+### 👤 Profile Management & Compliance
 *   **Dynamic Photo Uploader:** An interactive profile photo uploader on the Sign-Up screen. Users can tap the company logo or the `+` button to select a personal photo, which dynamically replaces the branding to personalize the experience.
+*   **Legal Transparency:** Integrated full-page Terms of Use and Privacy Policy accessible directly from the registration flow to ensure client compliance and data handling awareness.
 *   **Secure Authentication:** Integrated with the firm's central authentication system.
 
 ### 🔐 Security & Data Routing (Set in Stone)
@@ -26,8 +27,15 @@ For detailed information, please refer to the following guides:
 
 ### 📊 Mission Control (Dashboard)
 *   **Live KPI Tracking:** Real-time visibility into "Active Projects" and "Open Invoices" pulled directly from the cloud database.
+*   **Offline First:** Uses a Room-based Repository pattern to ensure data is available instantly, even without a connection.
 *   **Project Ledger:** Detailed lists of active and completed projects with progress tracking.
-*   **Financial Hub:** Comprehensive billing section showing invoice status (Paid/Pending) with integrated payment triggers.
+*   **Financial Hub:** Triple-redundancy M-Pesa tracking (STK Push, SMS Interceptor, and Firebase Receipt Caching).
+
+### 🤖 Intelligent Operations
+*   **AI Telemetry:** Autonomous background monitor that detects, redacts, and reports issues with priority heuristics.
+*   **Session Guard:** Automatic "Nuclear Wipe" of local caches upon session expiry or logout.
+*   **Live Connectivity Bar:** Real-time UI feedback when switching to offline/cache modes.
+
 
 ## 🛠 Tech Stack
 *   **UI:** Jetpack Compose (Modern Declarative UI)
@@ -64,13 +72,13 @@ adb install -r app/build_final_v2/outputs/apk/debug/app-debug.apk
 ```
 
 ## 🌐 Backend Integration
-The app is fully synchronized with the Greggory Firm production environment using a dual-node failover architecture:
-*   **Production API:** `https://w-the-greggory-systems-and-strategy-firm-vik4.onrender.com`
-*   **Primary DB (Cloud):** Aiven Cloud MySQL (`mysql-3ab0daba-thegreggorysystemsandstrategyfirm-dd1d.j.aivencloud.com:28067`)
-*   **Secondary DB (Local):** XAMPP MariaDB (`127.0.0.1:3306`)
-*   **Database Schema:** `the_greggory_systems_and_strategy_firm_db_main` (Default: `defaultdb`)
+The app is fully synchronized with the Greggory Firm production environment:
+*   **Production API:** `https://the-greggory-systems-and-strategy-firm-jz7i.onrender.com/`
+*   **Primary DB (Cloud):** Aiven Cloud MySQL
 *   **Auth Protocol:** Locked database-generated terminal tokens.
-*   **Financial Gateway:** M-Pesa Daraja STK Integration (Shortcode: 174379).
+*   **Financial Gateway:** Triple-Redundancy M-Pesa Integration (STK Push + Auto-Interceptor).
+*   **AI Monitoring:** Autonomous background telemetry engine with priority heuristics.
+
 
 ---
 *Developed for The Greggory Systems & Strategy Firm.*

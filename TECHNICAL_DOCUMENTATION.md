@@ -52,10 +52,37 @@ The project uses two primary build variants:
 com.greggory.portal/
 ├── data/
 │   ├── api/          # Retrofit Interfaces & Request/Response Models
-│   └── local/        # Room Database, DAOs, & Preferences Manager
+│   ├── local/        # Room Database, DAOs, & Preferences Manager
+│   └── repository/   # Offline Sync Repository (Source of Truth)
 ├── ui/
+│   ├── components/   # Shared UI components (Network Bar, etc.)
 │   ├── navigation/   # Compose Navigation Graphs & Routes
 │   ├── screens/      # Individual UI Screens (Compose)
 │   └── theme/        # Material 3 Color Schemes & Typography
-└── utils/            # Security, Biometrics, & Notification Helpers
+└── utils/            # AI Monitoring, M-Pesa Interceptor, & Security
 ```
+
+---
+
+## 6. Advanced Enterprise Features (Finalized)
+
+### Legal & Compliance Integration
+*   **Annotated UI Strings:** The `SignupScreen` uses `buildAnnotatedString` to provide inline clickable links for legal documents.
+*   **Scoped Dialogs:** Terms & Privacy content is delivered via a full-screen `Dialog` component to maintain state continuity in the registration flow.
+*   **Privacy Transparency:** Explicit documentation of AI Telemetry and Data Isolation is now provided to the client during onboarding.
+
+### Autonomous AI Telemetry (`AiIssueMonitor`)
+*   **Global Exception Hook:** Intercepts uncaught crashes across all threads.
+*   **Heuristic Priority Engine:** Analyzes stack traces to assign `high/medium/low` priority.
+*   **PII Scrubbing:** Automatically redacts tokens, passwords, and secrets from logs before cloud transmission.
+
+### Triple-Redundancy Accounting
+*   **M-Pesa AutoReconciler:** A `NotificationListenerService` that intercepts successful payment confirmations and pushes them to the backend instantly.
+*   **Clipboard Integration:** Automatically copies company billing details for the user during STK Push triggers.
+*   **Firebase Receipt Caching:** Automated downstream delivery of downloadable receipts into the local `messages` Room table.
+
+### Data Resiliency & Privacy
+*   **Offline Repository Pattern:** UI observes Room Flows; database updates silently in the background.
+*   **Network Status Banner:** Real-time UI indicator for offline/cache-only modes.
+*   **Nuclear Wipe:** All local caches (Projects, Invoices, Messages) are programmatically purged on logout or session expiry to ensure zero forensic footprint.
+

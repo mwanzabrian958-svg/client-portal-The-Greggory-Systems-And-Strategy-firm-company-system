@@ -7,8 +7,8 @@ Follow these steps in order to move the app from development to a live productio
 ## 🟢 PHASE 1: Database & Backend (Cloud)
 - [x] **1. Run SQL Schema:**
     *   Executed via automation script.
-    *   *Tables Created:* projects, invoices, project_reports, notifications.
-    *   *Status:* Completed by AI Assistant.
+    *   *Tables Created:* projects, invoices, project_reports, notifications, user_feedback, mpesa_transactions.
+    *   *Status:* Verified by AI Assistant.
 - [ ] **2. Update Render Environment Variables:**
     *   Login to [Render Dashboard](https://dashboard.render.com/).
     *   Navigate to your Backend Service > **Environment**.
