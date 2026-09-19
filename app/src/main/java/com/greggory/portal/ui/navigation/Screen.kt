@@ -1,6 +1,7 @@
 package com.greggory.portal.ui.navigation
 
 sealed class Screen(val route: String) {
+    object Onboarding : Screen("onboarding")
     object Login : Screen("login")
     object Signup : Screen("signup")
     object Portal : Screen("portal")

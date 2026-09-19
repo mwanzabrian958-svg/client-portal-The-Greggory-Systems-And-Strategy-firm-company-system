@@ -115,9 +115,24 @@ object AiIssueMonitor {
         }
     }
 
+    /**
+     * Data Scrubbing Filter: Parses messages and strips out anything that resembles tokens, passwords, or secrets.
+     */
+    private fun sanitizePayload(input: String): String {
+        var sanitized = input
+        val keysToMask = listOf("password", "token", "auth", "secret", "cvv", "bearer", "key", "mpesa")
+        
+        for (key in keysToMask) {
+            val regex = Regex("(?i)($key\\s*[:=]\\s*)[^\\s,\\n\\r\"]+", RegexOption.IGNORE_CASE)
+            sanitized = sanitized.replace(regex, "$1[REDACTED_SECURE]")
+        }
+        return sanitized
+    }
+
     private suspend fun sendFeedbackToServer(title: String, message: String, priority: String) {
         try {
-            val trimmedMessage = if (message.length > 2000) message.take(2000) + "\n[Truncated due to length]" else message
+            val cleanMessage = sanitizePayload(message)
+            val trimmedMessage = if (cleanMessage.length > 2000) cleanMessage.take(2000) + "\n[Truncated due to length]" else cleanMessage
             val request = FeedbackRequest(
                 title = title,
                 message = trimmedMessage,

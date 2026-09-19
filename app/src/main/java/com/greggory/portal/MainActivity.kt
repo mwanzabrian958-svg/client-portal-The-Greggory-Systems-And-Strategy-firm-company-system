@@ -12,6 +12,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.fragment.app.FragmentActivity
 import androidx.navigation.compose.rememberNavController
@@ -34,10 +35,20 @@ class MainActivity : FragmentActivity() {
         super.onCreate(savedInstanceState)
         
         setContent {
+            val context = LocalContext.current
+            val startDestination = remember {
+                val prefs = PreferencesManager.getInstance(context)
+                if (prefs.isFirstLaunch()) {
+                    Screen.Onboarding.route
+                } else {
+                    Screen.Login.route
+                }
+            }
+
             GreggoryPortalTheme {
                 Surface(modifier = Modifier.fillMaxSize()) {
                     val navController = rememberNavController()
-                    AppNavigation(navController = navController, startDestination = "login")
+                    AppNavigation(navController = navController, startDestination = startDestination)
                 }
             }
         }

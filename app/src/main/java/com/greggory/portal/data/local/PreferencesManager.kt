@@ -98,4 +98,9 @@ class PreferencesManager private constructor(context: Context) {
 
     fun saveCurrency(currency: String) { sharedPreferences.edit().putString("currency", currency).apply() }
     fun getCurrency(): String = sharedPreferences.getString("currency", "KSH") ?: "KSH"
+
+    fun saveFirstLaunchCompleted(completed: Boolean) {
+        sharedPreferences.edit().putBoolean("first_launch_completed", completed).apply()
+    }
+    fun isFirstLaunch(): Boolean = !sharedPreferences.getBoolean("first_launch_completed", false)
 }

@@ -5,6 +5,7 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import com.greggory.portal.ui.screens.LoginScreen
+import com.greggory.portal.ui.screens.OnboardingScreen
 import com.greggory.portal.ui.screens.PortalScreen
 import com.greggory.portal.ui.screens.SignupScreen
 import com.greggory.portal.ui.screens.ForgotPasswordScreen
@@ -16,6 +17,15 @@ import androidx.navigation.navArgument
 @Composable
 fun AppNavigation(navController: NavHostController, startDestination: String = Screen.Login.route) {
     NavHost(navController = navController, startDestination = startDestination) {
+        composable(Screen.Onboarding.route) {
+            OnboardingScreen(
+                onOnboardingComplete = {
+                    navController.navigate(Screen.Login.route) {
+                        popUpTo(Screen.Onboarding.route) { inclusive = true }
+                    }
+                }
+            )
+        }
         composable(Screen.Login.route) {
             LoginScreen(
                 onLoginSuccess = {
