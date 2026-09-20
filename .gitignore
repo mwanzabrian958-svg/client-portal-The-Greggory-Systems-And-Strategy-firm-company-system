@@ -20,3 +20,15 @@
 .cxx
 local.properties
 *.hprof
+
+# Kotlin
+.kotlin/
+
+# Signing files
+signing.properties
+*.jks
+*.keystore
+
+# Build directories
+build/
+app/build/
