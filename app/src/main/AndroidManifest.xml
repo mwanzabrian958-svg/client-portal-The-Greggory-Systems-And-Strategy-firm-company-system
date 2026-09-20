@@ -10,14 +10,14 @@
         android:name=".GreggoryApplication"
         android:allowBackup="false"
         android:icon="@drawable/ic_launcher"
-        android:label="Greggory Portal"
+        android:label="GSSF-client portal"
         android:supportsRtl="true"
         android:enableOnBackInvokedCallback="true"
         android:theme="@style/Theme.GreggoryPortal">
         <activity
             android:name=".MainActivity"
             android:exported="true"
-            android:label="Greggory Portal"
+            android:label="GSSF-client portal"
             android:theme="@style/Theme.App.Starting">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
