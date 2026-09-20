@@ -3,64 +3,141 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GSSF-client portal | Download</title>
+    <title>GSSF-client portal | Secure Download</title>
     <style>
+        :root {
+            --primary: #1a73e8;
+            --bg: #f8f9fa;
+            --text: #202124;
+        }
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #f4f7f9;
-            color: #333;
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
             display: flex;
             justify-content: center;
             align-items: center;
-            height: 100vh;
+            min-height: 100vh;
             margin: 0;
+            padding: 20px;
         }
         .container {
             background: white;
-            padding: 2rem;
-            border-radius: 12px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            padding: 2.5rem;
+            border-radius: 16px;
+            box-shadow: 0 8px 30px rgba(0,0,0,0.08);
             text-align: center;
-            max-width: 400px;
-            width: 90%;
+            max-width: 450px;
+            width: 100%;
+        }
+        .logo {
+            width: 80px;
+            height: 80px;
+            margin-bottom: 1.5rem;
+            border-radius: 20%;
+            background: var(--primary);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 2rem;
+            font-weight: bold;
         }
         h1 {
-            color: #1a73e8;
+            font-size: 1.75rem;
             margin-bottom: 0.5rem;
+            color: #1a73e8;
         }
         p {
-            color: #666;
-            line-height: 1.5;
+            color: #5f6368;
+            line-height: 1.6;
             margin-bottom: 2rem;
         }
-        .download-btn {
-            display: inline-block;
-            background-color: #1a73e8;
-            color: white;
-            padding: 12px 24px;
-            text-decoration: none;
-            border-radius: 6px;
+        .step-box {
+            background: #f1f3f4;
+            padding: 1rem;
+            border-radius: 8px;
+            text-align: left;
+            margin-bottom: 1.5rem;
+            border-left: 4px solid var(--primary);
+        }
+        .step-title {
             font-weight: bold;
-            transition: background-color 0.2s;
+            display: block;
+            margin-bottom: 0.25rem;
+            color: var(--text);
+        }
+        .step-desc {
+            font-size: 0.9rem;
+            color: #5f6368;
+        }
+        .download-btn {
+            display: block;
+            background-color: var(--primary);
+            color: white;
+            padding: 16px 32px;
+            text-decoration: none;
+            border-radius: 8px;
+            font-weight: bold;
+            font-size: 1.1rem;
+            transition: transform 0.2s, background-color 0.2s;
+            cursor: pointer;
+            border: none;
         }
         .download-btn:hover {
             background-color: #1557b0;
+            transform: translateY(-2px);
+        }
+        .download-btn:active {
+            transform: translateY(0);
         }
         .footer {
             margin-top: 2rem;
+            font-size: 0.75rem;
+            color: #9aa0a6;
+        }
+        .badge {
+            display: inline-block;
+            background: #e8f0fe;
+            color: #1967d2;
+            padding: 4px 12px;
+            border-radius: 20px;
             font-size: 0.8rem;
-            color: #999;
+            margin-bottom: 1rem;
+            font-weight: 500;
         }
     </style>
 </head>
 <body>
     <div class="container">
+        <div class="logo">GS</div>
+        <div class="badge">Official Firm Release</div>
         <h1>GSSF-client portal</h1>
-        <p>Unified secure portal for The Greggory Systems & Strategy Firm clients.</p>
-        <a href="GSSF-client-portal.apk" class="download-btn">Download for Android</a>
+        <p>Unified secure portal for The Greggory Systems & Strategy Firm.</p>
+
+        <div class="step-box">
+            <span class="step-title">Step 1: Preparation</span>
+            <span class="step-desc">When prompted, tap <b>"Download anyway"</b>. This is safe as the app is hosted on our official firm repository.</span>
+        </div>
+
+        <div class="step-box">
+            <span class="step-title">Step 2: Installation</span>
+            <span class="step-desc">Open the file and tap <b>"Settings"</b> if prompted to allow unknown apps, then toggle <b>"Allow from this source"</b>.</span>
+        </div>
+
+        <a href="GSSF-client-portal.apk" class="download-btn" onclick="primeUser()">Download for Android</a>
+
         <div class="footer">
-            Version 1.0.0 | &copy; 2026 The Greggory Systems & Strategy Firm
+            Build 1.0.0-Stable | AI-Telemetry Enabled<br>
+            &copy; 2026 The Greggory Systems & Strategy Firm
         </div>
     </div>
+
+    <script>
+        function primeUser() {
+            console.log("Priming user for Android security prompts...");
+            // We can add a small delay or a visual confirmation here
+        }
+    </script>
 </body>
 </html>
