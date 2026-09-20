@@ -9,7 +9,8 @@
     <application
         android:name=".GreggoryApplication"
         android:allowBackup="false"
-        android:icon="@drawable/ic_launcher"
+        android:icon="@mipmap/ic_launcher"
+        android:roundIcon="@mipmap/ic_launcher"
         android:label="GSSF-client portal"
         android:supportsRtl="true"
         android:enableOnBackInvokedCallback="true"
