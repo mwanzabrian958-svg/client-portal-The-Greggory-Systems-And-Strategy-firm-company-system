@@ -1,0 +1,12 @@
+{
+  "title": "GSSF-client portal",
+  "description": "Android Client Portal for The Greggory Systems & Strategy Firm",
+  "icon": "app/src/main/res/drawable/ic_launcher.png",
+  "menu": [
+    {
+      "html": "Download APK",
+      "icon": "fa-solid fa-download",
+      "href": "docs/index.html"
+    }
+  ]
+}
