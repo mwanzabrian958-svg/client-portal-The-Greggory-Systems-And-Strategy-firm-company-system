@@ -96,7 +96,7 @@ object RetrofitClient {
         okhttp3.CertificatePinner.DEFAULT
     }
 
-    private val httpClient = OkHttpClient.Builder()
+    internal val httpClient = OkHttpClient.Builder()
         .connectTimeout(60, java.util.concurrent.TimeUnit.SECONDS)
         .readTimeout(60, java.util.concurrent.TimeUnit.SECONDS)
         .writeTimeout(60, java.util.concurrent.TimeUnit.SECONDS)

@@ -41,15 +41,24 @@ import com.greggory.portal.utils.BiometricHelper
 import kotlinx.coroutines.launch
 
 @Composable
-fun SettingsScreen(onLogout: () -> Unit, onNavigateToProfile: () -> Unit) {
+fun SettingsScreen(
+    onLogout: () -> Unit, 
+    onNavigateToProfile: () -> Unit,
+    dashboardData: DashboardResponse? = null
+) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val prefs = remember { PreferencesManager.getInstance(context) }
     val database = remember { AppDatabase.getDatabase(context) }
     
-    val userName = prefs.getUserName() ?: "Client User"
-    val userEmail = prefs.getUserEmail() ?: ""
-    val initials = userName.split(" ").mapNotNull { it.firstOrNull()?.uppercase() }.take(2).joinToString("")
+    val userFromDash = dashboardData?.dashboard?.user
+    val userName = userFromDash?.firstName ?: prefs.getUserName() ?: "Client User"
+    val userEmail = userFromDash?.email ?: prefs.getUserEmail() ?: ""
+    val initials = userName.split(" ")
+        .filter { it.isNotEmpty() }
+        .mapNotNull { it.firstOrNull()?.uppercase() }
+        .take(2)
+        .joinToString("")
     
     var backgroundType by remember { mutableStateOf(prefs.getBackgroundType()) }
     var backgroundSource by remember { mutableStateOf(prefs.getBackgroundSource()) }

@@ -43,16 +43,32 @@ import okhttp3.RequestBody.Companion.asRequestBody
 import java.io.File
 
 @Composable
-fun ProfileScreen() {
+fun ProfileScreen(dashboardData: DashboardResponse? = null) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val prefs = remember { PreferencesManager.getInstance(context) }
     
-    var firstName by remember { mutableStateOf(prefs.getUserName() ?: "") }
-    var email by remember { mutableStateOf(prefs.getUserEmail() ?: "") }
-    var phoneNumber by remember { mutableStateOf(prefs.getUserPhone() ?: "") }
+    // Fallback logic: Use Dashboard data first, then cached prefs
+    val userFromDash = dashboardData?.dashboard?.user
+    val initialName = userFromDash?.firstName ?: prefs.getUserName() ?: ""
+    val initialEmail = userFromDash?.email ?: prefs.getUserEmail() ?: ""
+    val initialPhone = userFromDash?.phone ?: prefs.getUserPhone() ?: ""
+    val missionBriefing = userFromDash?.missionBriefing ?: "Strategic partnership in progress."
+
+    var firstName by remember { mutableStateOf(initialName) }
+    var email by remember { mutableStateOf(initialEmail) }
+    var phoneNumber by remember { mutableStateOf(initialPhone) }
     var isUpdating by remember { mutableStateOf(false) }
     var selectedImageUri by remember { mutableStateOf<Uri?>(null) }
+
+    // Synchronize local state if dashboard data arrives late
+    LaunchedEffect(userFromDash) {
+        if (userFromDash != null) {
+            firstName = userFromDash.firstName
+            email = userFromDash.email
+            phoneNumber = userFromDash.phone ?: ""
+        }
+    }
 
     val photoPickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
@@ -193,11 +209,36 @@ fun ProfileScreen() {
             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
         ) {
             Column(modifier = Modifier.padding(16.dp)) {
-                RelationshipStatItem("Total Projects", "4 Active / 12 Total", Icons.Default.History)
+                Text(
+                    text = "MISSION BRIEFING",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.primary,
+                    fontWeight = FontWeight.Bold
+                )
+                Text(
+                    text = missionBriefing,
+                    style = MaterialTheme.typography.bodyMedium,
+                    modifier = Modifier.padding(vertical = 8.dp)
+                )
+                HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp))
+                
+                RelationshipStatItem(
+                    "Account Status", 
+                    userFromDash?.primaryRole?.uppercase() ?: "CLIENT", 
+                    Icons.Default.Person
+                )
                 Spacer(modifier = Modifier.height(12.dp))
-                RelationshipStatItem("Financial Standing", "Good (No Overdue)", Icons.Default.AccountBalanceWallet)
+                RelationshipStatItem(
+                    "Total Projects", 
+                    "${dashboardData?.dashboard?.businessSummary?.activeProjects ?: 0} Active", 
+                    Icons.Default.History
+                )
                 Spacer(modifier = Modifier.height(12.dp))
-                RelationshipStatItem("System Efficiency", "+22% Improvement", Icons.Default.TrendingUp)
+                RelationshipStatItem(
+                    "Financial Standing", 
+                    if ((dashboardData?.dashboard?.businessSummary?.openInvoices ?: 0) > 0) "Action Required" else "Good Standing", 
+                    Icons.Default.AccountBalanceWallet
+                )
             }
         }
         
