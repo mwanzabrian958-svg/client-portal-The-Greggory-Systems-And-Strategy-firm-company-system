@@ -242,7 +242,7 @@ data class Project(
     @SerializedName("project_name") val name: String, 
     val status: String, 
     @SerializedName("progress_percentage") val progress: Int, 
-    @SerializedName("user_id") val clientId: Int,
+    @SerializedName("user_id", alternate = ["client_id"]) val clientId: Int,
     val priority: String? = "Medium",
     @SerializedName("manager_name") val manager: String? = "Team Lead",
     @SerializedName("end_date") val deadline: String? = null,
@@ -299,7 +299,7 @@ data class Invoice(
     val id: Int,
     val amount: Double,
     val status: String,
-    @SerializedName("user_id") val clientId: Int,
+    @SerializedName("user_id", alternate = ["client_id"]) val clientId: Int,
     @SerializedName("invoice_number") val invoiceNumber: String? = null,
     @SerializedName("project_name") val projectName: String? = null,
     @SerializedName("due_date") val dueDate: String? = null
@@ -340,13 +340,12 @@ data class Report(
     @SerializedName("file_size") val file_size: Long,
     @SerializedName("report_date") val report_date: String,
     @SerializedName("project_name") val project_name: String,
-    @SerializedName("client_id") val client_id: Int
+    @SerializedName("user_id", alternate = ["client_id"]) val clientId: Int
 ) {
     val fileType: String get() = file_type
     val fileSize: Long get() = file_size
     val reportDate: String get() = report_date
     val projectName: String get() = project_name
-    val clientId: Int get() = client_id
 }
 
 data class ProjectsResponse(val success: Boolean, val projects: List<Project>)

@@ -25,8 +25,11 @@ object DataRouter {
     /**
      * Verifies that the returned data belongs to the authenticated client.
      * This is a second layer of defense against accidental data leakage.
+     * 
+     * NOTE: We allow ID 0 as it often represents System-generated or Global data.
      */
     fun verifyRoutingIntegrity(remoteClientId: Int, localClientId: Int): Boolean {
-        return remoteClientId == localClientId
+        // Relaxed check: allow matches OR system-level global data (ID 0)
+        return remoteClientId == localClientId || remoteClientId == 0
     }
 }

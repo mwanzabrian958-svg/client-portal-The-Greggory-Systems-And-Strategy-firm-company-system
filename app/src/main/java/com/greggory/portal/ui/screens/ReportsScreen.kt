@@ -71,7 +71,7 @@ fun ReportsScreen(reports: List<Report>, onViewPdf: (String, String) -> Unit) {
             file_size = 245000,
             report_date = "2024-09-01",
             project_name = "Legal & Compliance",
-            client_id = 0
+            clientId = 0
         ),
         Report(
             id = -2,
@@ -81,7 +81,7 @@ fun ReportsScreen(reports: List<Report>, onViewPdf: (String, String) -> Unit) {
             file_size = 180000,
             report_date = "2024-09-01",
             project_name = "Legal & Compliance",
-            client_id = 0
+            clientId = 0
         )
     )
 
@@ -132,8 +132,26 @@ fun ReportsScreen(reports: List<Report>, onViewPdf: (String, String) -> Unit) {
 
         // Mock Proposals (To show variety of jobs)
         val mockProposals = listOf(
-            Report(-10, "Proposal: Firm Networking Overhaul", "Detailed setup for Cisco failover networking.", "pdf", 1200000, "2024-09-12", "Networking", 0),
-            Report(-11, "Proposal: Mobile Client Portal V2", "Expansion of current Android app features.", "pdf", 950000, "2024-09-14", "Mobile Development", 0)
+            Report(
+                id = -10, 
+                title = "Proposal: Firm Networking Overhaul", 
+                summary = "Detailed setup for Cisco failover networking.", 
+                file_type = "pdf", 
+                file_size = 1200000, 
+                report_date = "2024-09-12", 
+                project_name = "Networking", 
+                clientId = 0
+            ),
+            Report(
+                id = -11, 
+                title = "Proposal: Mobile Client Portal V2", 
+                summary = "Expansion of current Android app features.", 
+                file_type = "pdf", 
+                file_size = 950000, 
+                report_date = "2024-09-14", 
+                project_name = "Mobile Development", 
+                clientId = 0
+            )
         )
 
         items(mockProposals) { proposal ->

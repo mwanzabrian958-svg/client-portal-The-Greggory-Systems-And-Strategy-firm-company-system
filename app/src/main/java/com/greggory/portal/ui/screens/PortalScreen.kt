@@ -151,6 +151,7 @@ fun PortalScreen(onLogout: () -> Unit, onViewPdf: (String, String) -> Unit, onVi
 
                         if (isDashIntegrityValid) {
                             dashboardData = dashResponse.body()
+                            errorMessage = null // Clear any previous breach error if dashboard is now valid
                             body?.projects?.let { projects ->
                                 try {
                                     database.projectDao().clearProjects()
@@ -183,7 +184,7 @@ fun PortalScreen(onLogout: () -> Unit, onViewPdf: (String, String) -> Unit, onVi
                                 } catch (ignored: Exception) {}
                             }
                         } else {
-                            errorMessage = "Security Error: Dashboard Routing Integrity Breach Detected"
+                            errorMessage = "Security: Dashboard routing mismatch for User $userId"
                         }
                     }
 
@@ -198,7 +199,7 @@ fun PortalScreen(onLogout: () -> Unit, onViewPdf: (String, String) -> Unit, onVi
                                 database.reportDao().insertReports(reports.map { it.toEntity() })
                             } catch (ignored: Exception) {}
                         } else {
-                            errorMessage = "Security Error: Reports Routing Integrity Breach Detected"
+                            errorMessage = "Security: Reports routing mismatch for User $userId"
                         }
                     }
 
