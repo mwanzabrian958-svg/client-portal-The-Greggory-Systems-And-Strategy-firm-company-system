@@ -31,8 +31,8 @@ Security is the backbone of this project, defined by the "Set in Stone" routing 
 ## 3. Tech Stack Details
 | Component | Technology |
 | :--- | :--- |
-| **Language** | Kotlin 1.9.0 |
-| **UI Framework** | Jetpack Compose (Material 3) |
+| **Language** | Kotlin 2.0.21 |
+| **UI Framework** | Jetpack Compose (Material 3) - BOM 2025.01.00 |
 | **Networking** | Retrofit 2 + OkHttp 4 |
 | **JSON Parsing** | GSON |
 | **Image Loading** | Coil |

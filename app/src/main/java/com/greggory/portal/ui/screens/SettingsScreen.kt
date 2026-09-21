@@ -33,6 +33,7 @@ import androidx.compose.ui.unit.dp
 import androidx.fragment.app.FragmentActivity
 import coil.compose.AsyncImage
 import com.greggory.portal.R
+import com.greggory.portal.data.api.DashboardResponse
 import com.greggory.portal.data.api.RetrofitClient
 import com.greggory.portal.data.local.AppDatabase
 import com.greggory.portal.data.local.PreferencesManager
