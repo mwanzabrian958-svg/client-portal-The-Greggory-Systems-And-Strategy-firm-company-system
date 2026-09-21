@@ -24,6 +24,17 @@ if (Test-Path $apkPath) {
     Write-Host "🚚 Copying APK to docs/GSSF-client-portal.apk..." -ForegroundColor Yellow
     Copy-Item $apkPath "docs/GSSF-client-portal.apk" -Force
 
+    # 4. Verify Download URL in version.json
+    $versionFile = "docs/version.json"
+    $expectedUrl = "https://github.com/mwanzabrian958-svg/client-portal-The-Greggory-Systems-And-Strategy-firm-company-system/raw/main/docs/GSSF-client-portal.apk"
+    Write-Host "🔗 Verifying download URL in version.json..." -ForegroundColor Yellow
+    $json = Get-Content $versionFile | ConvertFrom-Json
+    if ($json.url -ne $expectedUrl) {
+        $json.url = $expectedUrl
+        $json | ConvertTo-Json -Depth 10 | Set-Content $versionFile
+        Write-Host "✅ Updated version.json URL to match the release link." -ForegroundColor Cyan
+    }
+
     Write-Host "✅ Deployment Ready!" -ForegroundColor Green
     Write-Host "Next steps:"
     Write-Host "1. Git add docs/GSSF-client-portal.apk"
