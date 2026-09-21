@@ -25,8 +25,10 @@ allprojects {
         mavenCentral()
         maven { url 'https://jitpack.io' }
     }
-    // Redirect build directory outside OneDrive to prevent file-locking and snapshotting errors
-    buildDir = "C:/android-builds/The-Greggory-Client-Portal/${project.name}"
+    // Redirect build directory outside OneDrive on Windows to prevent file-locking and snapshotting errors
+    if (System.getProperty('os.name').toLowerCase().contains('windows')) {
+        buildDir = "C:/android-builds/The-Greggory-Client-Portal/${project.name}"
+    }
 }
 
 task clean(type: Delete) {

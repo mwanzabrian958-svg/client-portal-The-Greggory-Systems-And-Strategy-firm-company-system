@@ -32,3 +32,6 @@ signing.properties
 # Build directories
 build/
 app/build/
+
+# Firebase
+app/google-services.json

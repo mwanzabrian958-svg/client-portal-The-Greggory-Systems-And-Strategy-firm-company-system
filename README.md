@@ -73,7 +73,7 @@ The project is configured with GitHub Actions for automated builds. To enable pr
 
 To install on the active emulator:
 ```powershell
-adb install -r app/build_final_v5/outputs/apk/release/app-release.apk
+adb install -r app/build/outputs/apk/release/app-release.apk
 ```
 
 ## 🌐 Backend Integration

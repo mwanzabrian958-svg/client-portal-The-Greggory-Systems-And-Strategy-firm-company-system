@@ -17,7 +17,6 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.foundation.text.ClickableText
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Visibility
@@ -31,13 +30,17 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.LinkAnnotation
 import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.TextLinkStyles
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextDecoration
+import androidx.compose.ui.text.withLink
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
@@ -226,26 +229,28 @@ fun SignupScreen(onSignupSuccess: () -> Unit, onBackToLogin: () -> Unit) {
                 
                 val annotatedText = buildAnnotatedString {
                     append("I agree to the ")
-                    pushStringAnnotation(tag = "TERMS", annotation = "terms")
-                    withStyle(style = SpanStyle(
-                        color = MaterialTheme.colorScheme.primary,
-                        fontWeight = FontWeight.Bold,
-                        textDecoration = TextDecoration.Underline
-                    )) {
+                    withLink(
+                        LinkAnnotation.Clickable(
+                            tag = "TERMS",
+                            styles = TextLinkStyles(
+                                style = SpanStyle(
+                                    color = MaterialTheme.colorScheme.primary,
+                                    fontWeight = FontWeight.Bold,
+                                    textDecoration = TextDecoration.Underline
+                                )
+                            ),
+                            linkInteractionListener = { 
+                                showTermsDialog = true 
+                            }
+                        )
+                    ) {
                         append("Terms of Use and Privacy Policy")
                     }
-                    pop()
                 }
 
-                ClickableText(
+                Text(
                     text = annotatedText,
-                    style = MaterialTheme.typography.bodySmall.copy(color = MaterialTheme.typography.bodySmall.color),
-                    onClick = { offset ->
-                        annotatedText.getStringAnnotations(tag = "TERMS", start = offset, end = offset)
-                            .firstOrNull()?.let {
-                                showTermsDialog = true
-                            }
-                    }
+                    style = MaterialTheme.typography.bodySmall
                 )
             }
 
