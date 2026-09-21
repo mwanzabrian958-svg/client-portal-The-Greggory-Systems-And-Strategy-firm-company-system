@@ -144,11 +144,15 @@ fun LoginScreen(
                                 if (token != null) {
                                     val prefs = PreferencesManager.getInstance(context)
                                     prefs.saveToken(token)
+                                    
+                                    // Use display name if available, otherwise combine first and last name
+                                    val fullName = body.displayName ?: "${body.firstName} ${body.lastName ?: ""}".trim()
+                                    
                                     // Backend returns user details at top level for login success
                                     prefs.saveUserInfo(
                                         body.id,
                                         body.email,
-                                        body.firstName,
+                                        fullName,
                                         body.phone ?: ""
                                     )
                                     
