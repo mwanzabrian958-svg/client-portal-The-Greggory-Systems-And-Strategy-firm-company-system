@@ -36,6 +36,8 @@ import com.greggory.portal.data.local.*
 import com.greggory.portal.ui.components.CustomBackground
 import com.greggory.portal.ui.components.SectionHeader
 import com.greggory.portal.utils.DataRouter
+import com.greggory.portal.utils.UpdateInfo
+import com.greggory.portal.utils.UpdateManager
 import kotlinx.coroutines.async
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -68,6 +70,71 @@ fun PortalScreen(onLogout: () -> Unit, onViewPdf: (String, String) -> Unit, onVi
     var isSearchLoading by remember { mutableStateOf(false) }
     
     var selectedProjectId by remember { mutableStateOf<Int?>(null) }
+
+    // Update States
+    var updateInfo by remember { mutableStateOf<UpdateInfo?>(null) }
+    var isDownloadingUpdate by remember { mutableStateOf(false) }
+    var downloadProgress by remember { mutableStateOf(0f) }
+
+    LaunchedEffect(Unit) {
+        val info = UpdateManager.checkForUpdates()
+        if (info != null) {
+            updateInfo = info
+        }
+    }
+
+    if (updateInfo != null) {
+        AlertDialog(
+            onDismissRequest = { if (!isDownloadingUpdate) updateInfo = null },
+            title = { Text("Update Available") },
+            text = {
+                Column {
+                    Text("A new version (${updateInfo!!.versionName}) of GSSF-client portal is available. This update includes:")
+                    Spacer(modifier = Modifier.height(8.dp))
+                    updateInfo!!.features.forEach { feature ->
+                        Text("• $feature", style = MaterialTheme.typography.bodySmall)
+                    }
+                    if (isDownloadingUpdate) {
+                        Spacer(modifier = Modifier.height(16.dp))
+                        LinearProgressIndicator(
+                            progress = { downloadProgress },
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                        Text(
+                            "Downloading update: ${(downloadProgress * 100).toInt()}%",
+                            style = MaterialTheme.typography.labelSmall
+                        )
+                    }
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        isDownloadingUpdate = true
+                        scope.launch {
+                            val success = UpdateManager.downloadAndInstall(context, updateInfo!!.url) { progress ->
+                                downloadProgress = progress
+                            }
+                            if (!success) {
+                                isDownloadingUpdate = false
+                                Toast.makeText(context, "Update failed to download", Toast.LENGTH_SHORT).show()
+                            }
+                        }
+                    },
+                    enabled = !isDownloadingUpdate
+                ) {
+                    Text("INSTALL UPDATE")
+                }
+            },
+            dismissButton = {
+                if (!isDownloadingUpdate) {
+                    TextButton(onClick = { updateInfo = null }) {
+                        Text("LATER")
+                    }
+                }
+            }
+        )
+    }
 
     BackHandler(enabled = isSearching || currentView != "Home" || selectedProjectId != null) {
         if (selectedProjectId != null) {
