@@ -18,7 +18,18 @@ Welcome to your mission control. This application is designed to give you comple
 ### 2. The Dashboard (Mission Control)
 *   **Active Projects:** See real-time progress percentages of your ongoing initiatives.
 *   **Open Invoices:** A quick glance at any outstanding balances.
-*   **Latest Updates:** Stay informed with notifications regarding project milestones or document uploads.
+*   **Direct Strategy Support:** Instant 1-tap channels (System Chat, Call, WhatsApp, SMS) located directly on your Home Screen.
+
+---
+
+## 🎯 Direct Strategy Support Channels Directive
+
+| Channel | Directive & Purpose | Technical Execution |
+| :--- | :--- | :--- |
+| 💬 **Direct System Chat ("Chat")** | In-app, encrypted messaging stream directly with Lead Strategists. | Launches **Strategy Chat Screen** (`/api/chat/send`), persisted locally in Room DB for offline resilience. |
+| 📞 **Direct Phone Call ("Call")** | Direct voice hotline connection (`+254 115 525 854`). | Launches Android Phone Dialer via `ACTION_DIAL` (`tel:+254115525854`). |
+| 💬 **WhatsApp Stream ("WhatsApp")** | Encrypted instant messaging and document sharing via official WhatsApp business desk. | Opens WhatsApp conversation window (`https://api.whatsapp.com/send?phone=254115525854`). |
+| ✉️ **Direct SMS ("SMS")** | Low-bandwidth or offline cellular SMS messaging line. | Opens native Android SMS app via `ACTION_VIEW` (`sms:+254115525854`). |
 
 ---
 
