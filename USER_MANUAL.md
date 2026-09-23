@@ -2,6 +2,10 @@
 
 Welcome to your mission control. This application is designed to give you complete transparency and control over your partnership with **The Greggory Systems & Strategy Firm**.
 
+## 📥 App Download Links
+* **Web Download Page:** [https://mwanzabrian958-svg.github.io/client-portal-The-Greggory-Systems-And-Strategy-firm-company-system/](https://mwanzabrian958-svg.github.io/client-portal-The-Greggory-Systems-And-Strategy-firm-company-system/)
+* **Direct APK Download:** [GSSF-client-portal.apk](https://github.com/mwanzabrian958-svg/client-portal-The-Greggory-Systems-And-Strategy-firm-company-system/raw/main/docs/GSSF-client-portal.apk)
+
 ---
 
 ## 🏁 Getting Started
