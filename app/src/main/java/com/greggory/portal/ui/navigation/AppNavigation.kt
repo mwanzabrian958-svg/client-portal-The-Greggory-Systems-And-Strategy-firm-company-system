@@ -10,6 +10,7 @@ import com.greggory.portal.ui.screens.PortalScreen
 import com.greggory.portal.ui.screens.SignupScreen
 import com.greggory.portal.ui.screens.ForgotPasswordScreen
 import com.greggory.portal.ui.screens.PdfViewerScreen
+import com.greggory.portal.ui.screens.StrategyChatScreen
 import androidx.navigation.NavType
 import androidx.navigation.navArgument
 
@@ -87,8 +88,14 @@ fun AppNavigation(navController: NavHostController, startDestination: String = S
                     },
                     onViewProject = { _ ->
                         // Navigation handled via state inside PortalScreen for instant data availability
+                    },
+                    onNavigateToChat = {
+                        navController.navigate(Screen.StrategyChat.route)
                     }
                 )
+            }
+            composable(Screen.StrategyChat.route) {
+                StrategyChatScreen(onBack = { navController.popBackStack() })
             }
             composable(
                 route = Screen.PdfViewer.route,

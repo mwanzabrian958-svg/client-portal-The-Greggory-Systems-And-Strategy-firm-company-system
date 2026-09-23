@@ -23,12 +23,14 @@ import com.greggory.portal.ui.theme.GreggoryPortalTheme
 
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.platform.LocalContext
+import androidx.fragment.app.FragmentActivity
 import com.greggory.portal.R
 import com.greggory.portal.data.api.RetrofitClient
 import com.greggory.portal.data.api.LoginRequest
 import com.greggory.portal.data.api.PushTokenRequest
 import com.greggory.portal.data.api.LoginResponse
 import com.greggory.portal.data.local.PreferencesManager
+import com.greggory.portal.utils.BiometricHelper
 import com.google.firebase.messaging.FirebaseMessaging
 import com.google.gson.Gson
 import kotlinx.coroutines.launch
@@ -43,6 +45,25 @@ fun LoginScreen(
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var passwordVisible by remember { mutableStateOf(false) }
+    
+    val context = LocalContext.current
+    val prefs = remember { PreferencesManager.getInstance(context) }
+    
+    LaunchedEffect(Unit) {
+        if (prefs.isBiometricEnabled() && prefs.getToken() != null) {
+            if (BiometricHelper.isBiometricAvailable(context)) {
+                BiometricHelper.showBiometricPrompt(
+                    activity = context as FragmentActivity,
+                    onSuccess = {
+                        onLoginSuccess()
+                    },
+                    onError = {
+                        // User can still type password if biometric fails
+                    }
+                )
+            }
+        }
+    }
 
     Column(
         modifier = Modifier
@@ -153,7 +174,10 @@ fun LoginScreen(
                                         body.id,
                                         body.email,
                                         fullName,
-                                        body.phone ?: ""
+                                        body.phone ?: "",
+                                        body.primaryRole,
+                                        body.missionBriefing,
+                                        body.profilePhotoData
                                     )
                                     
                                     // Trigger immediate re-init of Retrofit with the new token

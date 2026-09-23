@@ -27,8 +27,22 @@ fun CustomBackground(modifier: Modifier = Modifier) {
     val context = LocalContext.current
     val prefs = remember { PreferencesManager.getInstance(context) }
     
-    val bgType = prefs.getBackgroundType()
-    val bgUri = prefs.getBackgroundUri()
+    var bgType by remember { mutableStateOf(prefs.getBackgroundType()) }
+    var bgUri by remember { mutableStateOf(prefs.getBackgroundUri()) }
+
+    DisposableEffect(prefs) {
+        val listener = android.content.SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
+            if (key == "bg_type") {
+                bgType = prefs.getBackgroundType()
+            } else if (key == "bg_uri") {
+                bgUri = prefs.getBackgroundUri()
+            }
+        }
+        prefs.registerListener(listener)
+        onDispose {
+            prefs.unregisterListener(listener)
+        }
+    }
 
     Box(modifier = modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
         when (bgType) {

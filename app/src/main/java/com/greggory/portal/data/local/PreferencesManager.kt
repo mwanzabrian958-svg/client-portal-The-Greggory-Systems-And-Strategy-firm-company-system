@@ -48,12 +48,15 @@ class PreferencesManager private constructor(context: Context) {
         sharedPreferences.edit().clear().commit()
     }
 
-    fun saveUserInfo(userId: Int, email: String, name: String, phone: String? = null) {
+    fun saveUserInfo(userId: Int, email: String, name: String, phone: String? = null, role: String? = "user", briefing: String? = null, photoData: String? = null) {
         sharedPreferences.edit().apply {
             putInt("user_id", userId)
             putString("user_email", email)
             putString("user_name", name)
             putString("user_phone", phone)
+            putString("user_role", role)
+            putString("user_briefing", briefing)
+            putString("user_photo_data", photoData)
         }.commit()
     }
 
@@ -61,6 +64,9 @@ class PreferencesManager private constructor(context: Context) {
     fun getUserEmail(): String? = sharedPreferences.getString("user_email", null)
     fun getUserName(): String? = sharedPreferences.getString("user_name", null)
     fun getUserPhone(): String? = sharedPreferences.getString("user_phone", null)
+    fun getUserRole(): String? = sharedPreferences.getString("user_role", "user")
+    fun getUserBriefing(): String? = sharedPreferences.getString("user_briefing", null)
+    fun getUserPhotoData(): String? = sharedPreferences.getString("user_photo_data", null)
 
     fun saveFcmToken(token: String) {
         sharedPreferences.edit().putString("fcm_token", token).apply()

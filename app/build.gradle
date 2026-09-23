@@ -8,6 +8,22 @@ plugins {
     id 'io.gitlab.arturbosch.detekt'
 }
 
+// Enterprise Automation: Git-Driven Versioning (Configuration Cache Compatible)
+def getGitVersionCode() {
+    def cmd = providers.exec {
+        commandLine 'git', 'rev-list', '--count', 'HEAD'
+    }.standardOutput.asText.get().trim()
+    return (cmd ?: "1").toInteger()
+}
+
+def getGitVersionName() {
+    def cmd = providers.exec {
+        commandLine 'git', 'describe', '--tags', '--abbrev=0'
+        ignoreExitValue = true
+    }.standardOutput.asText.get().trim()
+    return cmd.isEmpty() ? "1.0.1" : cmd
+}
+
 android {
     namespace 'com.greggory.portal'
     compileSdk 35
@@ -16,8 +32,8 @@ android {
         applicationId "com.greggory.portal"
         minSdk 24
         targetSdk 35
-        versionCode 2
-        versionName "1.0.1"
+        versionCode getGitVersionCode()
+        versionName getGitVersionName()
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
@@ -69,16 +85,17 @@ android {
         compose true
         buildConfig true
     }
-    packagingOptions {
+    packaging {
         resources {
-            excludes += '/META-INF/{AL2.0,LGPL2.1}'
+            excludes += 'META-INF/{AL2.0,LGPL2.1}'
         }
     }
+}
 
-    // Detekt configuration - Code Quality Analysis
-    detekt {
-        config = files("$rootDir/detekt.yml")
-    }
+// Detekt configuration - Code Quality Analysis
+detekt {
+    config.setFrom(files("$rootDir/detekt.yml"))
+    buildUponDefaultConfig = true
 }
 
 // Detekt tasks configuration

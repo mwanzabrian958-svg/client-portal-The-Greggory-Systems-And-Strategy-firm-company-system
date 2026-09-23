@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.automirrored.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -161,7 +162,7 @@ fun ContactExpertDialog(expert: TeamMember, onDismiss: () -> Unit) {
         onDismissRequest = onDismiss,
         title = {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(Icons.Default.ContactSupport, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                Icon(Icons.AutoMirrored.Filled.ContactSupport, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
                 Spacer(modifier = Modifier.width(8.dp))
                 Text("Contact Strategy Expert")
             }
@@ -185,7 +186,7 @@ fun ContactExpertDialog(expert: TeamMember, onDismiss: () -> Unit) {
                     colors = CardDefaults.cardColors(containerColor = Color(0xFF25D366).copy(alpha = 0.1f))
                 ) {
                     Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
-                        Icon(Icons.Default.Chat, contentDescription = null, tint = Color(0xFF25D366))
+                        Icon(Icons.AutoMirrored.Filled.Chat, contentDescription = null, tint = Color(0xFF25D366))
                         Spacer(modifier = Modifier.width(16.dp))
                         Column {
                             Text("Open WhatsApp Chat", fontWeight = FontWeight.Bold, color = Color(0xFF25D366))
@@ -207,7 +208,7 @@ fun ContactExpertDialog(expert: TeamMember, onDismiss: () -> Unit) {
                     colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondary.copy(alpha = 0.1f))
                 ) {
                     Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
-                        Icon(Icons.Default.Chat, contentDescription = null, tint = MaterialTheme.colorScheme.secondary)
+                        Icon(Icons.AutoMirrored.Filled.Chat, contentDescription = null, tint = MaterialTheme.colorScheme.secondary)
                         Spacer(modifier = Modifier.width(16.dp))
                         Column {
                             Text("Start Chat in SMS", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.secondary)

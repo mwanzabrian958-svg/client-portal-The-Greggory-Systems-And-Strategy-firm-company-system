@@ -99,7 +99,28 @@ interface ApiService {
 
     @PUT("api/users/notifications/read-all/me")
     suspend fun markAllNotificationsRead(): Response<SimpleResponse>
+
+    @DELETE("api/users/sessions")
+    suspend fun revokeOtherSessions(@Query("currentToken") token: String): Response<SimpleResponse>
+
+    // Strategy Chat
+    @GET("api/chat/history")
+    suspend fun getChatHistory(): Response<ChatHistoryResponse>
+
+    @POST("api/chat/send")
+    suspend fun sendChatMessage(@Body request: SendChatRequest): Response<SimpleResponse>
 }
+
+data class ChatHistoryResponse(val success: Boolean, val messages: List<ChatMessageItem>)
+data class ChatMessageItem(
+    val id: String,
+    val sender_id: Int,
+    val sender_name: String,
+    val message: String,
+    val timestamp: Long,
+    val is_from_me: Boolean
+)
+data class SendChatRequest(val message: String)
 
 data class FeedbackRequest(
     val title: String,
@@ -187,8 +208,10 @@ data class LoginResponse(
     @SerializedName("first_name") val firstName: String,
     @SerializedName("last_name") val lastName: String? = null,
     @SerializedName("display_name") val displayName: String? = null,
-    val phone: String? = null,
+    @SerializedName("phone_number", alternate = ["phone"]) val phone: String? = null,
     @SerializedName("primary_role") val primaryRole: String? = "user",
+    @SerializedName("profilePhotoData") val profilePhotoData: String? = null,
+    @SerializedName("mission_briefing") val missionBriefing: String? = null,
     val token: String?,
     // Error fields for failed login
     val success: Boolean? = null,
@@ -202,7 +225,7 @@ data class UserInfo(
     @SerializedName("first_name") val firstName: String, 
     @SerializedName("last_name") val lastName: String? = null,
     @SerializedName("display_name") val displayName: String? = null,
-    val phone: String? = null,
+    @SerializedName("phone_number", alternate = ["phone"]) val phone: String? = null,
     @SerializedName("mission_briefing") val missionBriefing: String? = null,
     @SerializedName("primary_role") val primaryRole: String? = null,
     @SerializedName("profilePhotoData") val profilePhotoData: String? = null

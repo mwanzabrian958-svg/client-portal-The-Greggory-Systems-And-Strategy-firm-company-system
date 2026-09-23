@@ -13,6 +13,7 @@ sealed class Screen(val route: String) {
     object Documents : Screen("documents")
     object Feedback : Screen("feedback")
     object Requests : Screen("requests")
+    object StrategyChat : Screen("strategy_chat")
     object PdfViewer : Screen("pdf_viewer?url={url}&title={title}") {
         fun createRoute(url: String, title: String) = "pdf_viewer?url=$url&title=$title"
     }

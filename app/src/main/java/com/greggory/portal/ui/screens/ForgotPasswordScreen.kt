@@ -16,6 +16,9 @@ import com.greggory.portal.data.api.RetrofitClient
 import com.greggory.portal.data.api.ForgotPasswordRequest
 import kotlinx.coroutines.launch
 
+import androidx.compose.ui.tooling.preview.Preview
+import com.greggory.portal.ui.theme.GreggoryPortalTheme
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ForgotPasswordScreen(onBackToLogin: () -> Unit) {
@@ -133,5 +136,13 @@ fun ForgotPasswordScreen(onBackToLogin: () -> Unit) {
                 }
             }
         }
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun ForgotPasswordScreenPreview() {
+    GreggoryPortalTheme {
+        ForgotPasswordScreen(onBackToLogin = {})
     }
 }

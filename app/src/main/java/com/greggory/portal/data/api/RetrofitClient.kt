@@ -1,6 +1,10 @@
 package com.greggory.portal.data.api
 
 import android.content.Context
+import kotlinx.coroutines.DelicateCoroutinesApi
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.launch
 import okhttp3.Interceptor
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
@@ -53,6 +57,7 @@ object RetrofitClient {
      * Retry Interceptor: Handles transient "Company Pipeline" glitches (502, 503, 504),
      * and triggers automatic session expulsion redirects on 401 token authentication rejections.
      */
+    @OptIn(DelicateCoroutinesApi::class)
     private val retryInterceptor = Interceptor { chain ->
         val request = chain.request()
         var response = chain.proceed(request)
@@ -60,7 +65,23 @@ object RetrofitClient {
         if (response.code == 401) {
             // Expelled session: Wipe state and redirect instantly
             appContext?.let { ctx ->
-                com.greggory.portal.data.local.PreferencesManager.getInstance(ctx).clear()
+                val prefs = com.greggory.portal.data.local.PreferencesManager.getInstance(ctx)
+                prefs.clear()
+                
+                // --- NUCLEAR WIPE: Clear all local database tables ---
+                val db = com.greggory.portal.data.local.AppDatabase.getDatabase(ctx)
+                // We use a separate scope because interceptors are usually on background threads,
+                // but we want to ensure these are fired before redirection logic settles.
+                GlobalScope.launch(Dispatchers.IO) {
+                    try {
+                        db.projectDao().clearProjects()
+                        db.invoiceDao().clearInvoices()
+                        db.reportDao().clearReports()
+                        android.util.Log.d("NUCLEAR_WIPE", "All local data purged on 401 expulsion")
+                    } catch (e: Exception) {
+                        android.util.Log.e("NUCLEAR_WIPE", "Purge failed during 401", e)
+                    }
+                }
             }
             com.greggory.portal.utils.SessionEventBus.triggerUnauthorizedLogout()
             return@Interceptor response
@@ -91,6 +112,9 @@ object RetrofitClient {
     private val certificatePinner = if (!com.greggory.portal.BuildConfig.DEBUG) {
         okhttp3.CertificatePinner.Builder()
             .add("the-greggory-systems-and-strategy-firm-jz7i.onrender.com", "sha256/fizfE9JVlzlRplEx7epXfqW9enrbLvwF/LU26XTPEG4=")
+            .add("the-greggory-systems-and-strategy-firm-jz7i.onrender.com", "sha256/8emdl/UmneUm0I4Y/vHzOTQzb9eJwG4voRHtMdNmBPk=")
+            .add("the-greggory-systems-and-strategy-firm-jz7i.onrender.com", "sha256/kIdp6NNEd8wsugYyyIYFsi1ylMCED3hZbSR8ZFsa/A4=")
+            .add("the-greggory-systems-and-strategy-firm-jz7i.onrender.com", "sha256/mEflZT5enoR1FuXLgYYGqnVEoZvmf9c2bVBpiOjYQ0c=")
             .build()
     } else {
         okhttp3.CertificatePinner.DEFAULT

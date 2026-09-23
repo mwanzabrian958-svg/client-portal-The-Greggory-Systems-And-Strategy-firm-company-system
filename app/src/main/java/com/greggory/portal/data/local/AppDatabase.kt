@@ -45,6 +45,17 @@ data class MessageCacheEntity(
     val attachmentUrl: String? = null // For downloadable receipts or documentation items
 )
 
+@Entity(tableName = "chat_messages")
+data class StrategyChatMessageEntity(
+    @PrimaryKey(autoGenerate = true) val localId: Int = 0,
+    val id: String,
+    val senderId: Int,
+    val senderName: String,
+    val message: String,
+    val timestamp: Long,
+    val isFromMe: Boolean
+)
+
 @Dao
 interface ProjectDao {
     @Query("SELECT * FROM projects")
@@ -96,12 +107,25 @@ interface MessageCacheDao {
     suspend fun clearMessages()
 }
 
-@Database(entities = [ProjectEntity::class, InvoiceEntity::class, ReportEntity::class, MessageCacheEntity::class], version = 2, exportSchema = false)
+@Dao
+interface StrategyChatDao {
+    @Query("SELECT * FROM chat_messages ORDER BY timestamp ASC")
+    fun getChatHistory(): Flow<List<StrategyChatMessageEntity>>
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertMessage(message: StrategyChatMessageEntity)
+
+    @Query("DELETE FROM chat_messages")
+    suspend fun clearChat()
+}
+
+@Database(entities = [ProjectEntity::class, InvoiceEntity::class, ReportEntity::class, MessageCacheEntity::class, StrategyChatMessageEntity::class], version = 3, exportSchema = false)
 abstract class AppDatabase : RoomDatabase() {
     abstract fun projectDao(): ProjectDao
     abstract fun invoiceDao(): InvoiceDao
     abstract fun reportDao(): ReportDao
     abstract fun messageCacheDao(): MessageCacheDao
+    abstract fun strategyChatDao(): StrategyChatDao
 
     companion object {
         @Volatile
@@ -114,7 +138,7 @@ abstract class AppDatabase : RoomDatabase() {
                     AppDatabase::class.java,
                     "greggory_portal_database"
                 )
-                .fallbackToDestructiveMigration() // Smooth schema adjustment strategy
+                .fallbackToDestructiveMigration(true) // Modernized migration strategy
                 .build()
                 INSTANCE = instance
                 instance

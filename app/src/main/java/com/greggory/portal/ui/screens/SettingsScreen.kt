@@ -16,6 +16,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.HelpOutline
 import androidx.compose.material.icons.automirrored.filled.Logout
+import androidx.compose.material.icons.automirrored.filled.Chat
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -30,6 +31,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.core.net.toUri
 import androidx.fragment.app.FragmentActivity
 import coil.compose.AsyncImage
 import com.greggory.portal.R
@@ -45,6 +47,7 @@ import kotlinx.coroutines.launch
 fun SettingsScreen(
     onLogout: () -> Unit, 
     onNavigateToProfile: () -> Unit,
+    onNavigateToChat: () -> Unit,
     dashboardData: DashboardResponse? = null
 ) {
     val context = LocalContext.current
@@ -53,7 +56,7 @@ fun SettingsScreen(
     val database = remember { AppDatabase.getDatabase(context) }
     
     val userFromDash = dashboardData?.dashboard?.user
-    val userName = userFromDash?.firstName ?: prefs.getUserName() ?: "Client User"
+    val userName = userFromDash?.displayName ?: userFromDash?.firstName ?: prefs.getUserName() ?: "Client User"
     val userEmail = userFromDash?.email ?: prefs.getUserEmail() ?: ""
     val initials = userName.split(" ")
         .filter { it.isNotEmpty() }
@@ -76,6 +79,9 @@ fun SettingsScreen(
     
     var showPasswordDialog by remember { mutableStateOf(false) }
     var showLogoutDialog by remember { mutableStateOf(false) }
+    var showFeedbackDialog by remember { mutableStateOf(false) }
+    var showSessionsDialog by remember { mutableStateOf(false) }
+    var showExportDialog by remember { mutableStateOf(false) }
 
     val imagePicker = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
         uri?.let {
@@ -130,17 +136,44 @@ fun SettingsScreen(
                     modifier = Modifier
                         .size(60.dp)
                         .clip(CircleShape)
-                        .background(MaterialTheme.colorScheme.primary),
+                        .background(MaterialTheme.colorScheme.primaryContainer),
                     contentAlignment = Alignment.Center
                 ) {
-                    AsyncImage(
-                        model = "${RetrofitClient.BASE_URL}api/users/profile-photo/me",
-                        contentDescription = "Profile Photo",
-                        modifier = Modifier.fillMaxSize(),
-                        contentScale = ContentScale.Crop,
-                        error = null
-                    )
-                    Text(initials, style = MaterialTheme.typography.headlineSmall, color = MaterialTheme.colorScheme.onPrimary)
+                    var imageError by remember { mutableStateOf(false) }
+                    val cachedPhotoData = prefs.getUserPhotoData()
+                    if (!imageError) {
+                        val photoModel = when {
+                            !cachedPhotoData.isNullOrEmpty() -> {
+                                if (cachedPhotoData.startsWith("http") || cachedPhotoData.startsWith("data:")) cachedPhotoData else "${RetrofitClient.BASE_URL}$cachedPhotoData"
+                            }
+                            else -> "${RetrofitClient.BASE_URL}api/users/profile-photo/me"
+                        }
+                        val imageRequest = remember(photoModel, prefs.getToken()) {
+                            val builder = coil.request.ImageRequest.Builder(context)
+                                .data(photoModel)
+                                .crossfade(true)
+                            if (prefs.getToken() != null) {
+                                builder.addHeader("Authorization", "Bearer ${prefs.getToken()}")
+                            }
+                            builder.build()
+                        }
+                        AsyncImage(
+                            model = imageRequest,
+                            contentDescription = "Profile Photo",
+                            modifier = Modifier.fillMaxSize(),
+                            contentScale = ContentScale.Crop,
+                            onError = { imageError = true },
+                            onSuccess = { imageError = false }
+                        )
+                    }
+                    if (imageError || initials.isEmpty()) {
+                        Text(
+                            text = initials.ifEmpty { "G" },
+                            style = MaterialTheme.typography.titleMedium,
+                            color = MaterialTheme.colorScheme.onPrimaryContainer,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
                 }
                 Spacer(modifier = Modifier.width(16.dp))
                 Column(modifier = Modifier.weight(1f)) {
@@ -148,6 +181,29 @@ fun SettingsScreen(
                     Text(userEmail, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
                 Icon(Icons.Default.ChevronRight, contentDescription = null)
+            }
+        }
+
+        Spacer(modifier = Modifier.height(24.dp))
+
+        // --- DIRECT STRATEGY SUPPORT ---
+        SettingsSectionHeader("Direct Strategy Support", Icons.Default.SupportAgent)
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
+            horizontalArrangement = Arrangement.SpaceEvenly,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            SupportChannelItem(Icons.AutoMirrored.Filled.Chat, "Chat", MaterialTheme.colorScheme.primary) {
+                onNavigateToChat()
+            }
+            SupportChannelItem(Icons.Default.Phone, "Call", Color(0xFF4CAF50)) {
+                try { context.startActivity(Intent(Intent.ACTION_DIAL, Uri.parse("tel:+254115525854"))) } catch (e: Exception) { Toast.makeText(context, "Dialer unavailable", Toast.LENGTH_SHORT).show() }
+            }
+            SupportChannelItem(Icons.Default.ChatBubble, "WhatsApp", Color(0xFF25D366)) {
+                try { context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://api.whatsapp.com/send?phone=254115525854"))) } catch (e: Exception) { Toast.makeText(context, "WhatsApp not found", Toast.LENGTH_SHORT).show() }
+            }
+            SupportChannelItem(Icons.Default.Sms, "SMS", Color(0xFF2196F3)) {
+                try { context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("sms:+254115525854"))) } catch (e: Exception) { Toast.makeText(context, "SMS app not found", Toast.LENGTH_SHORT).show() }
             }
         }
 
@@ -243,7 +299,9 @@ fun SettingsScreen(
         SettingsClickItem("Change Password", "Update your portal credentials", Icons.Default.Lock) {
             showPasswordDialog = true
         }
-        SettingsClickItem("Active Sessions", "Manage other logged-in devices", Icons.Default.Devices) { }
+        SettingsClickItem("Active Sessions", "Manage other logged-in devices", Icons.Default.Devices) {
+            showSessionsDialog = true
+        }
 
         // --- NOTIFICATION PREFERENCES ---
         SettingsSectionHeader("Notification Preferences", Icons.Default.Notifications)
@@ -282,25 +340,16 @@ fun SettingsScreen(
             }
         }
         SettingsClickItem("Export My Data", "Download full history (PDF)", Icons.Default.Download) {
-            Toast.makeText(context, "Data export requested. Your strategist will upload the full history to your Document Vault shortly.", Toast.LENGTH_LONG).show()
+            showExportDialog = true
         }
 
         // --- ABOUT & SUPPORT ---
         SettingsSectionHeader("About & Support", Icons.AutoMirrored.Filled.HelpOutline)
         SettingsClickItem("Legal Documents", "Terms & Privacy Policy", Icons.Default.Description) { 
-            // Navigate to documents if they are there, or just show toast
-            onNavigateToProfile() // Or just navigate to documents view
+            onNavigateToProfile()
         }
-        SettingsClickItem("Contact Strategy Lead", "Priority support access", Icons.Default.HeadsetMic) { 
-            try {
-                val intent = Intent(Intent.ACTION_SENDTO).apply {
-                    data = Uri.parse("mailto:strategy@greggory.com")
-                    putExtra(Intent.EXTRA_SUBJECT, "Portal Support Request: ${prefs.getUserName()}")
-                }
-                context.startActivity(intent)
-            } catch (e: Exception) {
-                Toast.makeText(context, "No email app found.", Toast.LENGTH_SHORT).show()
-            }
+        SettingsClickItem("Feedback & Suggestions", "Help us improve your experience", Icons.Default.Feedback) {
+            showFeedbackDialog = true
         }
 
         Spacer(modifier = Modifier.height(32.dp))
@@ -321,6 +370,54 @@ fun SettingsScreen(
 
     if (showPasswordDialog) {
         ChangePasswordDialog(onDismiss = { showPasswordDialog = false })
+    }
+
+    if (showFeedbackDialog) {
+        FeedbackDialog(
+            onDismiss = { showFeedbackDialog = false },
+            onSend = { title, message ->
+                scope.launch {
+                    try {
+                        val response = RetrofitClient.instance.submitFeedback(
+                            com.greggory.portal.data.api.FeedbackRequest(
+                                title = title,
+                                message = message,
+                                type = "general",
+                                rating = 5,
+                                priority = "medium"
+                            )
+                        )
+                        if (response.isSuccessful) {
+                            Toast.makeText(context, "Feedback sent successfully!", Toast.LENGTH_SHORT).show()
+                        } else {
+                            Toast.makeText(context, "Failed to send feedback.", Toast.LENGTH_SHORT).show()
+                        }
+                    } catch (e: Exception) {
+                        Toast.makeText(context, "Network error: ${e.localizedMessage}", Toast.LENGTH_SHORT).show()
+                    }
+                }
+                showFeedbackDialog = false
+            }
+        )
+    }
+
+    if (showSessionsDialog) {
+        ActiveSessionsDialog(onDismiss = { showSessionsDialog = false })
+    }
+
+    if (showExportDialog) {
+        AlertDialog(
+            onDismissRequest = { showExportDialog = false },
+            title = { Text("Request Data Export") },
+            text = { Text("A certified PDF audit of your entire project and billing history will be compiled. This process can take up to 24 hours for security verification.\n\nContinue with request?") },
+            confirmButton = {
+                TextButton(onClick = {
+                    showExportDialog = false
+                    Toast.makeText(context, "Request logged. You will be notified when the audit is ready.", Toast.LENGTH_LONG).show()
+                }) { Text("REQUEST EXPORT") }
+            },
+            dismissButton = { TextButton(onClick = { showExportDialog = false }) { Text("CANCEL") } }
+        )
     }
 
     if (showLogoutDialog) {
@@ -345,6 +442,134 @@ fun SettingsScreen(
             },
             dismissButton = { TextButton(onClick = { showLogoutDialog = false }) { Text("CANCEL") } }
         )
+    }
+}
+
+@Composable
+fun ActiveSessionsDialog(onDismiss: () -> Unit) {
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    val prefs = remember { PreferencesManager.getInstance(context) }
+    var isRevoking by remember { mutableStateOf(false) }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Active Sessions") },
+        text = {
+            Column {
+                Text("Your account is secured by the Set in Stone Terminal Lock. Currently, only this device is authorized.", style = MaterialTheme.typography.bodySmall)
+                Spacer(modifier = Modifier.height(16.dp))
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.3f))
+                ) {
+                    Row(modifier = Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Icon(Icons.Default.PhoneAndroid, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                        Spacer(modifier = Modifier.width(12.dp))
+                        Column {
+                            Text("${android.os.Build.MANUFACTURER} ${android.os.Build.MODEL}", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold)
+                            Text("Android OS ${android.os.Build.VERSION.RELEASE} (This Device)", style = MaterialTheme.typography.labelSmall)
+                        }
+                    }
+                }
+                Spacer(modifier = Modifier.height(24.dp))
+                
+                Button(
+                    onClick = {
+                        val token = prefs.getToken()
+                        if (token != null) {
+                            isRevoking = true
+                            scope.launch {
+                                try {
+                                    val response = RetrofitClient.instance.revokeOtherSessions(token)
+                                    if (response.isSuccessful) {
+                                        Toast.makeText(context, "All other sessions revoked", Toast.LENGTH_SHORT).show()
+                                    } else {
+                                        Toast.makeText(context, "Revocation failed", Toast.LENGTH_SHORT).show()
+                                    }
+                                } catch (e: Exception) {
+                                    Toast.makeText(context, "Network error", Toast.LENGTH_SHORT).show()
+                                } finally {
+                                    isRevoking = false
+                                }
+                            }
+                        }
+                    },
+                    modifier = Modifier.fillMaxWidth(),
+                    enabled = !isRevoking,
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondary)
+                ) {
+                    if (isRevoking) {
+                        CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
+                    } else {
+                        Text("REVOKE ALL OTHER DEVICES")
+                    }
+                }
+                Spacer(modifier = Modifier.height(8.dp))
+                Text("Last access: Just now", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onDismiss) { Text("CLOSE") }
+        }
+    )
+}
+
+@Composable
+fun FeedbackDialog(onDismiss: () -> Unit, onSend: (String, String) -> Unit) {
+    var title by remember { mutableStateOf("") }
+    var message by remember { mutableStateOf("") }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Submit Feedback") },
+        text = {
+            Column {
+                OutlinedTextField(
+                    value = title,
+                    onValueChange = { title = it },
+                    label = { Text("Subject") },
+                    modifier = Modifier.fillMaxWidth()
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                OutlinedTextField(
+                    value = message,
+                    onValueChange = { message = it },
+                    label = { Text("How can we improve?") },
+                    modifier = Modifier.fillMaxWidth().height(120.dp)
+                )
+            }
+        },
+        confirmButton = {
+            Button(
+                onClick = { if (message.isNotBlank()) onSend(title, message) },
+                enabled = message.isNotBlank()
+            ) { Text("SEND") }
+        },
+        dismissButton = { TextButton(onClick = onDismiss) { Text("CANCEL") } }
+    )
+}
+
+@Composable
+fun SupportChannelItem(icon: ImageVector, label: String, color: Color, onClick: () -> Unit) {
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        modifier = Modifier.clickable(onClick = onClick).padding(8.dp)
+    ) {
+        Surface(
+            shape = CircleShape,
+            color = color.copy(alpha = 0.15f),
+            modifier = Modifier.size(52.dp)
+        ) {
+            Icon(
+                imageVector = icon,
+                contentDescription = label,
+                tint = color,
+                modifier = Modifier.padding(14.dp)
+            )
+        }
+        Spacer(modifier = Modifier.height(6.dp))
+        Text(text = label, style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold)
     }
 }
 

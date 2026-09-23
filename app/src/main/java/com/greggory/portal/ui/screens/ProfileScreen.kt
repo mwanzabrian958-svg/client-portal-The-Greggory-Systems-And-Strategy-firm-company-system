@@ -5,6 +5,7 @@ import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -30,6 +31,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import coil.compose.AsyncImage
 import coil.compose.rememberAsyncImagePainter
 import com.greggory.portal.data.api.*
 import com.greggory.portal.data.local.PreferencesManager
@@ -48,23 +50,39 @@ fun ProfileScreen(dashboardData: DashboardResponse? = null) {
     
     // Fallback logic: Use Dashboard data first, then cached prefs
     val userFromDash = dashboardData?.dashboard?.user
-    val initialName = userFromDash?.firstName ?: prefs.getUserName() ?: ""
+    val initialName = userFromDash?.displayName ?: if (userFromDash != null) "${userFromDash.firstName} ${userFromDash.lastName ?: ""}".trim() else (prefs.getUserName() ?: "")
     val initialEmail = userFromDash?.email ?: prefs.getUserEmail() ?: ""
     val initialPhone = userFromDash?.phone ?: prefs.getUserPhone() ?: ""
-    val missionBriefing = userFromDash?.missionBriefing ?: "Strategic partnership in progress."
+    val initialBriefing = userFromDash?.missionBriefing ?: prefs.getUserBriefing() ?: "Strategic partnership in progress."
+    val initialPhotoData = userFromDash?.profilePhotoData ?: prefs.getUserPhotoData()
 
     var firstName by remember { mutableStateOf(initialName) }
     var email by remember { mutableStateOf(initialEmail) }
     var phoneNumber by remember { mutableStateOf(initialPhone) }
+    var missionBriefing by remember { mutableStateOf(initialBriefing) }
+    var profilePhotoData by remember { mutableStateOf(initialPhotoData) }
     var isUpdating by remember { mutableStateOf(false) }
     var selectedImageUri by remember { mutableStateOf<Uri?>(null) }
 
     // Synchronize local state if dashboard data arrives late
     LaunchedEffect(userFromDash) {
         if (userFromDash != null) {
-            firstName = userFromDash.firstName
+            firstName = userFromDash.displayName ?: "${userFromDash.firstName} ${userFromDash.lastName ?: ""}".trim()
             email = userFromDash.email
             phoneNumber = userFromDash.phone ?: ""
+            missionBriefing = userFromDash.missionBriefing ?: missionBriefing
+            profilePhotoData = userFromDash.profilePhotoData ?: profilePhotoData
+            
+            // Persist the latest info
+            prefs.saveUserInfo(
+                userId = userFromDash.id, 
+                email = userFromDash.email, 
+                name = firstName, 
+                phone = phoneNumber, 
+                role = userFromDash.primaryRole,
+                briefing = missionBriefing,
+                photoData = profilePhotoData
+            )
         }
     }
 
@@ -74,8 +92,20 @@ fun ProfileScreen(dashboardData: DashboardResponse? = null) {
         uri?.let {
             selectedImageUri = it
             // Trigger upload
-            uploadPhoto(context, it, scope) { success, message ->
+            uploadPhoto(context, it, scope) { success, message, imageUrl ->
                 Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+                if (success && !imageUrl.isNullOrEmpty()) {
+                    profilePhotoData = imageUrl
+                    prefs.saveUserInfo(
+                        userId = prefs.getUserId(),
+                        email = email,
+                        name = firstName,
+                        phone = phoneNumber,
+                        role = prefs.getUserRole(),
+                        briefing = missionBriefing,
+                        photoData = imageUrl
+                    )
+                }
             }
         }
     }
@@ -90,26 +120,65 @@ fun ProfileScreen(dashboardData: DashboardResponse? = null) {
         Spacer(modifier = Modifier.height(24.dp))
         
         // Profile Photo Section
-        Box(contentAlignment = Alignment.BottomEnd) {
-            Image(
-                painter = if (selectedImageUri != null) {
-                    rememberAsyncImagePainter(selectedImageUri)
-                } else {
-                    rememberAsyncImagePainter("${RetrofitClient.BASE_URL}api/users/profile-photo/me")
-                },
-                contentDescription = "Profile Photo",
+        val initials = firstName.split(" ").filter { it.isNotEmpty() }.mapNotNull { it.firstOrNull()?.uppercase() }.take(2).joinToString("")
+        var imageError by remember { mutableStateOf(false) }
+
+        Box(contentAlignment = Alignment.Center, modifier = Modifier.size(120.dp)) {
+            Box(
                 modifier = Modifier
-                    .size(120.dp)
+                    .fillMaxSize()
                     .clip(CircleShape)
+                    .background(MaterialTheme.colorScheme.primaryContainer)
                     .border(2.dp, MaterialTheme.colorScheme.primary, CircleShape),
-                contentScale = ContentScale.Crop
-            )
-            FilledIconButton(
-                onClick = { photoPickerLauncher.launch("image/*") },
-                modifier = Modifier.size(36.dp),
-                shape = CircleShape
+                contentAlignment = Alignment.Center
             ) {
-                Icon(Icons.Default.CameraAlt, contentDescription = "Change Photo", modifier = Modifier.size(20.dp))
+                if (!imageError) {
+                    val photoModel = when {
+                        selectedImageUri != null -> selectedImageUri
+                        !profilePhotoData.isNullOrEmpty() -> {
+                            if (profilePhotoData!!.startsWith("http") || profilePhotoData!!.startsWith("data:")) profilePhotoData!! else "${RetrofitClient.BASE_URL}$profilePhotoData"
+                        }
+                        else -> "${RetrofitClient.BASE_URL}api/users/profile-photo/me"
+                    }
+                    val imageRequest = remember(photoModel, prefs.getToken()) {
+                        val builder = coil.request.ImageRequest.Builder(context)
+                            .data(photoModel)
+                            .crossfade(true)
+                        if (photoModel is String && prefs.getToken() != null) {
+                            builder.addHeader("Authorization", "Bearer ${prefs.getToken()}")
+                        }
+                        builder.build()
+                    }
+                    AsyncImage(
+                        model = imageRequest,
+                        contentDescription = "Profile Photo",
+                        modifier = Modifier.fillMaxSize(),
+                        contentScale = ContentScale.Crop,
+                        onError = { 
+                            imageError = true 
+                        },
+                        onSuccess = { imageError = false }
+                    )
+                }
+                
+                if (imageError || initials.isEmpty()) {
+                    Text(
+                        text = initials.ifEmpty { "G" },
+                        style = MaterialTheme.typography.headlineLarge,
+                        color = MaterialTheme.colorScheme.onPrimaryContainer,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+            }
+            
+            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.BottomEnd) {
+                FilledIconButton(
+                    onClick = { photoPickerLauncher.launch("image/*") },
+                    modifier = Modifier.size(36.dp),
+                    shape = CircleShape
+                ) {
+                    Icon(Icons.Default.CameraAlt, contentDescription = "Change Photo", modifier = Modifier.size(20.dp))
+                }
             }
         }
 
@@ -119,7 +188,7 @@ fun ProfileScreen(dashboardData: DashboardResponse? = null) {
         OutlinedTextField(
             value = firstName,
             onValueChange = { firstName = it },
-            label = { Text("First Name") },
+            label = { Text("Full Name") },
             modifier = Modifier.fillMaxWidth(),
             leadingIcon = { Icon(Icons.Default.Person, contentDescription = null) },
             enabled = !isUpdating
@@ -158,7 +227,15 @@ fun ProfileScreen(dashboardData: DashboardResponse? = null) {
                             ProfileUpdateRequest(firstName, phoneNumber)
                         )
                         if (response.isSuccessful && response.body()?.success == true) {
-                            prefs.saveUserInfo(prefs.getUserId(), email, firstName, phoneNumber)
+                            prefs.saveUserInfo(
+                                userId = prefs.getUserId(),
+                                email = email,
+                                name = firstName,
+                                phone = phoneNumber,
+                                role = prefs.getUserRole(),
+                                briefing = missionBriefing,
+                                photoData = profilePhotoData
+                            )
                             Toast.makeText(context, "Profile updated successfully", Toast.LENGTH_SHORT).show()
                         } else {
                             Toast.makeText(context, "Update failed: ${response.body()?.message}", Toast.LENGTH_SHORT).show()
@@ -260,7 +337,7 @@ private fun uploadPhoto(
     context: android.content.Context,
     uri: Uri,
     scope: kotlinx.coroutines.CoroutineScope,
-    onResult: (Boolean, String) -> Unit
+    onResult: (Boolean, String, String?) -> Unit
 ) {
     scope.launch {
         try {
@@ -270,12 +347,12 @@ private fun uploadPhoto(
             
             val response = RetrofitClient.instance.uploadProfilePhoto(body)
             if (response.isSuccessful && response.body()?.success == true) {
-                onResult(true, "Photo uploaded successfully")
+                onResult(true, "Photo uploaded successfully", response.body()?.imageUrl)
             } else {
-                onResult(false, "Upload failed: ${response.body()?.message}")
+                onResult(false, "Upload failed: ${response.body()?.message}", null)
             }
         } catch (e: Exception) {
-            onResult(false, "Error: ${e.localizedMessage}")
+            onResult(false, "Error: ${e.localizedMessage}", null)
         }
     }
 }

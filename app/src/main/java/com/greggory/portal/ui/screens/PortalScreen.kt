@@ -44,7 +44,12 @@ import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun PortalScreen(onLogout: () -> Unit, onViewPdf: (String, String) -> Unit, onViewProject: (Int) -> Unit) {
+fun PortalScreen(
+    onLogout: () -> Unit, 
+    onViewPdf: (String, String) -> Unit, 
+    onViewProject: (Int) -> Unit,
+    onNavigateToChat: () -> Unit
+) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
@@ -312,43 +317,26 @@ fun PortalScreen(onLogout: () -> Unit, onViewPdf: (String, String) -> Unit, onVi
         drawerState = drawerState,
         drawerContent = {
             ModalDrawerSheet {
-                DrawerHeader()
-                HorizontalDivider()
-                Spacer(modifier = Modifier.height(12.dp))
-                
-                DrawerItem("Home", Icons.Default.Dashboard, currentView == "Home") {
-                    currentView = "Home"; scope.launch { drawerState.close() }
-                }
-                
-                Text("DEEP DIVES", style = MaterialTheme.typography.labelSmall, modifier = Modifier.padding(16.dp), color = MaterialTheme.colorScheme.primary)
-                DrawerItem("Active Projects", Icons.Default.BusinessCenter, currentView == "Projects") {
-                    currentView = "Projects"; scope.launch { drawerState.close() }
-                }
-                DrawerItem("Project Roster", Icons.Default.Groups, currentView == "Team") {
-                    currentView = "Team"; scope.launch { drawerState.close() }
-                }
-                DrawerItem("Milestone Tasks", Icons.AutoMirrored.Filled.Assignment, currentView == "Tasks") {
-                    currentView = "Tasks"; scope.launch { drawerState.close() }
-                }
-                DrawerItem("Financial Ledger", Icons.Default.Payments, currentView == "Billing") {
-                    currentView = "Billing"; scope.launch { drawerState.close() }
-                }
-                DrawerItem("Document Vault", Icons.Default.Folder, currentView == "Documents") {
-                    currentView = "Documents"; scope.launch { drawerState.close() }
-                }
-                DrawerItem("Requests & Quotes", Icons.Default.Assessment, currentView == "Requests") {
-                    currentView = "Requests"; scope.launch { drawerState.close() }
-                }
-                DrawerItem("Support Inbox", Icons.Default.Email, currentView == "Messages") {
-                    currentView = "Messages"; scope.launch { drawerState.close() }
-                }
-                
-                Text("ACCOUNT", style = MaterialTheme.typography.labelSmall, modifier = Modifier.padding(16.dp), color = MaterialTheme.colorScheme.primary)
-                DrawerItem("My Profile", Icons.Default.Person, currentView == "Profile") {
-                    currentView = "Profile"; scope.launch { drawerState.close() }
-                }
-                DrawerItem("App Settings", Icons.Default.Settings, currentView == "Settings") {
-                    currentView = "Settings"; scope.launch { drawerState.close() }
+                Column(
+                    modifier = Modifier
+                        .verticalScroll(rememberScrollState())
+                        .weight(1f, fill = false)
+                ) {
+                    DrawerHeader(dashboardData?.dashboard?.user)
+                    HorizontalDivider()
+                    Spacer(modifier = Modifier.height(12.dp))
+                    
+                    DrawerItem("Home", Icons.Default.Dashboard, currentView == "Home") {
+                        currentView = "Home"; scope.launch { drawerState.close() }
+                    }
+                    
+                    Text("ACCOUNT", style = MaterialTheme.typography.labelSmall, modifier = Modifier.padding(16.dp), color = MaterialTheme.colorScheme.primary)
+                    DrawerItem("My Profile", Icons.Default.Person, currentView == "Profile") {
+                        currentView = "Profile"; scope.launch { drawerState.close() }
+                    }
+                    DrawerItem("App Settings", Icons.Default.Settings, currentView == "Settings") {
+                        currentView = "Settings"; scope.launch { drawerState.close() }
+                    }
                 }
                 
                 Spacer(modifier = Modifier.weight(1f))
@@ -409,31 +397,59 @@ fun PortalScreen(onLogout: () -> Unit, onViewPdf: (String, String) -> Unit, onVi
                         }
                     },
                     actions = {
-                        val userName = preferencesManager.getUserName() ?: "U"
-                        val initials = userName.split(" ").mapNotNull { it.firstOrNull()?.uppercase() }.take(2).joinToString("")
-                        
+                        val userName = preferencesManager.getUserName() ?: "Client"
+                        val initials = userName.split(" ")
+                            .filter { it.isNotEmpty() }
+                            .mapNotNull { it.firstOrNull()?.uppercase() }
+                            .take(2)
+                            .joinToString("")
+                        var imageError by remember { mutableStateOf(false) }
+                        val cachedPhotoData = preferencesManager.getUserPhotoData()
+
                         Box(
                             modifier = Modifier
                                 .padding(end = 12.dp)
-                                .size(36.dp)
+                                .size(40.dp)
                                 .clip(CircleShape)
-                                .background(MaterialTheme.colorScheme.primary)
+                                .background(MaterialTheme.colorScheme.primaryContainer)
                                 .clickable { currentView = "Profile" },
                             contentAlignment = Alignment.Center
                         ) {
-                            AsyncImage(
-                                model = "${RetrofitClient.BASE_URL}api/users/profile-photo/me",
-                                contentDescription = "Profile",
-                                modifier = Modifier.fillMaxSize(),
-                                contentScale = ContentScale.Crop,
-                                error = null // Fallback to text below
-                            )
-                            Text(
-                                text = initials,
-                                style = MaterialTheme.typography.labelMedium,
-                                color = MaterialTheme.colorScheme.onPrimary,
-                                fontWeight = FontWeight.Bold
-                            )
+                            if (!imageError) {
+                                val photoModel = when {
+                                    !cachedPhotoData.isNullOrEmpty() -> {
+                                        if (cachedPhotoData.startsWith("http") || cachedPhotoData.startsWith("data:")) cachedPhotoData else "${RetrofitClient.BASE_URL}$cachedPhotoData"
+                                    }
+                                    else -> "${RetrofitClient.BASE_URL}api/users/profile-photo/me"
+                                }
+                                val imageRequest = remember(photoModel, preferencesManager.getToken()) {
+                                    val builder = coil.request.ImageRequest.Builder(context)
+                                        .data(photoModel)
+                                        .crossfade(true)
+                                    if (preferencesManager.getToken() != null) {
+                                        builder.addHeader("Authorization", "Bearer ${preferencesManager.getToken()}")
+                                    }
+                                    builder.build()
+                                }
+                                AsyncImage(
+                                    model = imageRequest,
+                                    contentDescription = "Profile",
+                                    modifier = Modifier.fillMaxSize(),
+                                    contentScale = ContentScale.Crop,
+                                    onError = { imageError = true },
+                                    onSuccess = { imageError = false }
+                                )
+                            }
+                            
+                            // Only show initials if the image failed or is still loading
+                            if (imageError || initials.isEmpty()) {
+                                Text(
+                                    text = initials.ifEmpty { "G" },
+                                    style = MaterialTheme.typography.titleMedium,
+                                    color = MaterialTheme.colorScheme.onPrimaryContainer,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            }
                         }
                     },
                     colors = TopAppBarDefaults.topAppBarColors(
@@ -468,7 +484,8 @@ fun PortalScreen(onLogout: () -> Unit, onViewPdf: (String, String) -> Unit, onVi
                         localInvoices = localInvoices, 
                         notifications = notificationsData,
                         onNavigate = { currentView = it },
-                        onViewProject = { selectedProjectId = it }
+                        onViewProject = { selectedProjectId = it },
+                        onNavigateToChat = onNavigateToChat
                     )
                             "Projects" -> ProjectListScreen(
                             projects = dashboardData?.dashboard?.projects ?: localProjects.map { it.toApi() },
@@ -495,10 +512,12 @@ fun PortalScreen(onLogout: () -> Unit, onViewPdf: (String, String) -> Unit, onVi
                             )
                             "Feedback" -> FeedbackScreen()
                             "Notifications" -> NotificationsScreen(notificationsData)
-                            "Profile" -> ProfileScreen()
+                            "Profile" -> ProfileScreen(dashboardData)
                             "Settings" -> SettingsScreen(
                                 onLogout = onLogout,
-                                onNavigateToProfile = { currentView = "Profile" }
+                                onNavigateToProfile = { currentView = "Profile" },
+                                onNavigateToChat = onNavigateToChat,
+                                dashboardData = dashboardData
                             )
                             else -> Text("Section: $currentView", modifier = Modifier.align(Alignment.Center))
                         }
@@ -540,12 +559,38 @@ fun PortalScreen(onLogout: () -> Unit, onViewPdf: (String, String) -> Unit, onVi
 }
 
 @Composable
-fun DrawerHeader() {
+fun DrawerHeader(user: UserInfo?) {
     Column(modifier = Modifier.padding(28.dp)) {
-        Image(painter = painterResource(id = R.drawable.ic_launcher), contentDescription = null, modifier = Modifier.size(48.dp))
+        Image(
+            painter = painterResource(id = R.drawable.ic_launcher), 
+            contentDescription = null, 
+            modifier = Modifier.size(48.dp)
+        )
         Spacer(modifier = Modifier.height(12.dp))
-        Text("THE GREGGORY", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
-        Text("Systems & Strategy Firm", style = MaterialTheme.typography.labelSmall)
+        if (user != null) {
+            Text(
+                text = user.firstName,
+                style = MaterialTheme.typography.titleMedium, 
+                fontWeight = FontWeight.Bold, 
+                color = MaterialTheme.colorScheme.primary
+            )
+            Text(
+                text = user.email, 
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        } else {
+            Text(
+                text = "THE GREGGORY", 
+                style = MaterialTheme.typography.titleMedium, 
+                fontWeight = FontWeight.Bold, 
+                color = MaterialTheme.colorScheme.primary
+            )
+            Text(
+                text = "Systems & Strategy Firm", 
+                style = MaterialTheme.typography.labelSmall
+            )
+        }
     }
 }
 
@@ -568,7 +613,8 @@ fun HomeScreen(
     localInvoices: List<InvoiceEntity>,
     notifications: List<Notification>,
     onNavigate: (String) -> Unit,
-    onViewProject: (Int) -> Unit
+    onViewProject: (Int) -> Unit,
+    onNavigateToChat: () -> Unit
 ) {
     val displayProjects = dashboardData?.dashboard?.projects ?: localProjects.map { it.toApi() }
     val displayInvoices = dashboardData?.dashboard?.invoices ?: localInvoices.map { it.toApi() }
@@ -595,15 +641,23 @@ fun HomeScreen(
         HomeKpiSection(dashboardData, onNavigate)
 
         Spacer(modifier = Modifier.height(24.dp))
-        SectionHeader("Quick Actions", Icons.Default.FlashOn)
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            val modifier = Modifier.weight(1f)
-            QuickActionCard("Request Job", Icons.Default.AddCircle, modifier) { onNavigate("Services") }
-            QuickActionCard("Pay Invoice", Icons.Default.Payment, modifier) { onNavigate("Billing") }
-            QuickActionCard("Feedback", Icons.Default.RateReview, modifier) { onNavigate("Feedback") }
+        SectionHeader("Operations Hub", Icons.Default.Apps)
+        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                QuickActionCard("Active Projects", Icons.Default.BusinessCenter, Modifier.weight(1f)) { onNavigate("Projects") }
+                QuickActionCard("Project Roster", Icons.Default.Groups, Modifier.weight(1f)) { onNavigate("Team") }
+                QuickActionCard("Milestones", Icons.AutoMirrored.Filled.Assignment, Modifier.weight(1f)) { onNavigate("Tasks") }
+            }
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                QuickActionCard("Financials", Icons.Default.Payments, Modifier.weight(1f)) { onNavigate("Billing") }
+                QuickActionCard("Document Vault", Icons.Default.Folder, Modifier.weight(1f)) { onNavigate("Documents") }
+                QuickActionCard("Requests", Icons.Default.Assessment, Modifier.weight(1f)) { onNavigate("Requests") }
+            }
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                QuickActionCard("Support Inbox", Icons.Default.Email, Modifier.weight(1f)) { onNavigateToChat() }
+                QuickActionCard("Request Job", Icons.Default.AddCircle, Modifier.weight(1f)) { onNavigate("Services") }
+                QuickActionCard("Feedback", Icons.Default.RateReview, Modifier.weight(1f)) { onNavigate("Feedback") }
+            }
         }
         
         // Budget & Financial Forecast
