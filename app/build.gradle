@@ -21,7 +21,7 @@ def getGitVersionName() {
         commandLine 'git', 'describe', '--tags', '--abbrev=0'
         ignoreExitValue = true
     }.standardOutput.asText.get().trim()
-    return cmd.isEmpty() ? "1.0.1" : cmd
+    return cmd.isEmpty() ? "1.0.2" : cmd
 }
 
 android {
