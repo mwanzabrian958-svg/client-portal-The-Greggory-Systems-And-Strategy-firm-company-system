@@ -80,7 +80,7 @@ fun AppNavigation(navController: NavHostController, startDestination: String = S
                 PortalScreen(
                     onLogout = {
                         navController.navigate(Screen.Login.route) {
-                            popUpTo(Screen.Portal.route) { inclusive = true }
+                            popUpTo(0) { inclusive = true }
                         }
                     },
                     onViewPdf = { url, title ->

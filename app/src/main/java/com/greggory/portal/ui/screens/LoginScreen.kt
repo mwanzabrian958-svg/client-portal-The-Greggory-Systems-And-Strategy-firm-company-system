@@ -30,6 +30,8 @@ import com.greggory.portal.data.api.LoginRequest
 import com.greggory.portal.data.api.PushTokenRequest
 import com.greggory.portal.data.api.LoginResponse
 import com.greggory.portal.data.local.PreferencesManager
+import com.greggory.portal.data.local.AppDatabase
+import com.greggory.portal.data.local.toUserEntity
 import com.greggory.portal.utils.BiometricHelper
 import com.google.firebase.messaging.FirebaseMessaging
 import com.google.gson.Gson
@@ -179,6 +181,11 @@ fun LoginScreen(
                                         body.missionBriefing,
                                         body.profilePhotoData
                                     )
+                                    
+                                    try {
+                                        val database = com.greggory.portal.data.local.AppDatabase.getDatabase(context)
+                                        database.userDao().insertUser(body.toUserEntity())
+                                    } catch (ignored: Exception) {}
                                     
                                     // Trigger immediate re-init of Retrofit with the new token
                                     RetrofitClient.initialize(context)

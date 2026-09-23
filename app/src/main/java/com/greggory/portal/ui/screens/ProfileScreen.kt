@@ -35,6 +35,7 @@ import coil.compose.AsyncImage
 import coil.compose.rememberAsyncImagePainter
 import com.greggory.portal.data.api.*
 import com.greggory.portal.data.local.PreferencesManager
+import com.greggory.portal.data.local.toEntity
 import com.greggory.portal.ui.components.ChangePasswordDialog
 import kotlinx.coroutines.launch
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
@@ -47,6 +48,7 @@ fun ProfileScreen(dashboardData: DashboardResponse? = null) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val prefs = remember { PreferencesManager.getInstance(context) }
+    val database = remember { com.greggory.portal.data.local.AppDatabase.getDatabase(context) }
     
     // Fallback logic: Use Dashboard data first, then cached prefs
     val userFromDash = dashboardData?.dashboard?.user
@@ -54,7 +56,8 @@ fun ProfileScreen(dashboardData: DashboardResponse? = null) {
     val initialEmail = userFromDash?.email ?: prefs.getUserEmail() ?: ""
     val initialPhone = userFromDash?.phone ?: prefs.getUserPhone() ?: ""
     val initialBriefing = userFromDash?.missionBriefing ?: prefs.getUserBriefing() ?: "Strategic partnership in progress."
-    val initialPhotoData = userFromDash?.profilePhotoData ?: prefs.getUserPhotoData()
+    val dbUser by database.userDao().getUserByEmail(initialEmail).collectAsState(initial = null)
+    val initialPhotoData = dbUser?.profilePhotoData ?: userFromDash?.profilePhotoData ?: prefs.getUserPhotoData()
 
     var firstName by remember { mutableStateOf(initialName) }
     var email by remember { mutableStateOf(initialEmail) }
@@ -64,14 +67,19 @@ fun ProfileScreen(dashboardData: DashboardResponse? = null) {
     var isUpdating by remember { mutableStateOf(false) }
     var selectedImageUri by remember { mutableStateOf<Uri?>(null) }
 
-    // Synchronize local state if dashboard data arrives late
-    LaunchedEffect(userFromDash) {
+    // Synchronize local state if database or dashboard data arrives late
+    LaunchedEffect(dbUser, userFromDash) {
+        if (dbUser != null) {
+            if (!dbUser?.profilePhotoData.isNullOrEmpty()) {
+                profilePhotoData = dbUser?.profilePhotoData
+            }
+        }
         if (userFromDash != null) {
             firstName = userFromDash.displayName ?: "${userFromDash.firstName} ${userFromDash.lastName ?: ""}".trim()
             email = userFromDash.email
             phoneNumber = userFromDash.phone ?: ""
             missionBriefing = userFromDash.missionBriefing ?: missionBriefing
-            profilePhotoData = userFromDash.profilePhotoData ?: profilePhotoData
+            profilePhotoData = dbUser?.profilePhotoData ?: userFromDash.profilePhotoData ?: profilePhotoData
             
             // Persist the latest info
             prefs.saveUserInfo(
@@ -83,6 +91,9 @@ fun ProfileScreen(dashboardData: DashboardResponse? = null) {
                 briefing = missionBriefing,
                 photoData = profilePhotoData
             )
+            try {
+                database.userDao().insertUser(userFromDash.toEntity())
+            } catch (ignored: Exception) {}
         }
     }
 
@@ -105,6 +116,11 @@ fun ProfileScreen(dashboardData: DashboardResponse? = null) {
                         briefing = missionBriefing,
                         photoData = imageUrl
                     )
+                    scope.launch {
+                        try {
+                            database.userDao().updateProfilePhoto(email, imageUrl)
+                        } catch (ignored: Exception) {}
+                    }
                 }
             }
         }

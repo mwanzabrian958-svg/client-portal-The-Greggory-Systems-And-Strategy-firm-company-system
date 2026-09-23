@@ -45,7 +45,7 @@ import kotlinx.coroutines.launch
 
 @Composable
 fun SettingsScreen(
-    onLogout: () -> Unit, 
+    onLogout: (() -> Unit)? = null, 
     onNavigateToProfile: () -> Unit,
     onNavigateToChat: () -> Unit,
     dashboardData: DashboardResponse? = null
@@ -56,8 +56,9 @@ fun SettingsScreen(
     val database = remember { AppDatabase.getDatabase(context) }
     
     val userFromDash = dashboardData?.dashboard?.user
-    val userName = userFromDash?.displayName ?: userFromDash?.firstName ?: prefs.getUserName() ?: "Client User"
     val userEmail = userFromDash?.email ?: prefs.getUserEmail() ?: ""
+    val dbUser by database.userDao().getUserByEmail(userEmail).collectAsState(initial = null)
+    val userName = dbUser?.displayName ?: userFromDash?.displayName ?: userFromDash?.firstName ?: prefs.getUserName() ?: "Client User"
     val initials = userName.split(" ")
         .filter { it.isNotEmpty() }
         .mapNotNull { it.firstOrNull()?.uppercase() }
@@ -78,7 +79,6 @@ fun SettingsScreen(
     var currency by remember { mutableStateOf(prefs.getCurrency()) }
     
     var showPasswordDialog by remember { mutableStateOf(false) }
-    var showLogoutDialog by remember { mutableStateOf(false) }
     var showFeedbackDialog by remember { mutableStateOf(false) }
     var showSessionsDialog by remember { mutableStateOf(false) }
     var showExportDialog by remember { mutableStateOf(false) }
@@ -140,7 +140,7 @@ fun SettingsScreen(
                     contentAlignment = Alignment.Center
                 ) {
                     var imageError by remember { mutableStateOf(false) }
-                    val cachedPhotoData = prefs.getUserPhotoData()
+                    val cachedPhotoData = dbUser?.profilePhotoData ?: prefs.getUserPhotoData()
                     if (!imageError) {
                         val photoModel = when {
                             !cachedPhotoData.isNullOrEmpty() -> {
@@ -329,17 +329,6 @@ fun SettingsScreen(
             showFeedbackDialog = true
         }
 
-        Spacer(modifier = Modifier.height(32.dp))
-        Button(
-            onClick = { showLogoutDialog = true },
-            modifier = Modifier.fillMaxWidth(),
-            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
-        ) {
-            Icon(Icons.AutoMirrored.Filled.Logout, contentDescription = null)
-            Spacer(modifier = Modifier.width(8.dp))
-            Text("LOGOUT FROM PORTAL")
-        }
-
         Spacer(modifier = Modifier.height(24.dp))
         Text("App Version: 1.0.0", style = MaterialTheme.typography.labelSmall, modifier = Modifier.align(Alignment.CenterHorizontally))
         Spacer(modifier = Modifier.height(48.dp))
@@ -394,30 +383,6 @@ fun SettingsScreen(
                 }) { Text("REQUEST EXPORT") }
             },
             dismissButton = { TextButton(onClick = { showExportDialog = false }) { Text("CANCEL") } }
-        )
-    }
-
-    if (showLogoutDialog) {
-        AlertDialog(
-            onDismissRequest = { showLogoutDialog = false },
-            title = { Text("Logout") },
-            text = { Text("Are you sure you want to end your session? All local cache will be cleared.") },
-            confirmButton = {
-                Button(
-                    onClick = {
-                        showLogoutDialog = false
-                        scope.launch {
-                            prefs.clear()
-                            database.projectDao().clearProjects()
-                            database.invoiceDao().clearInvoices()
-                            database.reportDao().clearReports()
-                            onLogout()
-                        }
-                    },
-                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
-                ) { Text("LOGOUT") }
-            },
-            dismissButton = { TextButton(onClick = { showLogoutDialog = false }) { Text("CANCEL") } }
         )
     }
 }
