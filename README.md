@@ -78,7 +78,7 @@ adb install -r app/build/outputs/apk/release/app-release.apk
 
 ## 🌐 Backend Integration
 The app is fully synchronized with the Greggory Firm production environment:
-*   **Production API:** `https://the-greggory-systems-and-strategy-firm-jz7i.onrender.com/`
+*   **Production API:** `https://w-the-greggory-systems-and-strategy-firm-vik4.onrender.com/`
 *   **Primary DB (Cloud):** Aiven Cloud MySQL
 *   **Auth Protocol:** Locked database-generated terminal tokens.
 *   **Financial Gateway:** Triple-Redundancy M-Pesa Integration (STK Push + Auto-Interceptor).

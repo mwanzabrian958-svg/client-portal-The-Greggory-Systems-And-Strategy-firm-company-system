@@ -7,13 +7,13 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.foundation.shape.CircleShape
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Assignment
+import androidx.compose.material.icons.automirrored.filled.Chat
 import androidx.compose.material.icons.automirrored.filled.Logout
 import androidx.compose.material.icons.automirrored.filled.TrendingUp
 import androidx.compose.material.icons.filled.*
@@ -42,6 +42,7 @@ import com.greggory.portal.utils.UpdateInfo
 import com.greggory.portal.utils.UpdateManager
 import kotlinx.coroutines.async
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -63,6 +64,9 @@ fun PortalScreen(
     val localInvoices by database.invoiceDao().getAllInvoices().collectAsState(initial = emptyList())
     val localReports by database.reportDao().getAllReports().collectAsState(initial = emptyList())
 
+    val clientEmail = preferencesManager.getUserEmail() ?: ""
+    val userEntity by database.userDao().getUserByEmail(clientEmail).collectAsState(initial = null)
+
     var dashboardData by remember { mutableStateOf<DashboardResponse?>(null) }
     var notificationsData by remember { mutableStateOf<List<Notification>>(emptyList()) }
     var reportsData by remember { mutableStateOf<List<Report>>(emptyList()) }
@@ -77,6 +81,39 @@ fun PortalScreen(
     var isSearchLoading by remember { mutableStateOf(false) }
     
     var selectedProjectId by remember { mutableStateOf<Int?>(null) }
+
+    // Continuous retry loop: If client's profile photo is missing in DB for clientEmail, keep calling API until one is available
+    LaunchedEffect(clientEmail, userEntity?.profilePhotoData) {
+        if (clientEmail.isNotEmpty()) {
+            val photoData = userEntity?.profilePhotoData ?: preferencesManager.getUserPhotoData()
+            if (photoData.isNullOrBlank()) {
+                while (isActive) {
+                    try {
+                        val response = RetrofitClient.instance.getDashboard()
+                        if (response.isSuccessful && response.body()?.success == true) {
+                            val userObj = response.body()?.dashboard?.user
+                            if (userObj != null) {
+                                database.userDao().insertUser(userObj.toEntity())
+                                preferencesManager.saveUserInfo(
+                                    userObj.id,
+                                    userObj.email,
+                                    userObj.displayName ?: "${userObj.firstName} ${userObj.lastName ?: ""}".trim(),
+                                    userObj.phone ?: "",
+                                    userObj.primaryRole,
+                                    userObj.missionBriefing,
+                                    userObj.profilePhotoData
+                                )
+                                if (!userObj.profilePhotoData.isNullOrBlank()) {
+                                    break // Profile photo successfully fetched!
+                                }
+                            }
+                        }
+                    } catch (ignored: Exception) {}
+                    delay(4000)
+                }
+            }
+        }
+    }
 
     // Update States
     var updateInfo by remember { mutableStateOf<UpdateInfo?>(null) }
@@ -192,7 +229,10 @@ fun PortalScreen(
         val token = preferencesManager.getToken()
         if (token == null) {
             scope.launch {
+                try { database.userDao().purgeAllTokens() } catch (ignored: Exception) {}
                 try { database.clearAllTables() } catch (ignored: Exception) {}
+                preferencesManager.clearToken()
+                preferencesManager.clear()
                 onLogout()
             }
             return
@@ -226,6 +266,11 @@ fun PortalScreen(
                         if (isDashIntegrityValid) {
                             dashboardData = dashResponse.body()
                             errorMessage = null // Clear any previous breach error if dashboard is now valid
+                            body?.user?.let { u ->
+                                try {
+                                    database.userDao().insertUser(u.toEntity())
+                                } catch (ignored: Exception) {}
+                            }
                             body?.projects?.let { projects ->
                                 try {
                                     database.projectDao().clearProjects()
@@ -292,7 +337,9 @@ fun PortalScreen(
                         scope.launch { 
                             snackbarHostState.showSnackbar(errorMessage!!)
                             kotlinx.coroutines.delay(1000)
+                            try { database.userDao().purgeAllTokens() } catch (ignored: Exception) {}
                             try { database.clearAllTables() } catch (ignored: Exception) {}
+                            preferencesManager.clearToken()
                             preferencesManager.clear()
                             onLogout()
                         }
@@ -324,12 +371,23 @@ fun PortalScreen(
                         .verticalScroll(rememberScrollState())
                         .weight(1f, fill = false)
                 ) {
-                    DrawerHeader(dashboardData?.dashboard?.user)
+                    DrawerHeader(
+                        user = dashboardData?.dashboard?.user ?: userEntity?.toUserInfo(),
+                        profilePhotoData = userEntity?.profilePhotoData ?: preferencesManager.getUserPhotoData()
+                    )
                     HorizontalDivider()
                     Spacer(modifier = Modifier.height(12.dp))
                     
-                    DrawerItem("Home", Icons.Default.Dashboard, currentView == "Home") {
-                        currentView = "Home"; scope.launch { drawerState.close() }
+                    DrawerItem("Logout", Icons.AutoMirrored.Filled.Logout, false) {
+                        scope.launch {
+                            drawerState.close()
+                            try { database.userDao().purgeAllTokens() } catch (ignored: Exception) {}
+                            try { database.clearAllTables() } catch (ignored: Exception) {}
+                            preferencesManager.clearToken()
+                            preferencesManager.clear()
+                            RetrofitClient.initialize(context)
+                            onLogout()
+                        }
                     }
                     
                     Text("ACCOUNT", style = MaterialTheme.typography.labelSmall, modifier = Modifier.padding(16.dp), color = MaterialTheme.colorScheme.primary)
@@ -338,16 +396,6 @@ fun PortalScreen(
                     }
                     DrawerItem("App Settings", Icons.Default.Settings, currentView == "Settings") {
                         currentView = "Settings"; scope.launch { drawerState.close() }
-                    }
-                }
-                
-                Spacer(modifier = Modifier.weight(1f))
-                HorizontalDivider()
-                DrawerItem("Logout", Icons.AutoMirrored.Filled.Logout, false) {
-                    scope.launch {
-                        try { database.clearAllTables() } catch (ignored: Exception) {}
-                        preferencesManager.clear()
-                        onLogout()
                     }
                 }
             }
@@ -399,14 +447,14 @@ fun PortalScreen(
                         }
                     },
                     actions = {
-                        val userName = preferencesManager.getUserName() ?: "Client"
+                        val userName = userEntity?.displayName ?: dashboardData?.dashboard?.user?.displayName ?: preferencesManager.getUserName() ?: "Client"
                         val initials = userName.split(" ")
                             .filter { it.isNotEmpty() }
                             .mapNotNull { it.firstOrNull()?.uppercase() }
                             .take(2)
                             .joinToString("")
                         var imageError by remember { mutableStateOf(false) }
-                        val cachedPhotoData = preferencesManager.getUserPhotoData()
+                        val cachedPhotoData = userEntity?.profilePhotoData ?: preferencesManager.getUserPhotoData()
 
                         Box(
                             modifier = Modifier
@@ -502,7 +550,7 @@ fun PortalScreen(
                                     onViewPdf = onViewPdf
                                 )
                                 "Documents" -> ReportsScreen(
-                                    reports = if (reportsData.isNotEmpty()) reportsData else localReports.map { it.toApi() },
+                                    reports = reportsData.ifEmpty { localReports.map { it.toApi() } },
                                     onViewPdf = onViewPdf
                                 )
                                 "Services" -> JobServicesScreen()
@@ -563,17 +611,65 @@ fun PortalScreen(
 }
 
 @Composable
-fun DrawerHeader(user: UserInfo?) {
+fun DrawerHeader(user: UserInfo?, profilePhotoData: String? = null) {
+    val context = LocalContext.current
+    val prefs = remember { PreferencesManager.getInstance(context) }
+    val initials = user?.let {
+        (it.displayName ?: "${it.firstName} ${it.lastName ?: ""}").split(" ")
+            .filter { part -> part.isNotEmpty() }
+            .mapNotNull { part -> part.firstOrNull()?.uppercase() }
+            .take(2)
+            .joinToString("")
+    } ?: "G"
+
     Column(modifier = Modifier.padding(28.dp)) {
-        Image(
-            painter = painterResource(id = R.drawable.ic_launcher), 
-            contentDescription = null, 
-            modifier = Modifier.size(48.dp)
-        )
+        Box(
+            modifier = Modifier
+                .size(56.dp)
+                .clip(CircleShape)
+                .background(MaterialTheme.colorScheme.primaryContainer),
+            contentAlignment = Alignment.Center
+        ) {
+            var imageError by remember { mutableStateOf(false) }
+            val photoData = profilePhotoData ?: user?.profilePhotoData
+            val photoModel = when {
+                !photoData.isNullOrBlank() -> {
+                    if (photoData.startsWith("http") || photoData.startsWith("data:")) photoData else "${RetrofitClient.BASE_URL}$photoData"
+                }
+                else -> "${RetrofitClient.BASE_URL}api/users/profile-photo/me"
+            }
+            if (!imageError) {
+                val imageRequest = remember(photoModel, prefs.getToken()) {
+                    val builder = coil.request.ImageRequest.Builder(context)
+                        .data(photoModel)
+                        .crossfade(true)
+                    if (prefs.getToken() != null) {
+                        builder.addHeader("Authorization", "Bearer ${prefs.getToken()}")
+                    }
+                    builder.build()
+                }
+                AsyncImage(
+                    model = imageRequest,
+                    contentDescription = "Profile Photo",
+                    modifier = Modifier.fillMaxSize(),
+                    contentScale = ContentScale.Crop,
+                    onError = { imageError = true },
+                    onSuccess = { imageError = false }
+                )
+            }
+            if (imageError || initials.isEmpty()) {
+                Text(
+                    text = initials,
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onPrimaryContainer
+                )
+            }
+        }
         Spacer(modifier = Modifier.height(12.dp))
         if (user != null) {
             Text(
-                text = user.firstName,
+                text = user.displayName ?: user.firstName,
                 style = MaterialTheme.typography.titleMedium, 
                 fontWeight = FontWeight.Bold, 
                 color = MaterialTheme.colorScheme.primary
@@ -658,7 +754,7 @@ fun HomeScreen(
                 QuickActionCard("Requests", Icons.Default.Assessment, Modifier.weight(1f)) { onNavigate("Requests") }
             }
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                QuickActionCard("Direct Strategy Support", Icons.Default.Chat, Modifier.weight(1f)) { onNavigateToChat() }
+                QuickActionCard("Direct Strategy Support", Icons.AutoMirrored.Filled.Chat, Modifier.weight(1f)) { onNavigateToChat() }
                 QuickActionCard("Request Job", Icons.Default.AddCircle, Modifier.weight(1f)) { onNavigate("Services") }
                 QuickActionCard("Feedback", Icons.Default.RateReview, Modifier.weight(1f)) { onNavigate("Feedback") }
             }
@@ -732,7 +828,7 @@ fun HomeScreen(
 
         Spacer(modifier = Modifier.height(24.dp))
         SectionHeader("Active Projects", Icons.Default.BusinessCenter)
-        ProjectsSummaryList(displayProjects.take(3), onNavigate, onViewProject)
+        ProjectsSummaryList(displayProjects.take(3), onViewProject)
         
         // Section Header "Milestone Tasks" with AutoMirrored icon
         Spacer(modifier = Modifier.height(24.dp))
@@ -878,7 +974,6 @@ fun HomeKpiSection(
 @Composable
 fun ProjectsSummaryList(
     projects: List<Project>, 
-    onNavigate: (String) -> Unit,
     onViewProject: (Int) -> Unit
 ) {
     if (projects.isEmpty()) {

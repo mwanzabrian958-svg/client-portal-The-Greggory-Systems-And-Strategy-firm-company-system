@@ -75,7 +75,7 @@ In `RetrofitClient.kt`, I added a security feature called SSL Pinning.
 2. **Action Required:** You must replace this with the real fingerprint of your Render certificate.
 3. **How to get it:** Open a terminal on your computer and run:
    ```bash
-   openssl s_client -connect the-greggory-systems-and-strategy-firm-jz7i.onrender.com:443 | openssl x509 -pubkey -noout | openssl pkey -pubin -outform der | openssl dgst -sha256 -binary | openssl enc -base64
+   openssl s_client -connect w-the-greggory-systems-and-strategy-firm-vik4.onrender.com:443 | openssl x509 -pubkey -noout | openssl pkey -pubin -outform der | openssl dgst -sha256 -binary | openssl enc -base64
    ```
 4. Paste the output string into `RetrofitClient.kt` replacing the `AAAAA...` string.
 

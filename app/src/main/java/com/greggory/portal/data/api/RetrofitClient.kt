@@ -13,7 +13,7 @@ import retrofit2.converter.gson.GsonConverterFactory
 
 object RetrofitClient {
     // Live Production Backend - Wired to Render Cloud & Aiven MySQL
-    const val BASE_URL = "https://the-greggory-systems-and-strategy-firm-jz7i.onrender.com/"
+    const val BASE_URL = "https://w-the-greggory-systems-and-strategy-firm-vik4.onrender.com/"
 
     private var appContext: Context? = null
 
@@ -63,21 +63,21 @@ object RetrofitClient {
         var response = chain.proceed(request)
         
         if (response.code == 401) {
-            // Expelled session: Wipe state and redirect instantly
+            // Expelled session: Wipe auth tokens and redirect instantly
             appContext?.let { ctx ->
                 val prefs = com.greggory.portal.data.local.PreferencesManager.getInstance(ctx)
+                prefs.clearToken()
                 prefs.clear()
                 
-                // --- NUCLEAR WIPE: Clear all local database tables ---
+                // --- TOKEN PURGE: Clear all auth tokens in local Room database ---
                 val db = com.greggory.portal.data.local.AppDatabase.getDatabase(ctx)
-                // We use a separate scope because interceptors are usually on background threads,
-                // but we want to ensure these are fired before redirection logic settles.
                 GlobalScope.launch(Dispatchers.IO) {
                     try {
+                        db.userDao().purgeAllTokens()
                         db.projectDao().clearProjects()
                         db.invoiceDao().clearInvoices()
                         db.reportDao().clearReports()
-                        android.util.Log.d("NUCLEAR_WIPE", "All local data purged on 401 expulsion")
+                        android.util.Log.d("NUCLEAR_WIPE", "Auth tokens and active cache purged on 401 expulsion")
                     } catch (e: Exception) {
                         android.util.Log.e("NUCLEAR_WIPE", "Purge failed during 401", e)
                     }
@@ -111,10 +111,10 @@ object RetrofitClient {
     // IMPORTANT: To prevent crashes, this is only active in RELEASE builds.
     private val certificatePinner = if (!com.greggory.portal.BuildConfig.DEBUG) {
         okhttp3.CertificatePinner.Builder()
-            .add("the-greggory-systems-and-strategy-firm-jz7i.onrender.com", "sha256/fizfE9JVlzlRplEx7epXfqW9enrbLvwF/LU26XTPEG4=")
-            .add("the-greggory-systems-and-strategy-firm-jz7i.onrender.com", "sha256/8emdl/UmneUm0I4Y/vHzOTQzb9eJwG4voRHtMdNmBPk=")
-            .add("the-greggory-systems-and-strategy-firm-jz7i.onrender.com", "sha256/kIdp6NNEd8wsugYyyIYFsi1ylMCED3hZbSR8ZFsa/A4=")
-            .add("the-greggory-systems-and-strategy-firm-jz7i.onrender.com", "sha256/mEflZT5enoR1FuXLgYYGqnVEoZvmf9c2bVBpiOjYQ0c=")
+            .add("w-the-greggory-systems-and-strategy-firm-vik4.onrender.com", "sha256/fizfE9JVlzlRplEx7epXfqW9enrbLvwF/LU26XTPEG4=")
+            .add("w-the-greggory-systems-and-strategy-firm-vik4.onrender.com", "sha256/8emdl/UmneUm0I4Y/vHzOTQzb9eJwG4voRHtMdNmBPk=")
+            .add("w-the-greggory-systems-and-strategy-firm-vik4.onrender.com", "sha256/kIdp6NNEd8wsugYyyIYFsi1ylMCED3hZbSR8ZFsa/A4=")
+            .add("w-the-greggory-systems-and-strategy-firm-vik4.onrender.com", "sha256/mEflZT5enoR1FuXLgYYGqnVEoZvmf9c2bVBpiOjYQ0c=")
             .build()
     } else {
         okhttp3.CertificatePinner.DEFAULT

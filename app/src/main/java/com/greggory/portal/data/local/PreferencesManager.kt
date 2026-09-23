@@ -44,7 +44,12 @@ class PreferencesManager private constructor(context: Context) {
         return sharedPreferences.getString("auth_token", null)
     }
 
+    fun clearToken() {
+        sharedPreferences.edit().remove("auth_token").remove("fcm_token").commit()
+    }
+
     fun clear() {
+        clearToken()
         sharedPreferences.edit().clear().commit()
     }
 
