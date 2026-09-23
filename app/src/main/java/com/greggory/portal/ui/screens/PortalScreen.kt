@@ -476,50 +476,52 @@ fun PortalScreen(
                         onRefresh = { refreshData(isManual = true) },
                         modifier = Modifier.fillMaxSize()
                     ) {
-                        when (currentView) {
-                            "Home" -> HomeScreen(
-                        isLoading = isLoading, 
-                        dashboardData = dashboardData, 
-                        localProjects = localProjects, 
-                        localInvoices = localInvoices, 
-                        notifications = notificationsData,
-                        onNavigate = { currentView = it },
-                        onViewProject = { selectedProjectId = it },
-                        onNavigateToChat = onNavigateToChat
-                    )
-                            "Projects" -> ProjectListScreen(
-                            projects = dashboardData?.dashboard?.projects ?: localProjects.map { it.toApi() },
-                            onViewPdf = onViewPdf,
-                            onViewDetails = { selectedProjectId = it.id }
-                        )
-                            "Team" -> TeamScreen(dashboardData?.dashboard?.teamMembers ?: emptyList())
-                            "Tasks" -> TasksScreen(dashboardData?.dashboard?.tasks ?: emptyList())
-                            "Billing" -> BillingScreen(
-                                invoices = dashboardData?.dashboard?.invoices ?: localInvoices.map { it.toApi() },
-                                onViewPdf = onViewPdf
-                            )
-                            "Documents" -> ReportsScreen(
-                                reports = if (reportsData.isNotEmpty()) reportsData else localReports.map { it.toApi() },
-                                onViewPdf = onViewPdf
-                            )
-                            "Services" -> JobServicesScreen()
-                            "Requests" -> RequestsScreen()
-                            "Messages" -> ChatScreen(
-                                messages = dashboardData?.dashboard?.messages ?: emptyList(),
-                                onSendMessage = { text ->
-                                    Toast.makeText(context, "Message Sent: $text", Toast.LENGTH_SHORT).show()
-                                }
-                            )
-                            "Feedback" -> FeedbackScreen()
-                            "Notifications" -> NotificationsScreen(notificationsData)
-                            "Profile" -> ProfileScreen(dashboardData)
-                            "Settings" -> SettingsScreen(
-                                onLogout = onLogout,
-                                onNavigateToProfile = { currentView = "Profile" },
-                                onNavigateToChat = onNavigateToChat,
-                                dashboardData = dashboardData
-                            )
-                            else -> Text("Section: $currentView", modifier = Modifier.align(Alignment.Center))
+                        Box(modifier = Modifier.fillMaxSize()) {
+                            when (currentView) {
+                                "Home" -> HomeScreen(
+                                    isLoading = isLoading, 
+                                    dashboardData = dashboardData, 
+                                    localProjects = localProjects, 
+                                    localInvoices = localInvoices, 
+                                    notifications = notificationsData,
+                                    onNavigate = { currentView = it },
+                                    onViewProject = { selectedProjectId = it },
+                                    onNavigateToChat = onNavigateToChat
+                                )
+                                "Projects" -> ProjectListScreen(
+                                    projects = dashboardData?.dashboard?.projects ?: localProjects.map { it.toApi() },
+                                    onViewPdf = onViewPdf,
+                                    onViewDetails = { selectedProjectId = it.id }
+                                )
+                                "Team" -> TeamScreen(dashboardData?.dashboard?.teamMembers ?: emptyList())
+                                "Tasks" -> TasksScreen(dashboardData?.dashboard?.tasks ?: emptyList())
+                                "Billing" -> BillingScreen(
+                                    invoices = dashboardData?.dashboard?.invoices ?: localInvoices.map { it.toApi() },
+                                    onViewPdf = onViewPdf
+                                )
+                                "Documents" -> ReportsScreen(
+                                    reports = if (reportsData.isNotEmpty()) reportsData else localReports.map { it.toApi() },
+                                    onViewPdf = onViewPdf
+                                )
+                                "Services" -> JobServicesScreen()
+                                "Requests" -> RequestsScreen()
+                                "Messages" -> ChatScreen(
+                                    messages = dashboardData?.dashboard?.messages ?: emptyList(),
+                                    onSendMessage = { text ->
+                                        Toast.makeText(context, "Message Sent: $text", Toast.LENGTH_SHORT).show()
+                                    }
+                                )
+                                "Feedback" -> FeedbackScreen()
+                                "Notifications" -> NotificationsScreen(notificationsData)
+                                "Profile" -> ProfileScreen(dashboardData)
+                                "Settings" -> SettingsScreen(
+                                    onLogout = onLogout,
+                                    onNavigateToProfile = { currentView = "Profile" },
+                                    onNavigateToChat = onNavigateToChat,
+                                    dashboardData = dashboardData
+                                )
+                                else -> Text("Section: $currentView", modifier = Modifier.align(Alignment.Center))
+                            }
                         }
                     }
 
@@ -638,7 +640,7 @@ fun HomeScreen(
             }
         }
 
-        HomeKpiSection(dashboardData, onNavigate)
+        HomeKpiSection(dashboardData, onNavigate, onNavigateToChat)
 
         Spacer(modifier = Modifier.height(24.dp))
         SectionHeader("Operations Hub", Icons.Default.Apps)
@@ -654,7 +656,7 @@ fun HomeScreen(
                 QuickActionCard("Requests", Icons.Default.Assessment, Modifier.weight(1f)) { onNavigate("Requests") }
             }
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                QuickActionCard("Support Inbox", Icons.Default.Email, Modifier.weight(1f)) { onNavigateToChat() }
+                QuickActionCard("Direct Strategy Support", Icons.Default.Chat, Modifier.weight(1f)) { onNavigateToChat() }
                 QuickActionCard("Request Job", Icons.Default.AddCircle, Modifier.weight(1f)) { onNavigate("Services") }
                 QuickActionCard("Feedback", Icons.Default.RateReview, Modifier.weight(1f)) { onNavigate("Feedback") }
             }
@@ -772,24 +774,42 @@ fun MessageFeedItem(message: Message) {
 }
 
 @Composable
-fun HomeKpiSection(dashboardData: DashboardResponse?, onNavigate: (String) -> Unit) {
+fun HomeKpiSection(
+    dashboardData: DashboardResponse?, 
+    onNavigate: (String) -> Unit,
+    onNavigateToChat: () -> Unit
+) {
     val summary = dashboardData?.dashboard?.businessSummary
     
     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-        val kpiModifier = Modifier.weight(1f)
-        KpiCard("Active Projects", summary?.activeProjects?.toString() ?: "0", kpiModifier.clickable { onNavigate("Projects") })
-        KpiCard("Open Invoices", summary?.openInvoices?.toString() ?: "0", kpiModifier.clickable { onNavigate("Billing") })
+        KpiCard("Active Projects", summary?.activeProjects?.toString() ?: "0", Modifier.weight(1f).clickable { onNavigate("Projects") })
+        KpiCard("Open Invoices", summary?.openInvoices?.toString() ?: "0", Modifier.weight(1f).clickable { onNavigate("Billing") })
     }
     Spacer(modifier = Modifier.height(8.dp))
     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-        val kpiModifier = Modifier.weight(1f)
-        KpiCard("Open Messages", summary?.openMessages?.toString() ?: "0", kpiModifier)
-        KpiCard("Next Milestone", summary?.nextMilestone ?: "Syncing...", kpiModifier.clickable { onNavigate("Tasks") })
+        KpiCard("Direct Strategy Support", "24/7 Active Lead", Modifier.weight(1f).clickable { onNavigateToChat() })
+        KpiCard("Next Milestone", summary?.nextMilestone ?: "Syncing...", Modifier.weight(1f).clickable { onNavigate("Tasks") })
     }
 
     dashboardData?.dashboard?.kpiMetrics?.forEach { metric ->
+        val label = if (metric.label.equals("On-time Delivery", ignoreCase = true) || metric.label.equals("On Time Delivery", ignoreCase = true)) {
+            "Direct Strategy Support"
+        } else {
+            metric.label
+        }
+        val value = if (label == "Direct Strategy Support" && (metric.value.contains("%") || metric.value.isEmpty())) {
+            "24/7 Active Lead"
+        } else {
+            metric.value
+        }
+        val isStrategySupport = label.contains("Strategy", ignoreCase = true) || label.contains("Support", ignoreCase = true)
+        val modifier = if (isStrategySupport) {
+            Modifier.fillMaxWidth().clickable { onNavigateToChat() }
+        } else {
+            Modifier.fillMaxWidth()
+        }
         Spacer(modifier = Modifier.height(8.dp))
-        KpiCard(metric.label, metric.value, Modifier.fillMaxWidth())
+        KpiCard(label, value, modifier)
     }
 }
 
@@ -809,8 +829,7 @@ fun ProjectsSummaryList(
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
             ) {
                 Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
-                    val contentModifier = Modifier.weight(1f)
-                    Column(modifier = contentModifier) {
+                    Column(modifier = Modifier.weight(1f)) {
                         Text(project.name, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Medium)
                         Text(project.status, style = MaterialTheme.typography.labelSmall)
                     }
@@ -833,8 +852,7 @@ fun TasksSummaryList(tasks: List<Task>, onNavigate: (String) -> Unit) {
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
             ) {
                 Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
-                    val contentModifier = Modifier.weight(1f)
-                    Column(modifier = contentModifier) {
+                    Column(modifier = Modifier.weight(1f)) {
                         Text(task.title, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold)
                         Text(task.project, style = MaterialTheme.typography.labelSmall)
                     }
@@ -857,8 +875,7 @@ fun InvoicesSummaryList(invoices: List<Invoice>, onNavigate: (String) -> Unit) {
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
             ) {
                 Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
-                    val contentModifier = Modifier.weight(1f)
-                    Column(modifier = contentModifier) {
+                    Column(modifier = Modifier.weight(1f)) {
                         Text("Invoice #${invoice.id}", style = MaterialTheme.typography.bodyLarge)
                         InvoiceStatusBadge(invoice.status)
                     }
