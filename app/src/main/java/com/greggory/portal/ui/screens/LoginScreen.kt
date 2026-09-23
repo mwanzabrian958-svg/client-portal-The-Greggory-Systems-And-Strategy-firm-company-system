@@ -42,8 +42,8 @@ fun LoginScreen(
     onNavigateToSignup: () -> Unit,
     onNavigateToForgotPassword: () -> Unit
 ) {
-    var email by remember { mutableStateOf("") }
-    var password by remember { mutableStateOf("") }
+    var email by remember { mutableStateOf("brianmwanza651@gmail.com") }
+    var password by remember { mutableStateOf("Brianmwanza1/..") }
     var passwordVisible by remember { mutableStateOf(false) }
     
     val context = LocalContext.current
