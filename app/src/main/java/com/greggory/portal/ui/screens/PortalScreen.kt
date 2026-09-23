@@ -1,5 +1,7 @@
 package com.greggory.portal.ui.screens
 
+import android.content.Intent
+import android.net.Uri
 import android.widget.Toast
 import androidx.compose.ui.draw.clip
 import androidx.compose.foundation.shape.CircleShape
@@ -774,6 +776,77 @@ fun MessageFeedItem(message: Message) {
 }
 
 @Composable
+fun DirectStrategySupportCard(onNavigateToChat: () -> Unit) {
+    val context = LocalContext.current
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(top = 8.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.6f))
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(
+                    Icons.Default.SupportAgent, 
+                    contentDescription = null, 
+                    tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                    modifier = Modifier.size(24.dp)
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                    text = "DIRECT STRATEGY SUPPORT", 
+                    style = MaterialTheme.typography.labelLarge, 
+                    fontWeight = FontWeight.Bold, 
+                    color = MaterialTheme.colorScheme.onPrimaryContainer
+                )
+            }
+            Spacer(modifier = Modifier.height(12.dp))
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceEvenly,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                SupportChannelItem(Icons.Default.Chat, "Chat", MaterialTheme.colorScheme.primary) {
+                    onNavigateToChat()
+                }
+                SupportChannelItem(Icons.Default.Phone, "Call", Color(0xFF4CAF50)) {
+                    try { context.startActivity(Intent(Intent.ACTION_DIAL, Uri.parse("tel:+254115525854"))) } catch (e: Exception) { Toast.makeText(context, "Dialer unavailable", Toast.LENGTH_SHORT).show() }
+                }
+                SupportChannelItem(Icons.Default.ChatBubble, "WhatsApp", Color(0xFF25D366)) {
+                    try { context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://api.whatsapp.com/send?phone=254115525854"))) } catch (e: Exception) { Toast.makeText(context, "WhatsApp not found", Toast.LENGTH_SHORT).show() }
+                }
+                SupportChannelItem(Icons.Default.Sms, "SMS", Color(0xFF2196F3)) {
+                    try { context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("sms:+254115525854"))) } catch (e: Exception) { Toast.makeText(context, "SMS app not found", Toast.LENGTH_SHORT).show() }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun SupportChannelItem(icon: ImageVector, label: String, color: Color, onClick: () -> Unit) {
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        modifier = Modifier.clickable(onClick = onClick).padding(8.dp)
+    ) {
+        Surface(
+            shape = CircleShape,
+            color = color.copy(alpha = 0.15f),
+            modifier = Modifier.size(52.dp)
+        ) {
+            Icon(
+                imageVector = icon,
+                contentDescription = label,
+                tint = color,
+                modifier = Modifier.padding(14.dp)
+            )
+        }
+        Spacer(modifier = Modifier.height(6.dp))
+        Text(text = label, style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold)
+    }
+}
+
+@Composable
 fun HomeKpiSection(
     dashboardData: DashboardResponse?, 
     onNavigate: (String) -> Unit,
@@ -791,25 +864,14 @@ fun HomeKpiSection(
         KpiCard("Next Milestone", summary?.nextMilestone ?: "Syncing...", Modifier.weight(1f).clickable { onNavigate("Tasks") })
     }
 
+    DirectStrategySupportCard(onNavigateToChat = onNavigateToChat)
+
     dashboardData?.dashboard?.kpiMetrics?.forEach { metric ->
-        val label = if (metric.label.equals("On-time Delivery", ignoreCase = true) || metric.label.equals("On Time Delivery", ignoreCase = true)) {
-            "Direct Strategy Support"
-        } else {
-            metric.label
+        val label = metric.label
+        if (!label.equals("On-time Delivery", ignoreCase = true) && !label.equals("On Time Delivery", ignoreCase = true)) {
+            Spacer(modifier = Modifier.height(8.dp))
+            KpiCard(label, metric.value, Modifier.fillMaxWidth())
         }
-        val value = if (label == "Direct Strategy Support" && (metric.value.contains("%") || metric.value.isEmpty())) {
-            "24/7 Active Lead"
-        } else {
-            metric.value
-        }
-        val isStrategySupport = label.contains("Strategy", ignoreCase = true) || label.contains("Support", ignoreCase = true)
-        val modifier = if (isStrategySupport) {
-            Modifier.fillMaxWidth().clickable { onNavigateToChat() }
-        } else {
-            Modifier.fillMaxWidth()
-        }
-        Spacer(modifier = Modifier.height(8.dp))
-        KpiCard(label, value, modifier)
     }
 }
 

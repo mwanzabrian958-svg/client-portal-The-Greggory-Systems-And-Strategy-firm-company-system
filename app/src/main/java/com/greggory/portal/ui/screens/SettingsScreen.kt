@@ -186,29 +186,6 @@ fun SettingsScreen(
 
         Spacer(modifier = Modifier.height(24.dp))
 
-        // --- DIRECT STRATEGY SUPPORT ---
-        SettingsSectionHeader("Direct Strategy Support", Icons.Default.SupportAgent)
-        Row(
-            modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
-            horizontalArrangement = Arrangement.SpaceEvenly,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            SupportChannelItem(Icons.AutoMirrored.Filled.Chat, "Chat", MaterialTheme.colorScheme.primary) {
-                onNavigateToChat()
-            }
-            SupportChannelItem(Icons.Default.Phone, "Call", Color(0xFF4CAF50)) {
-                try { context.startActivity(Intent(Intent.ACTION_DIAL, Uri.parse("tel:+254115525854"))) } catch (e: Exception) { Toast.makeText(context, "Dialer unavailable", Toast.LENGTH_SHORT).show() }
-            }
-            SupportChannelItem(Icons.Default.ChatBubble, "WhatsApp", Color(0xFF25D366)) {
-                try { context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://api.whatsapp.com/send?phone=254115525854"))) } catch (e: Exception) { Toast.makeText(context, "WhatsApp not found", Toast.LENGTH_SHORT).show() }
-            }
-            SupportChannelItem(Icons.Default.Sms, "SMS", Color(0xFF2196F3)) {
-                try { context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("sms:+254115525854"))) } catch (e: Exception) { Toast.makeText(context, "SMS app not found", Toast.LENGTH_SHORT).show() }
-            }
-        }
-
-        Spacer(modifier = Modifier.height(24.dp))
-
         // --- APP CUSTOMIZATION ---
         SettingsSectionHeader("App Customization", Icons.Default.Palette)
         
@@ -550,28 +527,7 @@ fun FeedbackDialog(onDismiss: () -> Unit, onSend: (String, String) -> Unit) {
     )
 }
 
-@Composable
-fun SupportChannelItem(icon: ImageVector, label: String, color: Color, onClick: () -> Unit) {
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally,
-        modifier = Modifier.clickable(onClick = onClick).padding(8.dp)
-    ) {
-        Surface(
-            shape = CircleShape,
-            color = color.copy(alpha = 0.15f),
-            modifier = Modifier.size(52.dp)
-        ) {
-            Icon(
-                imageVector = icon,
-                contentDescription = label,
-                tint = color,
-                modifier = Modifier.padding(14.dp)
-            )
-        }
-        Spacer(modifier = Modifier.height(6.dp))
-        Text(text = label, style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold)
-    }
-}
+
 
 @Composable
 fun SettingsSectionHeader(title: String, icon: ImageVector) {
