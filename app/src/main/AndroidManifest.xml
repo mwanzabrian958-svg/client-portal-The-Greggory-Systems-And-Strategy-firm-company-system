@@ -16,6 +16,10 @@
         android:enableOnBackInvokedCallback="true"
         android:theme="@style/Theme.GreggoryPortal">
 
+        <meta-data
+            android:name="firebase_sessions_enabled"
+            android:value="false" />
+
         <provider
             android:name="androidx.core.content.FileProvider"
             android:authorities="com.greggory.portal.fileprovider"
@@ -41,7 +45,7 @@
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
                 <data android:scheme="https" />
-                <data android:host="w-the-greggory-systems-and-strategy-firm-vik4.onrender.com" />
+                <data android:host="the-greggory-systems-and-strategy-firm-jz7i.onrender.com" />
                 <data android:pathPrefix="/project" />
                 <data android:pathPrefix="/invoice" />
             </intent-filter>

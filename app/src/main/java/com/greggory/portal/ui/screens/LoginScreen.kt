@@ -192,12 +192,14 @@ fun LoginScreen(
                                     
                                     // Register FCM Token for Push Notifications
                                     try {
-                                        @Suppress("DEPRECATION")
-                                        val fcmToken = FirebaseMessaging.getInstance().token.await()
-                                        prefs.saveFcmToken(fcmToken)
-                                        RetrofitClient.instance.updatePushToken(
-                                            PushTokenRequest(fcmToken)
-                                        )
+                                        kotlinx.coroutines.withTimeoutOrNull(2000) {
+                                            @Suppress("DEPRECATION")
+                                            val fcmToken = FirebaseMessaging.getInstance().token.await()
+                                            prefs.saveFcmToken(fcmToken)
+                                            RetrofitClient.instance.updatePushToken(
+                                                PushTokenRequest(fcmToken)
+                                            )
+                                        }
                                     } catch (e: Exception) {
                                         // Non-critical: failure to register token shouldn't block login
                                         android.util.Log.e("FCM", "Failed to register token on login", e)

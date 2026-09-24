@@ -13,7 +13,7 @@ import retrofit2.converter.gson.GsonConverterFactory
 
 object RetrofitClient {
     // Live Production Backend - Wired to Render Cloud & Aiven MySQL
-    const val BASE_URL = "https://w-the-greggory-systems-and-strategy-firm-vik4.onrender.com/"
+    const val BASE_URL = "https://the-greggory-systems-and-strategy-firm-jz7i.onrender.com/"
 
     private var appContext: Context? = null
 
@@ -111,10 +111,10 @@ object RetrofitClient {
     // IMPORTANT: To prevent crashes, this is only active in RELEASE builds.
     private val certificatePinner = if (!com.greggory.portal.BuildConfig.DEBUG) {
         okhttp3.CertificatePinner.Builder()
-            .add("w-the-greggory-systems-and-strategy-firm-vik4.onrender.com", "sha256/fizfE9JVlzlRplEx7epXfqW9enrbLvwF/LU26XTPEG4=")
-            .add("w-the-greggory-systems-and-strategy-firm-vik4.onrender.com", "sha256/8emdl/UmneUm0I4Y/vHzOTQzb9eJwG4voRHtMdNmBPk=")
-            .add("w-the-greggory-systems-and-strategy-firm-vik4.onrender.com", "sha256/kIdp6NNEd8wsugYyyIYFsi1ylMCED3hZbSR8ZFsa/A4=")
-            .add("w-the-greggory-systems-and-strategy-firm-vik4.onrender.com", "sha256/mEflZT5enoR1FuXLgYYGqnVEoZvmf9c2bVBpiOjYQ0c=")
+            .add("the-greggory-systems-and-strategy-firm-jz7i.onrender.com", "sha256/fizfE9JVlzlRplEx7epXfqW9enrbLvwF/LU26XTPEG4=")
+            .add("the-greggory-systems-and-strategy-firm-jz7i.onrender.com", "sha256/8emdl/UmneUm0I4Y/vHzOTQzb9eJwG4voRHtMdNmBPk=")
+            .add("the-greggory-systems-and-strategy-firm-jz7i.onrender.com", "sha256/kIdp6NNEd8wsugYyyIYFsi1ylMCED3hZbSR8ZFsa/A4=")
+            .add("the-greggory-systems-and-strategy-firm-jz7i.onrender.com", "sha256/mEflZT5enoR1FuXLgYYGqnVEoZvmf9c2bVBpiOjYQ0c=")
             .build()
     } else {
         okhttp3.CertificatePinner.DEFAULT

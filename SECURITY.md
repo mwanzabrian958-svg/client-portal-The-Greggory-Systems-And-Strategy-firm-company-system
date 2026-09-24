@@ -45,7 +45,7 @@ The app is built with **R8/ProGuard** enabled in release mode.
 *   **Shrinking:** Unused code and resources are removed to reduce the attack surface.
 
 ## Backend Infrastructure
-*   **Production API:** `https://w-the-greggory-systems-and-strategy-firm-vik4.onrender.com/`
+*   **Production API:** `https://the-greggory-systems-and-strategy-firm-jz7i.onrender.com/`
 *   **Encryption:** Mandatory TLS 1.3 for all data in transit.
 *   **Database:** Aiven Cloud MySQL with enforced SSL connections.
 *   **Persistence:** Tokens follow a strict `7-day` rotation policy.
