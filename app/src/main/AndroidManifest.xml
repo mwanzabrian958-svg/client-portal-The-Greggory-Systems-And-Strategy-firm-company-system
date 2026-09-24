@@ -45,7 +45,7 @@
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
                 <data android:scheme="https" />
-                <data android:host="the-greggory-systems-and-strategy-firm-jz7i.onrender.com" />
+                <data android:host="greggory-firm-rtl3.onrender.com" />
                 <data android:pathPrefix="/project" />
                 <data android:pathPrefix="/invoice" />
             </intent-filter>
