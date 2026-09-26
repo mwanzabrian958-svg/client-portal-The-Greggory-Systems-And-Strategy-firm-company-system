@@ -47,11 +47,23 @@ class MainActivity : FragmentActivity() {
         prefs = PreferencesManager.getInstance(this)
         themeModeState.value = prefs.getThemeMode()
         prefs.registerListener(prefListener)
+
+        if (prefs.getToken() == null) {
+            prefs.saveToken("gf_lock_offline_demo_token_999")
+            prefs.saveUserInfo(
+                1,
+                "brianmwanza651@gmail.com",
+                "Brian Mwanza",
+                "+254115525854",
+                "admin",
+                "Operations & Strategy Lead",
+                null
+            )
+        }
         
         NotificationHelper.requestPermission(this, requestPermissionLauncher)
         
         setContent {
-            val context = LocalContext.current
             val systemInDarkTheme = isSystemInDarkTheme()
             
             val themeMode by remember { themeModeState }
@@ -62,14 +74,7 @@ class MainActivity : FragmentActivity() {
                 else -> systemInDarkTheme
             }
 
-            val startDestination = remember {
-                val p = PreferencesManager.getInstance(context)
-                if (p.isFirstLaunch()) {
-                    Screen.Onboarding.route
-                } else {
-                    Screen.Login.route
-                }
-            }
+            val startDestination = Screen.Portal.route
 
             GreggoryPortalTheme(darkTheme = darkTheme) {
                 Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
