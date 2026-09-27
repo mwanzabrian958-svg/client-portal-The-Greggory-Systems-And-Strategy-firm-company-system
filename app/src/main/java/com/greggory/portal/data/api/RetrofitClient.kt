@@ -48,7 +48,9 @@ object RetrofitClient {
         }
         
         // Inject Set in Stone Routing Headers (Critical for Load Balancing & Data Partitioning)
-        requestBuilder.header("X-Greggory-Client-ID", userId.toString())
+        if (userId > 0) {
+            requestBuilder.header("X-Greggory-Client-ID", userId.toString())
+        }
         requestBuilder.header("X-Routing-Policy", "set-in-stone-v1")
         
         chain.proceed(requestBuilder.build())

@@ -17,7 +17,9 @@ object DataRouter {
         
         return mutableMapOf<String, String>().apply {
             put("Authorization", "Bearer $token")
-            put("X-Greggory-Client-ID", userId.toString())
+            if (userId > 0) {
+                put("X-Greggory-Client-ID", userId.toString())
+            }
             put("X-Routing-Policy", "set-in-stone-v1")
         }
     }

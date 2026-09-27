@@ -19,6 +19,7 @@
 ### Forgot Password
 *   **Endpoint:** `POST /api/users/forgot-password`
 *   **Description:** Triggers a password reset email for the provided account.
+*   **Rate Limit:** 5 requests per 15 minutes per IP address.
 
 ### Change Password
 *   **Endpoint:** `POST /api/users/change-password`
@@ -30,7 +31,7 @@
 
 ### Upload Profile Photo
 *   **Endpoint:** `POST /api/users/profile-photo` (Multipart)
-*   **Description:** Uploads a new profile image directly to the secure storage.
+*   **Description:** Uploads a new profile image (`photo`) directly to secure storage. Matches backend `upload.single('photo')`.
 
 ---
 
@@ -38,12 +39,13 @@
 
 ### Get Dashboard Data
 *   **Endpoint:** `GET /api/users/client-dashboard`
-*   **Description:** Retrieves summary statistics, recent projects, active invoices, tasks, and KPI metrics.
-*   **Routing:** Automatically filtered by `X-Greggory-Client-ID`.
+*   **Description:** Retrieves summary statistics, recent projects, active invoices, tasks, team members, and KPI metrics.
+*   **Routing:** Automatically filtered by `X-Greggory-Client-ID` (sent only when `userId > 0`).
+*   **Payload Compatibility:** Accepts both `snake_case` (legacy API) and `camelCase` (payload builder) via robust Gson `@SerializedName(..., alternate = [...])` annotations across `Project`, `Task`, `Invoice`, and `TeamMember`.
 
 ### Get Project Ledger
 *   **Endpoint:** `GET /api/user-projects`
-*   **Description:** Returns a full list of all projects (active and archived) for the client.
+*   **Description:** Returns a full list of all projects (active and archived) for the client. Requires `authenticateUser` middleware on backend.
 
 ### Global Search
 *   **Endpoint:** `GET /api/users/search?q={query}`
@@ -82,7 +84,7 @@
 
 ### Download Invoice PDF
 *   **Endpoint:** `GET /api/users/my-invoices/{id}/pdf`
-*   **Description:** Generates and streams a PDF version of the specified invoice.
+*   **Description:** Generates and streams a PDF version of the specified invoice. Matches invoice number for M-Pesa account references.
 
 ### Upload Asset
 *   **Endpoint:** `POST /api/reports/upload-asset` (Multipart)
@@ -130,5 +132,13 @@
 *   **Endpoint:** `PUT /api/users/notifications/read-all/me`
 
 ### Update Push Token
-*   **Endpoint:** `POST /api/users/push-token`
-*   **Description:** Updates the Firebase FCM token for the device.
+*   **Endpoint:** `POST /api/fcm/register-token`
+*   **Description:** Updates the Firebase FCM token and device metadata (`PushTokenRequest` with `fcmToken` and `deviceInfo`).
+
+---
+
+## 8. Backend & API Contract Notes (Audit & Alignment)
+
+*   **Render Cloud Cold Starts:** The backend hosted on Render free tier may take ~60 seconds to spin up on cold start. Network timeouts in `RetrofitClient` are set to 60s to accommodate this.
+*   **401 Unauthorized Interceptor Protection:** 401 responses on login requests (`/login`) do **not** clear tokens or purge local database caches, ensuring invalid credentials display error states properly without wiping user data.
+*   **Routing Integrity (`X-Greggory-Client-ID`):** Header is sent only when `userId > 0`. Prevents global/unauthenticated calls from triggering routing integrity breaches.

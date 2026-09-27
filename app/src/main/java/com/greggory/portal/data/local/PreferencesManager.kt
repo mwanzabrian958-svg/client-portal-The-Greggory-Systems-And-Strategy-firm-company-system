@@ -53,6 +53,7 @@ class PreferencesManager private constructor(context: Context) {
     }
 
     fun saveUserInfo(userId: Int, email: String, name: String, phone: String? = null, role: String? = "user", briefing: String? = null, photoData: String? = null) {
+        if (userId <= 0) return
         sharedPreferences.edit().apply {
             putInt("user_id", userId)
             putString("user_email", email)

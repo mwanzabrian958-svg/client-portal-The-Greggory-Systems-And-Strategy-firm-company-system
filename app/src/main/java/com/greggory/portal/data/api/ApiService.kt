@@ -58,7 +58,7 @@ interface ApiService {
     @POST("api/users/change-password")
     suspend fun changePassword(@Body request: ChangePasswordRequest): Response<SimpleResponse>
 
-    @POST("api/users/push-token")
+    @POST("api/fcm/register-token")
     suspend fun updatePushToken(@Body request: PushTokenRequest): Response<SimpleResponse>
 
     @GET("api/users/search")
@@ -194,7 +194,18 @@ data class ChangeRequestAction(val project_id: Int, val title: String, val descr
 
 data class PaymentReportRequest(val invoiceId: String, val mpesaMessage: String)
 
-data class PushTokenRequest(val token: String, val platform: String = "android")
+data class PushTokenRequest(
+    @SerializedName("fcmToken", alternate = ["token"]) val fcmToken: String,
+    @SerializedName("deviceInfo") val deviceInfo: DeviceInfo? = null
+)
+
+data class DeviceInfo(
+    @SerializedName("os") val os: String = "android",
+    @SerializedName("osVersion") val osVersion: String? = null,
+    @SerializedName("model") val model: String? = null,
+    @SerializedName("appVersion") val appVersion: String? = null,
+    @SerializedName("clientId") val clientId: Int? = null
+)
 
 data class LoginRequest(val email: String, val password: String)
 
@@ -262,26 +273,26 @@ data class DashboardData(
 
 data class Project(
     val id: Int, 
-    @SerializedName("project_name") val name: String, 
+    @SerializedName("project_name", alternate = ["name"]) val name: String, 
     val status: String, 
-    @SerializedName("progress_percentage") val progress: Int, 
+    @SerializedName("progress_percentage", alternate = ["progress"]) val progress: Int, 
     @SerializedName("user_id", alternate = ["client_id"]) val clientId: Int,
     val priority: String? = "Medium",
-    @SerializedName("manager_name") val manager: String? = "Team Lead",
-    @SerializedName("end_date") val deadline: String? = null,
-    @SerializedName("estimated_budget") val plannedBudget: Double? = 0.0,
-    @SerializedName("actual_budget") val actualBudget: Double? = 0.0
+    @SerializedName("manager_name", alternate = ["manager"]) val manager: String? = "Team Lead",
+    @SerializedName("end_date", alternate = ["deadline"]) val deadline: String? = null,
+    @SerializedName("estimated_budget", alternate = ["plannedBudget"]) val plannedBudget: Double? = 0.0,
+    @SerializedName("actual_budget", alternate = ["actualBudget"]) val actualBudget: Double? = 0.0
 )
 
 data class Task(
     val id: Int,
-    @SerializedName("task_name") val title: String,
-    @SerializedName("project_name") val project: String,
-    @SerializedName("assignee_name") val assignee: String,
+    @SerializedName("task_name", alternate = ["title"]) val title: String,
+    @SerializedName("project_name", alternate = ["project"]) val project: String,
+    @SerializedName("assignee_name", alternate = ["assignee"]) val assignee: String,
     val priority: String,
-    @SerializedName("progress_percentage") val progress: Int,
+    @SerializedName("progress_percentage", alternate = ["progress"]) val progress: Int,
     val status: String,
-    @SerializedName("due_date") val dueDate: String?
+    @SerializedName("due_date", alternate = ["dueDate"]) val dueDate: String?
 )
 
 data class TeamMember(
@@ -291,7 +302,8 @@ data class TeamMember(
     val duties: String,
     val email: String?,
     val phone: String? = null,
-    @SerializedName("project_name") val projectName: String?
+    @SerializedName("project_name", alternate = ["projectName"]) val projectName: String? = null,
+    @SerializedName("project_id", alternate = ["projectId"]) val projectId: Int? = null
 )
 
 data class Message(
@@ -323,9 +335,9 @@ data class Invoice(
     val amount: Double,
     val status: String,
     @SerializedName("user_id", alternate = ["client_id"]) val clientId: Int,
-    @SerializedName("invoice_number") val invoiceNumber: String? = null,
-    @SerializedName("project_name") val projectName: String? = null,
-    @SerializedName("due_date") val dueDate: String? = null
+    @SerializedName("invoice_number", alternate = ["invoiceNumber"]) val invoiceNumber: String? = null,
+    @SerializedName("project_name", alternate = ["project"]) val projectName: String? = null,
+    @SerializedName("due_date", alternate = ["dueDate"]) val dueDate: String? = null
 )
 
 data class KpiMetric(val label: String, val value: String, val trend: String? = "neutral")
