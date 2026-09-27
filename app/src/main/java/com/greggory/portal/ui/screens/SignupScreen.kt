@@ -303,13 +303,18 @@ fun SignupScreen(onSignupSuccess: () -> Unit, onBackToLogin: () -> Unit) {
                             if (response.isSuccessful && response.body()?.success == true) {
                                 onBackToLogin()
                             } else {
-                                // Smart Fallback: bypass backend errors gracefully
-                                onBackToLogin()
+                                val errorBody = response.errorBody()?.string()
+                                val errorMsg = try {
+                                    val json = Gson().fromJson(errorBody, SimpleResponse::class.java)
+                                    json.message
+                                } catch (e: Exception) {
+                                    null
+                                }
+                                errorMessage = errorMsg ?: response.body()?.message ?: "Registration failed: ${response.code()}"
                             }
                         } catch (e: Exception) {
                             isLoading = false
-                            // Smart Fallback
-                            onBackToLogin()
+                            errorMessage = "Connection error: ${e.localizedMessage}"
                         }
                     }
                 },
