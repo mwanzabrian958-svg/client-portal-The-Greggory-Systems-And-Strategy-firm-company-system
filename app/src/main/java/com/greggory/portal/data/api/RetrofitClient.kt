@@ -5,6 +5,7 @@ import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
+import okhttp3.CertificatePinner
 import okhttp3.Interceptor
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
@@ -107,18 +108,8 @@ object RetrofitClient {
         }
     }
 
-    // SSL Pinning for "Set in Stone" Security
-    // IMPORTANT: To prevent crashes, this is only active in RELEASE builds.
-    private val certificatePinner = if (!com.greggory.portal.BuildConfig.DEBUG) {
-        okhttp3.CertificatePinner.Builder()
-            .add("the-greggory-systems-and-strategy-firm-jz7i.onrender.com", "sha256/fizfE9JVlzlRplEx7epXfqW9enrbLvwF/LU26XTPEG4=")
-            .add("the-greggory-systems-and-strategy-firm-jz7i.onrender.com", "sha256/8emdl/UmneUm0I4Y/vHzOTQzb9eJwG4voRHtMdNmBPk=")
-            .add("the-greggory-systems-and-strategy-firm-jz7i.onrender.com", "sha256/kIdp6NNEd8wsugYyyIYFsi1ylMCED3hZbSR8ZFsa/A4=")
-            .add("the-greggory-systems-and-strategy-firm-jz7i.onrender.com", "sha256/mEflZT5enoR1FuXLgYYGqnVEoZvmf9c2bVBpiOjYQ0c=")
-            .build()
-    } else {
-        okhttp3.CertificatePinner.DEFAULT
-    }
+    // SSL Pinning: Using DEFAULT system trust store to prevent certificate rotation failures on cloud hosts
+    private val certificatePinner = CertificatePinner.DEFAULT
 
     internal val httpClient = OkHttpClient.Builder()
         .connectTimeout(60, java.util.concurrent.TimeUnit.SECONDS)
