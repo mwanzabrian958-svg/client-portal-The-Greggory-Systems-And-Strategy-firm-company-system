@@ -11,49 +11,77 @@ class IntegrationFlowTest {
     private val gson = Gson()
 
     @Test
-    fun `Full Hand-in-Hand Application Journey Flow Simulator`() {
-        // --- STEP 1: CLIENT SIGNUP ---
+    fun `Execute Register and Login Flow for Test User`() {
+        // --- STEP 1: REGISTER NEW TEST USER ---
+        val registerRequest = RegisterRequest(
+            first_name = "DynamicTest",
+            last_name = "Client",
+            email = "dynamic_testuser@greggory.com",
+            phone = "0798765432",
+            password = "TestPassword123!"
+        )
+
+        val registerPayloadJson = gson.toJson(registerRequest)
+        assertTrue(registerPayloadJson.contains("dynamic_testuser@greggory.com"))
+        assertTrue(registerPayloadJson.contains("DynamicTest"))
+
+        // Simulate backend register response
         val registerResponseJson = """
             {
                 "success": true,
-                "message": "User registered successfully",
+                "message": "Test account registered successfully",
                 "loginInstead": false
             }
         """.trimIndent()
         
         val signUpResponse = gson.fromJson(registerResponseJson, RegisterResponse::class.java)
         assertTrue(signUpResponse.success)
-        assertEquals("User registered successfully", signUpResponse.message)
+        assertEquals("Test account registered successfully", signUpResponse.message)
 
-        // --- STEP 2: SECURE LOG IN ---
+        // --- STEP 2: LOG IN WITH NEW TEST USER ---
+        val loginRequest = LoginRequest(
+            email = "dynamic_testuser@greggory.com",
+            password = "TestPassword123!"
+        )
+        val loginPayloadJson = gson.toJson(loginRequest)
+        assertTrue(loginPayloadJson.contains("dynamic_testuser@greggory.com"))
+
+        // Simulate backend login response returning token and user metadata
         val loginResponseJson = """
             {
-                "id": 6,
-                "email": "client@greggory.com",
-                "first_name": "Brian",
-                "last_name": "Mwanza",
-                "display_name": "Brian Mwanza",
-                "token": "gf_lock_session_token_xyz"
+                "id": 99,
+                "email": "dynamic_testuser@greggory.com",
+                "first_name": "DynamicTest",
+                "last_name": "Client",
+                "display_name": "DynamicTest Client",
+                "primary_role": "user",
+                "token": "gf_lock_test_token_dynamic_99"
             }
         """.trimIndent()
 
         val loginResponse = gson.fromJson(loginResponseJson, LoginResponse::class.java)
-        assertEquals("gf_lock_session_token_xyz", loginResponse.token)
-        assertEquals(6, loginResponse.id)
+        assertEquals("gf_lock_test_token_dynamic_99", loginResponse.token)
+        assertEquals(99, loginResponse.id)
+        assertEquals("dynamic_testuser@greggory.com", loginResponse.email)
 
-        // --- STEP 3: PORTAL LAUNCH & DATA SYNC (HAND-IN-HAND CORRECTION LOAD) ---
+        // --- STEP 3: PORTAL DASHBOARD SYNC & ROUTING INTEGRITY ---
         val dashboardResponseJson = """
             {
                 "success": true,
                 "dashboard": {
-                    "user": { "id": 6, "first_name": "Brian", "mission_briefing": "Modernize infrastructure." },
+                    "user": { 
+                        "id": 99, 
+                        "email": "dynamic_testuser@greggory.com",
+                        "first_name": "DynamicTest", 
+                        "mission_briefing": "Automated pipeline verification." 
+                    },
                     "projects": [
-                        { "id": 101, "project_name": "Cloud Architecture Optimization", "status": "active", "progress_percentage": 75, "user_id": 6 }
+                        { "id": 501, "project_name": "Automated Security Audit", "status": "active", "progress_percentage": 90, "user_id": 99 }
                     ],
                     "invoices": [
-                        { "id": 201, "amount": 125000.0, "status": "pending", "user_id": 6 }
+                        { "id": 601, "amount": 250000.0, "status": "paid", "user_id": 99, "invoice_number": "INV-99-01" }
                     ],
-                    "businessSummary": { "activeProjects": 1, "openInvoices": 1, "openMessages": 2, "nextMilestone": "Database Migration" }
+                    "businessSummary": { "activeProjects": 1, "openInvoices": 0, "openMessages": 0, "nextMilestone": "Final Handover" }
                 }
             }
         """.trimIndent()
@@ -62,16 +90,16 @@ class IntegrationFlowTest {
         assertTrue(dashboardResponse.success == true)
         
         val dashboardData = dashboardResponse.dashboard!!
-        assertEquals("Modernize infrastructure.", dashboardData.user?.missionBriefing)
+        assertEquals(99, dashboardData.user?.id)
+        assertEquals("Automated pipeline verification.", dashboardData.user?.missionBriefing)
         assertEquals(1, dashboardData.projects?.size)
-        assertEquals("Cloud Architecture Optimization", dashboardData.projects?.get(0)?.name)
-        assertEquals(75, dashboardData.projects?.get(0)?.progress)
+        assertEquals("Automated Security Audit", dashboardData.projects?.get(0)?.name)
+        assertEquals(90, dashboardData.projects?.get(0)?.progress)
+        assertEquals("INV-99-01", dashboardData.invoices?.get(0)?.invoiceNumber)
 
-        // Validate the "Set in Stone" routing rule hand-in-hand match
+        // Verify Set-in-Stone Routing Integrity check passes for the newly registered user
         val remoteClientId = dashboardData.projects?.get(0)?.clientId ?: -1
         val localAuthenticatedUserId = loginResponse.id
-
-        // Verify Data Integrity check passes hand-in-hand
         assertTrue(DataRouter.verifyRoutingIntegrity(remoteClientId, localAuthenticatedUserId))
     }
 }
