@@ -14,7 +14,10 @@ import retrofit2.converter.gson.GsonConverterFactory
 
 object RetrofitClient {
     // Live Production Backend - Wired to Render Cloud & Aiven MySQL
-    const val BASE_URL = "https://the-greggory-systems-and-strategy-firm-jz7i.onrender.com/"
+    // NOTE: only the w-the-greggory-systems-and-strategy-firm-1vf9 host is live
+    // (it matches the website sitemap and serves /api/auth/whatsapp). The old
+    // jz7i / vik4 services 404 every route — that dead host is what broke login.
+    const val BASE_URL = "https://w-the-greggory-systems-and-strategy-firm-1vf9.onrender.com/"
 
     private var appContext: Context? = null
 

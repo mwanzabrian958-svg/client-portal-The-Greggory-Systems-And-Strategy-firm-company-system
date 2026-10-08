@@ -9,6 +9,7 @@ import com.greggory.portal.ui.screens.OnboardingScreen
 import com.greggory.portal.ui.screens.PortalScreen
 import com.greggory.portal.ui.screens.SignupScreen
 import com.greggory.portal.ui.screens.ForgotPasswordScreen
+import com.greggory.portal.ui.screens.OtpVerificationScreen
 import com.greggory.portal.ui.screens.PdfViewerScreen
 import com.greggory.portal.ui.screens.StrategyChatScreen
 import androidx.navigation.NavType
@@ -54,6 +55,9 @@ fun AppNavigation(navController: NavHostController, startDestination: String = S
                     },
                     onNavigateToForgotPassword = {
                         navController.navigate(Screen.ForgotPassword.route)
+                    },
+                    onNavigateToOtpVerification = {
+                        navController.navigate(Screen.OtpVerification.route)
                     }
                 )
             }
@@ -71,6 +75,13 @@ fun AppNavigation(navController: NavHostController, startDestination: String = S
             }
             composable(Screen.ForgotPassword.route) {
                 ForgotPasswordScreen(
+                    onBackToLogin = {
+                        navController.popBackStack()
+                    }
+                )
+            }
+            composable(Screen.OtpVerification.route) {
+                OtpVerificationScreen(
                     onBackToLogin = {
                         navController.popBackStack()
                     }

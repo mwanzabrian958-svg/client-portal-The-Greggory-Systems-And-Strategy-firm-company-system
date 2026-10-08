@@ -17,6 +17,19 @@ interface ApiService {
     @POST("api/users/forgot-password")
     suspend fun forgotPassword(@Body request: ForgotPasswordRequest): Response<SimpleResponse>
 
+    // ── WhatsApp OTP auth-code pipeline (/api/auth/whatsapp) ────────────────
+    // Two unauthenticated calls made before login (see backend/routes/whatsappAuth.js),
+    // plus a health probe. verify-code never issues a session — it only flips
+    // users.whatsapp_verified; the password login below still gates the portal.
+    @POST("api/auth/whatsapp/request-code")
+    suspend fun requestWhatsAppCode(@Body request: WhatsAppCodeRequest): Response<WhatsAppCodeResponse>
+
+    @POST("api/auth/whatsapp/verify-code")
+    suspend fun verifyWhatsAppCode(@Body request: WhatsAppVerifyRequest): Response<WhatsAppVerifyResponse>
+
+    @GET("api/auth/whatsapp/status")
+    suspend fun getWhatsAppAuthStatus(): Response<WhatsAppAuthStatusResponse>
+
     @GET("api/user-projects")
     suspend fun getProjects(): Response<List<Project>>
 
@@ -421,4 +434,39 @@ data class ImageUploadResponse(
     val success: Boolean,
     val message: String?,
     val imageUrl: String?
+)
+
+// ── WhatsApp OTP auth-code pipeline DTOs ────────────────────────────────────
+// Mirrors backend/routes/whatsappAuth.js responses exactly:
+// request-code always answers 200 with the SAME generic body for known and
+// unknown identifiers (no account enumeration); errors are 400/429/500/502
+// with { success, message }.
+
+data class WhatsAppCodeRequest(val identifier: String)
+
+data class WhatsAppCodeResponse(
+    val success: Boolean,
+    val message: String?,
+    @SerializedName("expiresInMinutes") val expiresInMinutes: Int?,
+    val simulated: Boolean?,
+    val provider: String?,
+    // Dev-only echo: present only in simulated mode when NODE_ENV !== 'production'.
+    val code: String?
+)
+
+data class WhatsAppVerifyRequest(val identifier: String, val code: String)
+
+data class WhatsAppVerifyResponse(
+    val success: Boolean,
+    @SerializedName("whatsapp_verified") val whatsappVerified: Boolean?,
+    val message: String?
+)
+
+data class WhatsAppAuthStatusResponse(
+    val success: Boolean,
+    val configured: Boolean?,
+    val provider: String?,
+    val template: String?,
+    @SerializedName("otpTtlMinutes") val otpTtlMinutes: Int?,
+    val issues: List<String>?
 )

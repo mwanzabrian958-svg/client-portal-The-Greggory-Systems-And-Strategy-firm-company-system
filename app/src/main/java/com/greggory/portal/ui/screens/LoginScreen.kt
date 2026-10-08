@@ -43,7 +43,8 @@ import kotlinx.coroutines.tasks.await
 fun LoginScreen(
     onLoginSuccess: () -> Unit,
     onNavigateToSignup: () -> Unit,
-    onNavigateToForgotPassword: () -> Unit
+    onNavigateToForgotPassword: () -> Unit,
+    onNavigateToOtpVerification: () -> Unit
 ) {
     var email by remember { mutableStateOf("brianmwanza651@gmail.com") }
     var password by remember { mutableStateOf("Brianmwanza1/..") }
@@ -127,6 +128,12 @@ fun LoginScreen(
         Spacer(modifier = Modifier.height(24.dp))
 
         Box(modifier = Modifier.fillMaxWidth()) {
+            TextButton(
+                onClick = { onNavigateToOtpVerification() },
+                modifier = Modifier.align(Alignment.CenterStart)
+            ) {
+                Text("Verify WhatsApp", style = MaterialTheme.typography.bodySmall)
+            }
             TextButton(
                 onClick = { onNavigateToForgotPassword() },
                 modifier = Modifier.align(Alignment.CenterEnd)
@@ -239,6 +246,6 @@ fun LoginScreen(
 @Composable
 fun LoginScreenPreview() {
     GreggoryPortalTheme {
-        LoginScreen(onLoginSuccess = {}, onNavigateToSignup = {}, onNavigateToForgotPassword = {})
+        LoginScreen(onLoginSuccess = {}, onNavigateToSignup = {}, onNavigateToForgotPassword = {}, onNavigateToOtpVerification = {})
     }
 }

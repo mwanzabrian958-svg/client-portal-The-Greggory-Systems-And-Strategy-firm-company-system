@@ -1,6 +1,6 @@
 # API Reference Documentation
 
-**Base URL:** `https://the-greggory-systems-and-strategy-firm-jz7i.onrender.com/`
+**Base URL:** `https://w-the-greggory-systems-and-strategy-firm-1vf9.onrender.com/`
 
 ---
 
@@ -20,6 +20,13 @@
 *   **Endpoint:** `POST /api/users/forgot-password`
 *   **Description:** Triggers a password reset email for the provided account.
 *   **Rate Limit:** 5 requests per 15 minutes per IP address.
+
+### WhatsApp Verification (OTP auth-code pipeline)
+*   **Health Probe:** `GET /api/auth/whatsapp/status` → `{ success, configured, provider, template, otpTtlMinutes, issues }`. Used by the app to warn clients when WhatsApp delivery is not configured server-side.
+*   **Request Code:** `POST /api/auth/whatsapp/request-code` — Payload: `{ identifier }` (email **or** phone in any common format). Sends a 6-digit code (10-minute TTL) to the WhatsApp number on file. The 200 response is intentionally **generic** for known and unknown identifiers (no account enumeration): `{ success, message, expiresInMinutes }`. A dev-only simulated mode echoes `{ code }` when no provider is configured and `NODE_ENV !== 'production'`.
+*   **Verify Code:** `POST /api/auth/whatsapp/verify-code` — Payload: `{ identifier, code }`. Burns the code and flips `users.whatsapp_verified`; responds `{ success, whatsapp_verified, message }`. **Never issues a session** — password login still gates the portal. 5 wrong attempts or expiry forces a new code.
+*   **App Entry Point:** Login screen → "Verify WhatsApp" → `OtpVerificationScreen` (60s resend cooldown mirrors the server's per-identifier cooldown).
+*   **Rate Limits:** request-code 5 / 15 min per IP; verify-code 20 / 15 min per IP; 60s per-identifier resend cooldown.
 
 ### Change Password
 *   **Endpoint:** `POST /api/users/change-password`
