@@ -217,7 +217,11 @@ fun LoginScreen(
             colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
         ) {
             if (isLoading) {
-                CircularProgressIndicator(color = Color.White, modifier = Modifier.size(24.dp))
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.Center) {
+                    CircularProgressIndicator(color = Color.White, modifier = Modifier.size(20.dp))
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Connecting (Cold Start ~60s)...", fontSize = 12.sp, color = Color.White)
+                }
             } else {
                 Text("LOG IN", fontWeight = FontWeight.Bold)
             }
