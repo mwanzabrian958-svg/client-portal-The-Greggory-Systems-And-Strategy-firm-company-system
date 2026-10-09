@@ -15,32 +15,13 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.greggory.portal.data.api.RetrofitClient
-import com.greggory.portal.data.api.WhatsAppAuthStatusResponse
-import com.greggory.portal.data.api.WhatsAppCodeRequest
-import com.greggory.portal.data.api.WhatsAppCodeResponse
-import com.greggory.portal.data.api.WhatsAppVerifyRequest
-import com.greggory.portal.data.api.WhatsAppVerifyResponse
-import com.google.gson.Gson
+import com.greggory.portal.data.api.ChannelStatusResponse
+import com.greggory.portal.data.api.OtpRequest
+import com.greggory.portal.data.api.OtpVerify
+import com.greggory.portal.data.api.OtpVerifyResponse
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
-import androidx.compose.ui.tooling.preview.Preview
-import com.greggory.portal.ui.theme.GreggoryPortalTheme
-
-/**
- * WhatsApp OTP verification — wired to the backend auth-code pipeline at
- * /api/auth/whatsapp (routes/whatsappAuth.js):
- *
- *   1. request-code { identifier }  -> a 6-digit code is sent to the client's
- *      WhatsApp number on file. The response is intentionally GENERIC (anti
- *      enumeration), so always show the returned message verbatim.
- *   2. verify-code { identifier, code } -> burns the code and flips
- *      users.whatsapp_verified. It never issues a session — the password
- *      login still gates the portal.
- *
- * Mirrors the server's abuse controls: a 60s per-identifier resend cooldown
- * and 6-digit-only codes with a 10-minute TTL / 5-attempt cap server-side.
- */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun OtpVerificationScreen(onBackToLogin: () -> Unit) {
@@ -56,7 +37,7 @@ fun OtpVerificationScreen(onBackToLogin: () -> Unit) {
     var deliveryNote by remember { mutableStateOf<String?>(null) }
     val scope = rememberCoroutineScope()
 
-    // Resend cooldown ticker (server enforces the same 60s window).
+    // Resend cooldown ticker (60s window)
     LaunchedEffect(resendCooldown) {
         if (resendCooldown > 0) {
             delay(1000)
@@ -64,7 +45,7 @@ fun OtpVerificationScreen(onBackToLogin: () -> Unit) {
         }
     }
 
-    // Success → hold the confirmation briefly, then return to Login.
+    // Success → hold confirmation briefly, then return to Login
     LaunchedEffect(verified) {
         if (verified) {
             delay(1500)
@@ -72,23 +53,25 @@ fun OtpVerificationScreen(onBackToLogin: () -> Unit) {
         }
     }
 
-    // Provider health probe: warn up front if WhatsApp delivery is not
-    // configured server-side, so clients don't wait for a code that can
-    // never arrive. Failures here are non-blocking.
+    // Channel status health probe
     LaunchedEffect(Unit) {
         try {
-            val response = RetrofitClient.instance.getWhatsAppAuthStatus()
-            val body: WhatsAppAuthStatusResponse? = response.body()
-            if (response.isSuccessful && body?.success == true && body.configured == false) {
-                deliveryNote = "WhatsApp delivery is not configured on the server yet — codes cannot be sent."
+            val response = RetrofitClient.instance.channelStatus()
+            val body: ChannelStatusResponse? = response.body()
+            if (response.isSuccessful && body?.success == true) {
+                val whatsappConfigured = body.whatsapp?.configured == true
+                val smsConfigured = body.sms?.configured == true
+                if (!whatsappConfigured && !smsConfigured) {
+                    deliveryNote = "No primary OTP delivery channels (WhatsApp/SMS) are fully configured on the server."
+                }
             }
-        } catch (ignored: Exception) { /* offline: the request itself will surface errors */ }
+        } catch (ignored: Exception) {}
     }
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("WhatsApp Verification") },
+                title = { Text("Multi-Channel Verification") },
                 navigationIcon = {
                     IconButton(onClick = onBackToLogin) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
@@ -115,7 +98,7 @@ fun OtpVerificationScreen(onBackToLogin: () -> Unit) {
             Spacer(modifier = Modifier.height(24.dp))
 
             Text(
-                text = "Verify your WhatsApp",
+                text = "Verify Your Account",
                 style = MaterialTheme.typography.headlineSmall,
                 fontWeight = FontWeight.Bold
             )
@@ -123,7 +106,7 @@ fun OtpVerificationScreen(onBackToLogin: () -> Unit) {
             Spacer(modifier = Modifier.height(8.dp))
 
             Text(
-                text = "Enter the email or phone number registered to your portal account. We'll send a 6-digit verification code to the WhatsApp number on file.",
+                text = "Enter your email or phone number. We'll send a 6-digit verification code through the active delivery channel.",
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(horizontal = 16.dp),
@@ -147,7 +130,6 @@ fun OtpVerificationScreen(onBackToLogin: () -> Unit) {
                 OutlinedTextField(
                     value = code,
                     onValueChange = { input ->
-                        // Server only accepts exactly 6 digits — enforce it here.
                         if (input.all { it.isDigit() } && input.length <= 6) code = input
                     },
                     label = { Text("6-Digit Code") },
@@ -178,17 +160,23 @@ fun OtpVerificationScreen(onBackToLogin: () -> Unit) {
                                     message = null
                                     scope.launch {
                                         try {
-                                            val response = RetrofitClient.instance.requestWhatsAppCode(
-                                                WhatsAppCodeRequest(cleanIdentifier)
+                                            val response = RetrofitClient.instance.requestCode(
+                                                OtpRequest(cleanIdentifier)
                                             )
                                             isSending = false
                                             if (response.isSuccessful && response.body()?.success == true) {
-                                                message = response.body()?.message ?: "If an account exists, a code has been sent via WhatsApp."
+                                                val body = response.body()!!
+                                                message = body.message.ifEmpty { "Code resent successfully." }
                                                 isError = false
                                                 resendCooldown = 60
                                             } else {
-                                                message = parseErrorMessage(response.errorBody()?.string())
-                                                    ?: "Could not resend the code. Please try again."
+                                                if (response.code() == 429) {
+                                                    message = "Too many requests. Please wait before trying again."
+                                                } else if (response.code() == 502) {
+                                                    message = "Could not send the code, please try again."
+                                                } else {
+                                                    message = "Could not resend the code. Please try again."
+                                                }
                                                 isError = true
                                             }
                                         } catch (e: Exception) {
@@ -236,29 +224,36 @@ fun OtpVerificationScreen(onBackToLogin: () -> Unit) {
                 onClick = {
                     val cleanIdentifier = identifier.trim()
                     if (!codeSent) {
-                        // ── Step 1: request the code ──
                         if (cleanIdentifier.isNotEmpty()) {
                             isSending = true
                             message = null
                             scope.launch {
                                 try {
-                                    val response = RetrofitClient.instance.requestWhatsAppCode(
-                                        WhatsAppCodeRequest(cleanIdentifier)
+                                    val response = RetrofitClient.instance.requestCode(
+                                        OtpRequest(cleanIdentifier)
                                     )
                                     isSending = false
                                     if (response.isSuccessful && response.body()?.success == true) {
                                         val body = response.body()!!
-                                        // Generic anti-enumeration message — always shown as-is.
-                                        message = body.message
-                                            ?: "If an account exists for $cleanIdentifier, a code has been sent via WhatsApp."
+                                        val provider = body.provider ?: "whatsapp"
+                                        val announcement = when {
+                                            provider.contains("sms", ignoreCase = true) -> "Code sent by SMS"
+                                            provider.contains("voice", ignoreCase = true) -> "You will receive a phone call reading your code"
+                                            provider.contains("email", ignoreCase = true) -> "Check your email for the verification code"
+                                            else -> "Check WhatsApp for the verification code"
+                                        }
+                                        message = "$announcement (Expires in ${body.expiresInMinutes}m)"
                                         isError = false
                                         codeSent = true
                                         resendCooldown = 60
-                                        // Dev-only simulated echo (never present against production).
-                                        if (!body.code.isNullOrEmpty()) code = body.code
                                     } else {
-                                        message = parseErrorMessage(response.errorBody()?.string())
-                                            ?: "Could not send the code. Please try again."
+                                        if (response.code() == 429) {
+                                            message = "Too many requests. Please wait before trying again."
+                                        } else if (response.code() == 502) {
+                                            message = "Could not send the code, please try again."
+                                        } else {
+                                            message = "Could not send code. Please check your identifier."
+                                        }
                                         isError = true
                                     }
                                 } catch (e: Exception) {
@@ -272,33 +267,31 @@ fun OtpVerificationScreen(onBackToLogin: () -> Unit) {
                             isError = true
                         }
                     } else {
-                        // ── Step 2: verify the code ──
                         if (code.length == 6) {
                             isVerifying = true
                             message = null
                             scope.launch {
                                 try {
-                                    val response = RetrofitClient.instance.verifyWhatsAppCode(
-                                        WhatsAppVerifyRequest(cleanIdentifier, code)
+                                    val response = RetrofitClient.instance.verifyCode(
+                                        OtpVerify(cleanIdentifier, code)
                                     )
                                     isVerifying = false
                                     if (response.isSuccessful && response.body()?.success == true) {
-                                        message = response.body()?.message ?: "Your WhatsApp number has been verified."
+                                        message = response.body()?.message ?: "Verification successful!"
                                         isError = false
                                         verified = true
                                     } else {
-                                        message = parseErrorMessage(response.errorBody()?.string())
-                                            ?: "Invalid or expired code. Please request a new one."
+                                        message = "Invalid or expired code. Please check and try again."
                                         isError = true
                                     }
                                 } catch (e: Exception) {
                                     isVerifying = false
-                                    message = "Network error: ${e.localizedMessage}"
+                                    message = "Verification error: ${e.localizedMessage}"
                                     isError = true
                                 }
                             }
                         } else {
-                            message = "Enter the full 6-digit code"
+                            message = "Please enter the 6-digit code"
                             isError = true
                         }
                     }
@@ -306,37 +299,15 @@ fun OtpVerificationScreen(onBackToLogin: () -> Unit) {
                 enabled = !isSending && !isVerifying && !verified,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(50.dp)
+                    .height(50.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
             ) {
                 if (isSending || isVerifying) {
                     CircularProgressIndicator(color = Color.White, modifier = Modifier.size(24.dp))
                 } else {
-                    Text(
-                        text = if (!codeSent) "SEND CODE" else "VERIFY CODE",
-                        fontWeight = FontWeight.Bold
-                    )
+                    Text(if (!codeSent) "SEND CODE" else "VERIFY CODE", fontWeight = FontWeight.Bold)
                 }
             }
         }
-    }
-}
-
-/** Pulls { success, message } error bodies (400/429/500/502) into a readable string. */
-private fun parseErrorMessage(errorBody: String?): String? {
-    val gson = Gson()
-    val codeMsg = try {
-        gson.fromJson(errorBody, WhatsAppCodeResponse::class.java)?.message
-    } catch (e: Exception) { null }
-    if (codeMsg != null) return codeMsg
-    return try {
-        gson.fromJson(errorBody, WhatsAppVerifyResponse::class.java)?.message
-    } catch (e: Exception) { null }
-}
-
-@Preview(showBackground = true)
-@Composable
-fun OtpVerificationScreenPreview() {
-    GreggoryPortalTheme {
-        OtpVerificationScreen(onBackToLogin = {})
     }
 }

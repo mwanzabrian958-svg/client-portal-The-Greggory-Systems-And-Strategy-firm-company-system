@@ -17,18 +17,15 @@ interface ApiService {
     @POST("api/users/forgot-password")
     suspend fun forgotPassword(@Body request: ForgotPasswordRequest): Response<SimpleResponse>
 
-    // ── WhatsApp OTP auth-code pipeline (/api/auth/whatsapp) ────────────────
-    // Two unauthenticated calls made before login (see backend/routes/whatsappAuth.js),
-    // plus a health probe. verify-code never issues a session — it only flips
-    // users.whatsapp_verified; the password login below still gates the portal.
+    // ── Multi-Channel OTP pipeline (as requested in prompt) ───────────────
     @POST("api/auth/whatsapp/request-code")
-    suspend fun requestWhatsAppCode(@Body request: WhatsAppCodeRequest): Response<WhatsAppCodeResponse>
+    suspend fun requestCode(@Body b: OtpRequest): Response<OtpRequestResponse>
 
     @POST("api/auth/whatsapp/verify-code")
-    suspend fun verifyWhatsAppCode(@Body request: WhatsAppVerifyRequest): Response<WhatsAppVerifyResponse>
+    suspend fun verifyCode(@Body b: OtpVerify): Response<OtpVerifyResponse>
 
-    @GET("api/auth/whatsapp/status")
-    suspend fun getWhatsAppAuthStatus(): Response<WhatsAppAuthStatusResponse>
+    @GET("api/notify/status")
+    suspend fun channelStatus(): Response<ChannelStatusResponse>
 
     @GET("api/user-projects")
     suspend fun getProjects(): Response<List<Project>>
@@ -451,12 +448,46 @@ data class WhatsAppCodeRequest(val identifier: String)
 
 data class WhatsAppCodeResponse(
     val success: Boolean,
-    val message: String?,
-    @SerializedName("expiresInMinutes") val expiresInMinutes: Int?,
-    val simulated: Boolean?,
-    val provider: String?,
-    // Dev-only echo: present only in simulated mode when NODE_ENV !== 'production'.
-    val code: String?
+    val message: String,
+    @SerializedName("expiresInMinutes") val expiresInMinutes: Int = 10,
+    val simulated: Boolean? = null,
+    val provider: String? = null
+)
+
+// ── Multi-Channel OTP Models (Prompt 2.B) ───────────────────────────────────
+data class OtpRequest(val identifier: String)
+
+data class OtpRequestResponse(
+    val success: Boolean,
+    val message: String,
+    @SerializedName("expiresInMinutes") val expiresInMinutes: Int = 10,
+    val simulated: Boolean? = null,
+    val provider: String? = null,
+    val channel: String? = null
+)
+
+data class OtpVerify(val identifier: String, val code: String)
+
+data class OtpVerifyResponse(
+    val success: Boolean,
+    val message: String? = null,
+    @SerializedName("whatsapp_verified") val whatsapp_verified: Boolean? = null
+)
+
+data class ChannelStatusResponse(
+    val success: Boolean,
+    val chain: List<String>,
+    val whatsapp: ChannelInfo? = null,
+    val sms: ChannelInfo? = null,
+    val email: ChannelInfo? = null,
+    val voice: ChannelInfo? = null,
+    val viber: ChannelInfo? = null
+)
+
+data class ChannelInfo(
+    val configured: Boolean,
+    val provider: String? = null,
+    val template: String? = null
 )
 
 data class WhatsAppVerifyRequest(val identifier: String, val code: String)

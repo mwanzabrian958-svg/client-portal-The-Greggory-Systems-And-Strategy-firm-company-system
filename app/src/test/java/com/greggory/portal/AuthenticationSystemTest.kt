@@ -1,7 +1,9 @@
 package com.greggory.portal
 
 import com.google.gson.Gson
+import com.greggory.portal.data.api.ChannelStatusResponse
 import com.greggory.portal.data.api.LoginResponse
+import com.greggory.portal.data.api.OtpRequestResponse
 import com.greggory.portal.data.api.RegisterResponse
 import com.greggory.portal.data.api.SimpleResponse
 import org.junit.Assert.*
@@ -78,5 +80,37 @@ class AuthenticationSystemTest {
         val response = gson.fromJson(json, SimpleResponse::class.java)
         assertTrue(response.success)
         assertEquals("Operation completed", response.message)
+    }
+
+    @Test
+    fun `Verify Multi-Channel OTP Request and Status Deserialization`() {
+        val requestResponseJson = """
+            {
+                "success": true,
+                "message": "Code sent successfully",
+                "expiresInMinutes": 10,
+                "simulated": true,
+                "provider": "sms:infobip",
+                "channel": "sms"
+            }
+        """.trimIndent()
+
+        val otpResp = gson.fromJson(requestResponseJson, OtpRequestResponse::class.java)
+        assertTrue(otpResp.success)
+        assertEquals(10, otpResp.expiresInMinutes)
+        assertEquals("sms:infobip", otpResp.provider)
+
+        val statusJson = """
+            {
+                "success": true,
+                "chain": ["whatsapp", "sms", "email"],
+                "whatsapp": { "configured": true, "provider": "infobip" }
+            }
+        """.trimIndent()
+
+        val statusResp = gson.fromJson(statusJson, ChannelStatusResponse::class.java)
+        assertTrue(statusResp.success)
+        assertEquals(3, statusResp.chain.size)
+        assertTrue(statusResp.whatsapp?.configured == true)
     }
 }
