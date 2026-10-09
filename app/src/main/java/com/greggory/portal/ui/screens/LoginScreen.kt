@@ -77,15 +77,19 @@ fun LoginScreen(
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background
     ) { paddingValues ->
-        Column(
+        Box(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
                 .padding(24.dp)
                 .verticalScroll(rememberScrollState()),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
+            contentAlignment = Alignment.Center
         ) {
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
+            ) {
         Image(
             painter = painterResource(id = R.drawable.ic_launcher),
             contentDescription = "Greggory Logo",
@@ -250,6 +254,7 @@ fun LoginScreen(
         TextButton(onClick = { onNavigateToSignup() }) {
             Text("Don't have an account? Sign up", color = MaterialTheme.colorScheme.secondary)
         }
+       }
       }
     }
 }
