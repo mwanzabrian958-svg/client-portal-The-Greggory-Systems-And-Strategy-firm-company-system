@@ -116,6 +116,11 @@ interface ApiService {
     @DELETE("api/users/sessions")
     suspend fun revokeOtherSessions(@Query("currentToken") token: String): Response<SimpleResponse>
 
+    // Session revocation — parity with the website AuthContext.logout()
+    // (POST /api/users/logout with Bearer). Best-effort; local cleanup proceeds.
+    @POST("api/users/logout")
+    suspend fun logout(): Response<SimpleResponse>
+
     // Strategy Chat
     @GET("api/chat/history")
     suspend fun getChatHistory(): Response<ChatHistoryResponse>

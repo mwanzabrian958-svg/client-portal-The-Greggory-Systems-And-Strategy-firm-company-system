@@ -381,6 +381,12 @@ fun PortalScreen(
                     DrawerItem("Logout", Icons.AutoMirrored.Filled.Logout, false) {
                         scope.launch {
                             drawerState.close()
+                            // Revoke this account's session server-side first
+                            // (same as the website portal's logout), while the
+                            // token is still in prefs so the interceptor can
+                            // attach it. Best-effort — local cleanup below
+                            // always runs, even offline.
+                            try { RetrofitClient.instance.logout() } catch (ignored: Exception) {}
                             try { database.userDao().purgeAllTokens() } catch (ignored: Exception) {}
                             try { database.clearAllTables() } catch (ignored: Exception) {}
                             preferencesManager.clearToken()

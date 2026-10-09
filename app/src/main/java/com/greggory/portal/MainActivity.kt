@@ -48,17 +48,14 @@ class MainActivity : FragmentActivity() {
         themeModeState.value = prefs.getThemeMode()
         prefs.registerListener(prefListener)
 
-        if (prefs.getToken() == null) {
-            prefs.saveToken("gf_lock_offline_demo_token_999")
-            prefs.saveUserInfo(
-                1,
-                "brianmwanza651@gmail.com",
-                "Brian Mwanza",
-                "+254115525854",
-                "admin",
-                "Operations & Strategy Lead",
-                null
-            )
+        // ── Unique-account session gate (parity with the website's AuthContext):
+        //    a session is authenticated ONLY when a real token for a real user
+        //    exists. Older builds injected a hardcoded demo identity here
+        //    (user id 1 "Brian Mwanza" / token gf_lock_offline_demo_token_999),
+        //    which let the portal open as someone who never logged in — purge
+        //    it so every device shows the account that actually signed in.
+        if (prefs.getToken() == "gf_lock_offline_demo_token_999") {
+            prefs.clear()
         }
         
         NotificationHelper.requestPermission(this, requestPermissionLauncher)
@@ -74,7 +71,14 @@ class MainActivity : FragmentActivity() {
                 else -> systemInDarkTheme
             }
 
-            val startDestination = Screen.Portal.route
+            // Portal only for an existing signed-in account; first run shows
+            // onboarding, everyone else lands on Login (same rule as the
+            // website portal's PrivateRoute: no token -> /login).
+            val startDestination = when {
+                !prefs.getToken().isNullOrEmpty() && prefs.getUserId() > 0 -> Screen.Portal.route
+                prefs.isFirstLaunch() -> Screen.Onboarding.route
+                else -> Screen.Login.route
+            }
 
             GreggoryPortalTheme(darkTheme = darkTheme) {
                 Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
