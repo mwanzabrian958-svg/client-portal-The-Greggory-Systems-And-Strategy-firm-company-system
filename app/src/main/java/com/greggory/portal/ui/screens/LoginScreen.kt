@@ -46,8 +46,11 @@ fun LoginScreen(
     onNavigateToForgotPassword: () -> Unit,
     onNavigateToOtpVerification: () -> Unit
 ) {
-    var email by remember { mutableStateOf("brianmwanza651@gmail.com") }
-    var password by remember { mutableStateOf("Brianmwanza1/..") }
+    // Empty by default: credentials are never baked into the app — each
+    // device must type its own account (a build once shipped with a real
+    // email/password prefilled here, which is how credentials leak).
+    var email by remember { mutableStateOf("") }
+    var password by remember { mutableStateOf("") }
     var passwordVisible by remember { mutableStateOf(false) }
     
     val context = LocalContext.current
