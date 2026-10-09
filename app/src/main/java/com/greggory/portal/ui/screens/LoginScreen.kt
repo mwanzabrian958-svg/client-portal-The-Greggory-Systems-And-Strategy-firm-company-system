@@ -169,6 +169,7 @@ fun LoginScreen(
                                 LoginRequest(cleanEmail, cleanPassword)
                             )
                             isLoading = false
+                            Log.d("Auth", "Login response code: ${response.code()}")
                             if (response.isSuccessful && response.body() != null) {
                                 val body = response.body()!!
                                 val token = body.token

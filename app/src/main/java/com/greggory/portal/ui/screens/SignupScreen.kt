@@ -5,6 +5,7 @@ import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.net.Uri
 import android.util.Base64
+import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
@@ -300,6 +301,7 @@ fun SignupScreen(onSignupSuccess: () -> Unit, onBackToLogin: () -> Unit) {
                             
                             val response = RetrofitClient.instance.register(registerRequest)
                             isLoading = false
+                            Log.d("Auth", "Register response code: ${response.code()}")
                             
                             if (response.isSuccessful && response.body()?.success == true) {
                                 onBackToLogin()
