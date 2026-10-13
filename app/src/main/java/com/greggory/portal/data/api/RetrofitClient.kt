@@ -17,7 +17,9 @@ object RetrofitClient {
     // NOTE: only the w-the-greggory-systems-and-strategy-firm-1vf9 host is live
     // (it matches the website sitemap and serves /api/auth/whatsapp). The old
     // jz7i / vik4 services 404 every route — that dead host is what broke login.
-    const val BASE_URL = "https://w-the-greggory-systems-and-strategy-firm-1vf9.onrender.com/"
+    // Base URL comes from BuildConfig: debug -> local backend (10.0.2.2:10000),
+    // release -> Render cloud (HTTPS). Keeps one source of truth per build type.
+    val BASE_URL: String = com.greggory.portal.BuildConfig.BASE_URL
 
     private var appContext: Context? = null
 
@@ -62,13 +64,46 @@ object RetrofitClient {
     /**
      * Retry Interceptor: Handles transient "Company Pipeline" glitches (502, 503, 504),
      * and triggers automatic session expulsion redirects on 401 token authentication rejections.
+     *
+     * Per-device independence rule: a 401 from an AUTH endpoint (login / register /
+     * forgot-password / whatsapp request-code / verify-code) means "wrong credentials",
+     * NOT "session expired" — it must NEVER wipe tokens or Room caches. Only a 401
+     * from an AUTHENTICATED endpoint (with a Bearer token attached) triggers the
+     * nuclear wipe + logout redirect. This is what lets every downloaded app work
+     * independently: bad login on one phone can't nuke another session, and each
+     * device keeps only its own userId silo.
      */
     @OptIn(DelicateCoroutinesApi::class)
     private val retryInterceptor = Interceptor { chain ->
         val request = chain.request()
         var response = chain.proceed(request)
-        
+
         if (response.code == 401) {
+            val path = request.url.encodedPath.lowercase()
+            val isAuthEndpoint = path.contains("/login") ||
+                path.contains("/register") ||
+                path.contains("/forgot-password") ||
+                path.contains("/request-code") ||
+                path.contains("/verify-code") ||
+                path.contains("/whatsapp/status") ||
+                path.contains("/notify/status")
+            // Only expel when the device actually holds a session token.
+            // NOTE: retryInterceptor runs BEFORE authInterceptor, so the request
+            // object here does NOT have the Authorization header yet — read the
+            // token straight from encrypted prefs instead.
+            val heldToken: String? = try {
+                appContext?.let {
+                    com.greggory.portal.data.local.PreferencesManager.getInstance(it).getToken()
+                }
+            } catch (ignored: Exception) { null }
+            val hadToken = !heldToken.isNullOrEmpty()
+
+            if (isAuthEndpoint || !hadToken) {
+                // Wrong password / unknown account / cold-start probe — show the
+                // server error message, keep local cache + token untouched.
+                android.util.Log.d("SESSION_GUARD", "401 on public/auth endpoint $path — no wipe")
+                return@Interceptor response
+            }
             // Expelled session: Wipe auth tokens and redirect instantly
             appContext?.let { ctx ->
                 val prefs = com.greggory.portal.data.local.PreferencesManager.getInstance(ctx)
@@ -120,11 +155,37 @@ object RetrofitClient {
         .connectTimeout(60, java.util.concurrent.TimeUnit.SECONDS)
         .readTimeout(60, java.util.concurrent.TimeUnit.SECONDS)
         .writeTimeout(60, java.util.concurrent.TimeUnit.SECONDS)
-        .addInterceptor(retryInterceptor)
+        // Order matters: auth headers must be attached BEFORE the session-guard
+        // sees the request, so the 401 handler can tell "logged-in call expired"
+        // apart from "wrong password on login screen".
         .addInterceptor(authInterceptor)
+        .addInterceptor(retryInterceptor)
         .addInterceptor(logging)
         .certificatePinner(certificatePinner)
         .build()
+
+    /**
+     * Lightweight pipeline probe — call before login/dashboard sync to tell the
+     * user "server waking up / down" instead of a generic connection error.
+     * Returns true when the Render backend + Aiven DB answer.
+     */
+    suspend fun isBackendReachable(): Boolean {
+        return try {
+            val url = BASE_URL.trimEnd('/') + "/api/auth/whatsapp/status"
+            val req = okhttp3.Request.Builder()
+                .url(url)
+                .header("X-Routing-Policy", "set-in-stone-v1")
+                .get()
+                .build()
+            httpClient.newCall(req).execute().use { resp ->
+                // Any real HTTP answer (even 401/429) = pipeline alive.
+                // 502/503/504 = Render asleep or crashed. Exception = no route.
+                resp.code !in listOf(502, 503, 504)
+            }
+        } catch (ignored: Exception) {
+            false
+        }
+    }
 
     val instance: ApiService by lazy {
         Retrofit.Builder()

@@ -1,27 +1,24 @@
 {
-  "name": "client-portal-the-greggory-systems-and-strategy-firm-company-system",
+  "name": "greggory-portal-backend",
   "version": "1.0.0",
-  "description": "A modern Android application built with Jetpack Compose, designed to provide clients of The Greggory Systems & Strategy Firm with a seamless, secure, and unified portal for project management, billing, and communication.",
-  "main": "index.js",
-  "directories": {
-    "doc": "docs"
-  },
+  "description": "Greggory Client Portal backend — Express + Aiven MySQL gateway for the Android app",
+  "main": "server.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "node server.js",
+    "init-db": "node scripts/init-db.js",
+    "import-db": "node scripts/import-db.js",
+    "test-endpoints": "node scripts/test-endpoints-status.js"
   },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/mwanzabrian958-svg/client-portal-The-Greggory-Systems-And-Strategy-firm-company-system.git"
+  "engines": {
+    "node": ">=18"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "type": "commonjs",
-  "bugs": {
-    "url": "https://github.com/mwanzabrian958-svg/client-portal-The-Greggory-Systems-And-Strategy-firm-company-system/issues"
-  },
-  "homepage": "https://github.com/mwanzabrian958-svg/client-portal-The-Greggory-Systems-And-Strategy-firm-company-system#readme",
   "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "cors": "^2.8.5",
+    "express": "^4.19.2",
+    "express-rate-limit": "^7.2.0",
+    "jsonwebtoken": "^9.0.2",
     "mysql2": "^3.24.5"
   }
 }
+

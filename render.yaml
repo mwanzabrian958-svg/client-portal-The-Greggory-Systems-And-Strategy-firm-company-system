@@ -1,0 +1,25 @@
+# Greggory backend — Render reads this file.
+# DB credentials come from Render Environment ONLY (never committed).
+services:
+  - type: web
+    name: w-the-greggory-systems-and-strategy-firm-1vf9
+    runtime: node
+    plan: free
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DB_HOST
+        value: mysql-2277f171-brianmwanza651-0b75.g.aivencloud.com
+      - key: DB_PORT
+        value: 27059
+      - key: DB_USER
+        value: avnadmin
+      - key: DB_NAME
+        value: defaultdb
+      - key: DB_PASSWORD
+        sync: false
+      - key: JWT_SECRET
+        generateValue: true

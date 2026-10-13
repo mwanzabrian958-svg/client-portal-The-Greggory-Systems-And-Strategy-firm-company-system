@@ -35,3 +35,8 @@ app/build/
 
 # Firebase
 app/google-services.json
+
+# Backend secrets — never commit live credentials
+.env
+node_modules/
+npm-debug.log*
