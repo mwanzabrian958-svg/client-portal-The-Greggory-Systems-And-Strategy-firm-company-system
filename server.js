@@ -138,12 +138,37 @@ function publicUser(row) {
 // --- Health (Render + app probe use these) ---
 app.get('/', (req, res) => res.json({ success: true, service: 'greggory-portal-backend', time: new Date().toISOString() }));
 app.get('/health', (req, res) => res.json({ success: true, status: 'ok' }));
+// Non-secret DB diagnostics (host/port/db/ssl + whether a password is present).
+// Never echoes the password itself — only whether it is set. This is what turns a
+// vague "test-db error" into an actionable message when a Render deploy is
+// misconfigured (the usual cause: DB_PASSWORD unset or pasted with a stray
+// newline/space so the value is silently wrong).
+function dbDiagnostics() {
+  return {
+    dbHost: process.env.DB_HOST ? String(process.env.DB_HOST) : '(unset)',
+    dbPort: parseInt(process.env.DB_PORT || '27059', 10),
+    dbName: process.env.DB_NAME || 'defaultdb',
+    dbUser: process.env.DB_USER || '(unset)',
+    passwordSet: Boolean(process.env.DB_PASSWORD && process.env.DB_PASSWORD.trim()),
+    ssl: true,
+  };
+}
+
 app.get('/health/db', async (req, res) => {
+  const diag = dbDiagnostics();
+  if (!diag.passwordSet) {
+    return res.status(503).json({
+      success: false, db: 'unreachable', reason: 'DB_PASSWORD not set in environment',
+      hint: 'Set DB_PASSWORD (and DB_HOST/DB_PORT/DB_USER/DB_NAME) in the Render service Environment, then redeploy.',
+      ...diag,
+    });
+  }
+  const started = Date.now();
   try {
     await q('SELECT 1');
-    res.json({ success: true, db: 'reachable' });
+    res.json({ success: true, db: 'reachable', latencyMs: Date.now() - started, ...diag });
   } catch (e) {
-    res.status(503).json({ success: false, db: 'unreachable', message: e.message });
+    res.status(503).json({ success: false, db: 'unreachable', code: e.code || e.errno || null, message: e.message, ...diag });
   }
 });
 
@@ -186,6 +211,12 @@ app.post('/api/users/login', async (req, res) => {
     const ok = user.password_hash ? await bcrypt.compare(password, user.password_hash) : false;
     if (!ok) return res.status(401).json({ success: false, message: 'Invalid email or password' });
     const token = signToken(user);
+    // Best-effort login tracking — never let a failure here break a valid login.
+    // Uses ON DUPLICATE-free UPDATE guarded by id; wrapped so any DB hiccup is swallowed.
+    try {
+      const ip = (req.headers['x-forwarded-for'] || req.socket.remoteAddress || '').toString().split(',')[0].trim() || null;
+      await q('UPDATE users SET last_login_at = CURRENT_TIMESTAMP, last_login_ip = ? WHERE id = ?', [ip, user.id]);
+    } catch (_) { /* tracking is non-critical */ }
     res.json({ ...publicUser(user), token });
   } catch (e) {
     res.status(500).json({ success: false, message: e.message });
@@ -205,7 +236,7 @@ app.get('/api/users/client-dashboard', authenticateUser, async (req, res) => {
     const [projects] = await q(
       'SELECT id, project_name AS name, status, progress_percentage AS progress, user_id AS client_id FROM user_projects WHERE user_id = ?', [uid]);
     const [invoices] = await q(
-      'SELECT id, amount, status, user_id AS client_id FROM invoices WHERE user_id = ?', [uid]);
+      "SELECT id, total_amount AS amount, status, client_id, invoice_number FROM invoices WHERE client_id = ? AND deleted_at IS NULL ORDER BY id DESC", [uid]);
     res.json({ success: true, dashboard: {
       user: urows[0] ? publicUser(urows[0]) : null,
       projects, invoices, tasks: [], teamMembers: [], messages: [],
@@ -223,7 +254,31 @@ app.get('/api/user-projects', authenticateUser, async (req, res) => {
 });
 
 app.get('/api/users/my-reports', authenticateUser, async (req, res) => {
-  const [rows] = await q('SELECT * FROM project_reports WHERE user_id = ?', [req.user.id]);
+  // Mirror the source-of-truth backend (backend/routes/users.js): client reports
+  // are scoped through the user_projects link (pr.project_id -> user_projects.id),
+  // NOT the `projects` consultancy table. Only 'final' reports are client-visible.
+  // project_reports may or may not have deleted_at depending on how it was created,
+  // so try the soft-delete-aware query first and fall back if that column is absent
+  // (matches fetchClientProjectReports()). NOTE: base has NO ORDER BY — the
+  // soft-delete predicate must be appended to WHERE, before ORDER BY, or it is a
+  // SQL parse error.
+  const base =
+    'SELECT pr.id, pr.title, pr.summary, pr.file_type, pr.file_size, pr.report_date, ' +
+    "       up.project_name AS project_name, up.user_id AS user_id " +
+    'FROM project_reports pr ' +
+    'JOIN user_projects up ON pr.project_id = up.id ' +
+    'WHERE up.user_id = ? AND pr.status = ?';
+  const order = ' ORDER BY pr.report_date DESC';
+  let rows;
+  try {
+    [rows] = await q(base + ' AND pr.deleted_at IS NULL' + order, [req.user.id, 'final']);
+  } catch (e) {
+    if (e && e.code === 'ER_BAD_FIELD_ERROR') {
+      [rows] = await q(base + order, [req.user.id, 'final']); // no deleted_at column — plain query
+    } else {
+      throw e;
+    }
+  }
   res.json({ success: true, reports: rows });
 });
 
