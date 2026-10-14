@@ -9,9 +9,13 @@ async function importDatabase() {
         user: process.env.DB_USER || 'avnadmin',
         password: process.env.DB_PASSWORD || '',
         database: process.env.DB_NAME || 'defaultdb',
-        ssl: {
-            rejectUnauthorized: false
-        },
+        // SECURITY: verify the chain against the PINNED Aiven Project CA
+        // (../config-aiven-ca.pem; override via DB_CA_FILE / DB_CA_PEM).
+        ssl: (function () {
+            if (process.env.DB_CA_PEM) return { minVersion: 'TLSv1.2', ca: process.env.DB_CA_PEM };
+            if (process.env.DB_CA_FILE) return { minVersion: 'TLSv1.2', ca: fs.readFileSync(process.env.DB_CA_FILE, 'utf8') };
+            return { minVersion: 'TLSv1.2', ca: fs.readFileSync(path.join(__dirname, '..', 'config-aiven-ca.pem'), 'utf8') };
+        })(),
         multipleStatements: true
     };
 

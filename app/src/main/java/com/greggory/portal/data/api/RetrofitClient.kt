@@ -148,8 +148,32 @@ object RetrofitClient {
         }
     }
 
-    // SSL Pinning: Using DEFAULT system trust store to prevent certificate rotation failures on cloud hosts
-    private val certificatePinner = CertificatePinner.DEFAULT
+    // SECURITY (M3): TLS pinning for the production API host. The SHA-256 pins
+    // below are the leaf + intermediate SPKI hashes for
+    // w-the-greggory-systems-and-strategy-firm-1vf9.onrender.com's CURRENT
+    // certificate ("Not After: ..." recorded when generated — re-run the probe
+    // below BEFORE that date, because Render rotates its cert and stale pins
+    // fail CLOSED, bricking the app's network).
+    //
+    // Probe (any machine with openssl):
+    //   openssl s_client -connect w-the-greggory-systems-and-strategy-firm-1vf9.onrender.com:443 -servername w-the-greggory-systems-and-strategy-firm-1vf9.onrender.com -showcerts < /dev/null \
+    //     | awk '/BEGIN CERT/,/END CERT/' | while read -r _; do :; done  # (split chain manually)
+    //   openssl x509 -in <each.pem> -noout -pubkey | openssl pkey -pubin -outform DER \
+    //     | openssl dgst -sha256 -binary | openssl enc -base64
+    //
+    // Pinning applies ONLY to the production host; debug/local builds use the
+    // system trust store so emulator testing never breaks.
+    //
+    // Live-measured 14 Oct 2026 (leaf NOT AFTER 2026-12-20; re-pin BEFORE then —
+    // Render rotates ~quarterly and stale pins fail CLOSED / brick the network).
+    private val PROD_API_HOST = "w-the-greggory-systems-and-strategy-firm-1vf9.onrender.com"
+    private val certificatePinner = CertificatePinner.Builder()
+        .add(PROD_API_HOST,
+            "sha256/8emdl/UmneUm0I4Y/vHzOTQzb9eJwG4voRHtMdNmBPk=", // leaf (CN=onrender.com, to 2026-12-20)
+            "sha256/kIdp6NNEd8wsugYyyIYFsi1ylMCED3hZbSR8ZFsa/A4=", // WE1 intermediate (backup)
+            "sha256/mEflZT5enoR1FuXLgYYGqnVEoZvmf9c2bVBpiOjYQ0c="  // GTS Root R4 (backup)
+        )
+        .build()
 
     internal val httpClient = OkHttpClient.Builder()
         .connectTimeout(60, java.util.concurrent.TimeUnit.SECONDS)

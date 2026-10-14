@@ -16,7 +16,12 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
 
     override fun onNewToken(token: String) {
         super.onNewToken(token)
-        Log.d("FCM", "New token generated: $token")
+        // SECURITY (M6): NEVER log the raw token — logcat is readable by any app
+        // with READ_LOGS on rooted devices and in bug reports. Only the length,
+        // and only in debug builds.
+        if (com.greggory.portal.BuildConfig.DEBUG) {
+            Log.d("FCM", "New FCM token generated (length=${token.length})")
+        }
         
         // Persist token locally
         val prefs = com.greggory.portal.data.local.PreferencesManager.getInstance(applicationContext)
@@ -39,7 +44,9 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
 
     override fun onMessageReceived(message: RemoteMessage) {
         super.onMessageReceived(message)
-        Log.d("FCM", "Message payload received: ${message.from}")
+        if (com.greggory.portal.BuildConfig.DEBUG) {
+            Log.d("FCM", "Message payload received: ${message.from}")
+        }
         
         // Show native notification banner on user device screen first
         message.notification?.let {

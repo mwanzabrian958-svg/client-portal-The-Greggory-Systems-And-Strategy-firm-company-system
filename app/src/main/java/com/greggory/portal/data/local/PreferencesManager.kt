@@ -18,10 +18,12 @@ class PreferencesManager private constructor(context: Context) {
             EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
         )
     } catch (e: Exception) {
-        context.getSharedPreferences(
-            "GreggoryPrefsSecure",
-            Context.MODE_PRIVATE
-        )
+        // SECURITY (M1): the silent downgrade is gone — a broken encrypted
+        // store is now LOUD (logcat + crash report), and the degraded path
+        // holds secrets in memory ONLY (never plaintext on disk), forcing a
+        // fresh login instead of persisting a stealable token.
+        android.util.Log.e("PreferencesManager", "EncryptedSharedPreferences unavailable — token persistence DISABLED, session is memory-only", e)
+        InMemoryFallback(context.getSharedPreferences("GreggoryPrefsBootstrap", Context.MODE_PRIVATE))
     }
 
     companion object {
@@ -33,6 +35,87 @@ class PreferencesManager private constructor(context: Context) {
                 INSTANCE ?: PreferencesManager(context.applicationContext).also { INSTANCE = it }
             }
         }
+    }
+
+    /**
+     * SECURITY (M1): degraded store used ONLY when EncryptedSharedPreferences
+     * cannot be created. Non-secret UI settings still persist (via a separate
+     * plain prefs file), but SECRET keys (auth_token, fcm_token, user_*) are
+     * held in RAM only — a cold reboot loses the session, which is exactly the
+     * safe failure mode (forces re-login instead of a plaintext token on disk).
+     */
+    private class InMemoryFallback(private val uiPrefs: SharedPreferences) : SharedPreferences by uiPrefs {
+        private val memory = java.util.concurrent.ConcurrentHashMap<String, Any?>()
+
+        private fun isSecretKey(key: String?): Boolean {
+            if (key == null) return false
+            return key == "auth_token" || key == "fcm_token" || key.startsWith("user_")
+        }
+
+        private inner class SecretAwareEditor(private val base: SharedPreferences.Editor) : SharedPreferences.Editor by base {
+            private val pendingSecrets = mutableMapOf<String, Any?>()
+            private val pendingSecretRemovals = mutableSetOf<String>()
+
+            override fun putString(key: String?, value: String?): SharedPreferences.Editor {
+                if (isSecretKey(key)) { pendingSecrets[key!!] = value; return this }
+                base.putString(key, value); return this
+            }
+            override fun putStringSet(key: String?, values: MutableSet<String>?): SharedPreferences.Editor {
+                if (isSecretKey(key)) { pendingSecrets[key!!] = values; return this }
+                base.putStringSet(key, values); return this
+            }
+            override fun putInt(key: String?, value: Int): SharedPreferences.Editor {
+                if (isSecretKey(key)) { pendingSecrets[key!!] = value; return this }
+                base.putInt(key, value); return this
+            }
+            override fun putLong(key: String?, value: Long): SharedPreferences.Editor {
+                if (isSecretKey(key)) { pendingSecrets[key!!] = value; return this }
+                base.putLong(key, value); return this
+            }
+            override fun putFloat(key: String?, value: Float): SharedPreferences.Editor {
+                if (isSecretKey(key)) { pendingSecrets[key!!] = value; return this }
+                base.putFloat(key, value); return this
+            }
+            override fun putBoolean(key: String?, value: Boolean): SharedPreferences.Editor {
+                if (isSecretKey(key)) { pendingSecrets[key!!] = value; return this }
+                base.putBoolean(key, value); return this
+            }
+            override fun remove(key: String?): SharedPreferences.Editor {
+                if (isSecretKey(key)) { memory.remove(key); pendingSecretRemovals.add(key!!); pendingSecrets.remove(key); return this }
+                base.remove(key); return this
+            }
+            override fun clear(): SharedPreferences.Editor {
+                memory.clear(); pendingSecrets.clear(); base.clear(); return this
+            }
+            override fun commit(): Boolean {
+                pendingSecrets.forEach { (k, v) -> if (v == null) memory.remove(k) else memory[k] = v }
+                pendingSecrets.clear(); pendingSecretRemovals.clear()
+                return base.commit()
+            }
+            override fun apply() {
+                pendingSecrets.forEach { (k, v) -> if (v == null) memory.remove(k) else memory[k] = v }
+                pendingSecrets.clear(); pendingSecretRemovals.clear()
+                base.apply()
+            }
+        }
+
+        override fun edit(): SharedPreferences.Editor = SecretAwareEditor(uiPrefs.edit())
+
+        @Suppress("UNCHECKED_CAST")
+        override fun getString(key: String?, defValue: String?): String? =
+            if (isSecretKey(key)) (memory[key] as? String) ?: defValue else uiPrefs.getString(key, defValue)
+        override fun getStringSet(key: String?, defValues: MutableSet<String>?): MutableSet<String>? =
+            if (isSecretKey(key)) (memory[key] as? MutableSet<String>) ?: defValues else uiPrefs.getStringSet(key, defValues)
+        override fun getInt(key: String?, defValue: Int): Int =
+            if (isSecretKey(key)) (memory[key] as? Int) ?: defValue else uiPrefs.getInt(key, defValue)
+        override fun getLong(key: String?, defValue: Long): Long =
+            if (isSecretKey(key)) (memory[key] as? Long) ?: defValue else uiPrefs.getLong(key, defValue)
+        override fun getFloat(key: String?, defValue: Float): Float =
+            if (isSecretKey(key)) (memory[key] as? Float) ?: defValue else uiPrefs.getFloat(key, defValue)
+        override fun getBoolean(key: String?, defValue: Boolean): Boolean =
+            if (isSecretKey(key)) (memory[key] as? Boolean) ?: defValue else uiPrefs.getBoolean(key, defValue)
+        override fun contains(key: String?): Boolean =
+            if (isSecretKey(key)) memory.containsKey(key) else uiPrefs.contains(key)
     }
 
     fun saveToken(token: String) {

@@ -1,5 +1,14 @@
 # The Greggory Client Portal - ProGuard Rules
 
+# SECURITY (M6): strip verbose/debug logs from RELEASE builds. Logcat is
+# readable by other apps on rooted devices and ships inside bug reports, so
+# release binaries must not emit Log.v/Log.d at all (belt-and-braces alongside
+# the BuildConfig.DEBUG gates in source).
+-assumenosideeffects class android.util.Log {
+    public static int v(...);
+    public static int d(...);
+}
+
 # Retrofit & OkHttp
 -keepattributes Signature, InnerClasses, EnclosingMethod
 -keepattributes RuntimeVisibleAnnotations, RuntimeVisibleParameterAnnotations

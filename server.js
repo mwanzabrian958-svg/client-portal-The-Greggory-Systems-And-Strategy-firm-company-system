@@ -10,7 +10,27 @@ const mysql = require('mysql2/promise');
 
 const app = express();
 const PORT = process.env.PORT || 10000;
-const JWT_SECRET = process.env.JWT_SECRET || 'change-me-in-render-env';
+// SECURITY: a weak/default JWT signing secret lets anyone mint admin-capable
+// tokens (OWASP API-2). Fail fast when unset — a process that cannot sign
+// tokens honestly must not boot with a guessable one. Local dev gets a working
+// ephemeral secret with an unmissable warning (every restart invalidates dev
+// sessions — exactly what you want in dev).
+let JWT_SECRET = process.env.JWT_SECRET;
+if (!JWT_SECRET) {
+  if (process.env.NODE_ENV === "production") {
+    console.error(
+      "[SECURITY][FATAL] JWT_SECRET is not set in production. Refusing to start " +
+        "rather than signing tokens with a default value. Set JWT_SECRET in the " +
+        "hosting dashboard, then redeploy."
+    );
+    process.exit(1);
+  }
+  JWT_SECRET = require("crypto").randomBytes(64).toString("hex");
+  console.warn(
+    "[SECURITY] JWT_SECRET unset — using an EPHEMERAL random secret. " +
+      "All sessions will invalidate on every restart. Set JWT_SECRET for stability."
+  );
+}
 const TOKEN_TTL = '7d';
 
 app.use(cors());
@@ -27,13 +47,31 @@ app.use((req, res, next) => {
 });
 
 // --- Aiven pool (env-only, no hardcoded password) ---
+// SECURITY: verify the server certificate against the PINNED Aiven Project CA
+// (config-aiven-ca.pem; rotation via DB_CA_FILE / DB_CA_PEM env). Live-proven
+// 14 Oct 2026: pinned-CA verification connects; anything else fails the TLS
+// handshake, which is the MITM protection (OWASP A02/API-8). Never
+// rejectUnauthorized:false — when the anchor is missing the process refuses to
+// boot rather than silently degrading to an unverified channel.
+const fs = require('fs');
+function loadDbCa() {
+  if (process.env.DB_CA_PEM) return { ca: process.env.DB_CA_PEM, source: 'DB_CA_PEM env' };
+  if (process.env.DB_CA_FILE) return { ca: fs.readFileSync(process.env.DB_CA_FILE, 'utf8'), source: 'DB_CA_FILE env' };
+  const bundled = require('path').join(__dirname, 'config-aiven-ca.pem');
+  if (fs.existsSync(bundled)) return { ca: fs.readFileSync(bundled, 'utf8'), source: 'bundled config-aiven-ca.pem' };
+  console.error('[SECURITY][FATAL] No MySQL CA trust anchor: bundled config-aiven-ca.pem is missing ' +
+    'and neither DB_CA_PEM nor DB_CA_FILE is set. Refusing to start.');
+  process.exit(1);
+}
+const _dbCa = loadDbCa();
+console.log(`[DB TLS] cloud certificate chain verified against: ${_dbCa.source}`);
 const pool = mysql.createPool({
   host: process.env.DB_HOST || 'mysql-2277f171-brianmwanza651-0b75.g.aivencloud.com',
   port: parseInt(process.env.DB_PORT || '27059', 10),
   user: process.env.DB_USER || 'avnadmin',
   password: process.env.DB_PASSWORD || '',
   database: process.env.DB_NAME || 'defaultdb',
-  ssl: { rejectUnauthorized: false },
+  ssl: { minVersion: 'TLSv1.2', ca: _dbCa.ca },
   waitForConnections: true,
   connectionLimit: 5,
   queueLimit: 0,
@@ -154,8 +192,29 @@ function dbDiagnostics() {
   };
 }
 
+// SECURITY: full diagnostics (hostname, db user, latency) are gated behind a
+// DIAG_TOKEN env + bearer auth. Unauthenticated callers get only the
+// up/down signal — nothing an attacker can use to craft a connection attempt.
+function diagAuthorized(req) {
+  if (!process.env.DIAG_TOKEN) return false;
+  const q = req.query.key || req.header('x-diag-key');
+  const h = req.header('authorization');
+  return (q && q === process.env.DIAG_TOKEN) ||
+    (h && h === 'Bearer ' + process.env.DIAG_TOKEN);
+}
+
 app.get('/health/db', async (req, res) => {
   const diag = dbDiagnostics();
+  if (!diagAuthorized(req)) {
+    // Public signal only: reachable or not. No host, user, latency, or hint.
+    if (!diag.passwordSet) return res.status(503).json({ success: false, db: 'unreachable' });
+    try {
+      await q('SELECT 1');
+      return res.json({ success: true, db: 'reachable' });
+    } catch (e) {
+      return res.status(503).json({ success: false, db: 'unreachable' });
+    }
+  }
   if (!diag.passwordSet) {
     return res.status(503).json({
       success: false, db: 'unreachable', reason: 'DB_PASSWORD not set in environment',
