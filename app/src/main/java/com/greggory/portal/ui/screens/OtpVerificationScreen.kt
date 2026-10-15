@@ -18,7 +18,6 @@ import com.greggory.portal.data.api.RetrofitClient
 import com.greggory.portal.data.api.ChannelStatusResponse
 import com.greggory.portal.data.api.OtpRequest
 import com.greggory.portal.data.api.OtpVerify
-import com.greggory.portal.data.api.OtpVerifyResponse
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
@@ -40,15 +39,15 @@ fun OtpVerificationScreen(onBackToLogin: () -> Unit) {
     // Resend cooldown ticker (60s window)
     LaunchedEffect(resendCooldown) {
         if (resendCooldown > 0) {
-            delay(1000)
+            delay(1000L)
             resendCooldown -= 1
         }
     }
 
-    // Success → hold confirmation briefly, then return to Login
+    // Success → hold confirmation briefly, then return to log in screen
     LaunchedEffect(verified) {
         if (verified) {
-            delay(1500)
+            delay(1500L)
             onBackToLogin()
         }
     }
@@ -65,7 +64,7 @@ fun OtpVerificationScreen(onBackToLogin: () -> Unit) {
                     deliveryNote = "No primary OTP delivery channels (WhatsApp/SMS) are fully configured on the server."
                 }
             }
-        } catch (ignored: Exception) {}
+        } catch (_: Exception) {}
     }
 
     Scaffold(

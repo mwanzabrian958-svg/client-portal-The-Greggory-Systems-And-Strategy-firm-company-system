@@ -411,7 +411,7 @@ private fun getFileFromUri(context: android.content.Context, uri: Uri): File {
                 file.outputStream().use { output -> input.copyTo(output) }
             }
         }
-    } catch (e: Exception) {
+    } catch (_: Exception) {
         context.contentResolver.openInputStream(uri)?.use { input ->
             file.outputStream().use { output -> input.copyTo(output) }
         }
