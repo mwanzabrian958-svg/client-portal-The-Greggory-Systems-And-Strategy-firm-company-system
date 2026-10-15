@@ -2,8 +2,9 @@
 
 A modern Android application built with Jetpack Compose, designed to provide clients of The Greggory Systems & Strategy Firm with a seamless, secure, and unified portal for project management, billing, and communication.
 
-## 📥 Download
-The latest version of the app can be downloaded directly from the internet:
+## 📥 Download & Web Portal
+Access the web version or download the Android app directly:
+*   [**Web Client Portal**](https://client-portal-tgssf.onrender.com)
 *   [**Download GSSF-client portal (Android APK)**](https://mwanzabrian958-svg.github.io/client-portal-The-Greggory-Systems-And-Strategy-firm-company-system/)
 *   Direct Link: [GSSF-client-portal.apk](https://github.com/mwanzabrian958-svg/client-portal-The-Greggory-Systems-And-Strategy-firm-company-system/raw/main/docs/GSSF-client-portal.apk)
 
