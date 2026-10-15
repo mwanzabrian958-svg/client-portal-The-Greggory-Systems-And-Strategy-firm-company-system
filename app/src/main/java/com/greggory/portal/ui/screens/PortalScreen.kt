@@ -462,6 +462,10 @@ fun PortalScreen(
                         var imageError by remember { mutableStateOf(false) }
                         val cachedPhotoData = userEntity?.profilePhotoData ?: preferencesManager.getUserPhotoData()
 
+                        LaunchedEffect(cachedPhotoData) {
+                            imageError = false
+                        }
+
                         Box(
                             modifier = Modifier
                                 .padding(end = 12.dp)
@@ -638,6 +642,11 @@ fun DrawerHeader(user: UserInfo?, profilePhotoData: String? = null) {
         ) {
             var imageError by remember { mutableStateOf(false) }
             val photoData = profilePhotoData ?: user?.profilePhotoData
+
+            LaunchedEffect(photoData) {
+                imageError = false
+            }
+
             val photoModel = when {
                 !photoData.isNullOrBlank() -> {
                     if (photoData.startsWith("http") || photoData.startsWith("data:")) photoData else "${RetrofitClient.BASE_URL}$photoData"

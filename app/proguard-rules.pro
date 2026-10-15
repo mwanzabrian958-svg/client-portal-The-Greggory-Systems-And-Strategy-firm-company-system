@@ -70,3 +70,10 @@
    public void *(android.view.View);
 }
 -keep class androidx.core.app.CoreComponentFactory
+
+# Media3 / ExoPlayer & PDF Viewer & Biometrics
+-dontwarn androidx.media3.**
+-dontwarn com.github.barteksc.pdfviewer.**
+-dontwarn com.shockwave.**
+-dontwarn androidx.biometric.**
+

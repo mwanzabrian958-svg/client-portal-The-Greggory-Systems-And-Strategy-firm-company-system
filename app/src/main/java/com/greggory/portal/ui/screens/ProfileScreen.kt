@@ -1,5 +1,7 @@
 package com.greggory.portal.ui.screens
 
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.net.Uri
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -138,6 +140,10 @@ fun ProfileScreen(dashboardData: DashboardResponse? = null) {
         // Profile Photo Section
         val initials = firstName.split(" ").filter { it.isNotEmpty() }.mapNotNull { it.firstOrNull()?.uppercase() }.take(2).joinToString("")
         var imageError by remember { mutableStateOf(false) }
+
+        LaunchedEffect(selectedImageUri, profilePhotoData) {
+            imageError = false
+        }
 
         Box(contentAlignment = Alignment.Center, modifier = Modifier.size(120.dp)) {
             Box(
@@ -375,9 +381,39 @@ private fun uploadPhoto(
 
 private fun getFileFromUri(context: android.content.Context, uri: Uri): File {
     val file = File(context.cacheDir, "profile_upload.jpg")
-    context.contentResolver.openInputStream(uri)?.use { inputStream ->
-        file.outputStream().use { output ->
-            inputStream.copyTo(output)
+    try {
+        val options = BitmapFactory.Options().apply {
+            inJustDecodeBounds = true
+        }
+        context.contentResolver.openInputStream(uri)?.use {
+            BitmapFactory.decodeStream(it, null, options)
+        }
+
+        var scale = 1
+        while (options.outWidth / scale / 2 >= 800 && options.outHeight / scale / 2 >= 800) {
+            scale *= 2
+        }
+
+        val decodeOptions = BitmapFactory.Options().apply {
+            inSampleSize = scale
+        }
+
+        val bitmap = context.contentResolver.openInputStream(uri)?.use {
+            BitmapFactory.decodeStream(it, null, decodeOptions)
+        }
+
+        if (bitmap != null) {
+            file.outputStream().use { output ->
+                bitmap.compress(Bitmap.CompressFormat.JPEG, 85, output)
+            }
+        } else {
+            context.contentResolver.openInputStream(uri)?.use { input ->
+                file.outputStream().use { output -> input.copyTo(output) }
+            }
+        }
+    } catch (e: Exception) {
+        context.contentResolver.openInputStream(uri)?.use { input ->
+            file.outputStream().use { output -> input.copyTo(output) }
         }
     }
     return file
