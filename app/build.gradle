@@ -61,9 +61,8 @@ android {
 
     buildTypes {
         debug {
-            // Emulator reaches the host machine's local backend at 10.0.2.2:10000.
-            // Cleartext to this one address is allowed via network_security_config.xml.
-            buildConfigField "String", "BASE_URL", "\"http://10.0.2.2:10000/\""
+            // Point debug builds to the live Render cloud backend as well
+            buildConfigField "String", "BASE_URL", "\"https://w-the-greggory-systems-and-strategy-firm-1vf9.onrender.com/\""
         }
         release {
             signingConfig = signingConfigs.getByName("release")
