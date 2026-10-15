@@ -908,7 +908,7 @@ fun DirectStrategySupportCard(onNavigateToChat: () -> Unit) {
                 horizontalArrangement = Arrangement.SpaceEvenly,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                SupportChannelItem(Icons.Default.Chat, "Chat", MaterialTheme.colorScheme.primary) {
+                SupportChannelItem(Icons.AutoMirrored.Filled.Chat, "Chat", MaterialTheme.colorScheme.primary) {
                     onNavigateToChat()
                 }
                 SupportChannelItem(Icons.Default.Phone, "Call", Color(0xFF4CAF50)) {

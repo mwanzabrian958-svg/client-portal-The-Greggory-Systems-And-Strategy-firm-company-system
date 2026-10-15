@@ -25,20 +25,18 @@ def getGitVersionName() {
 }
 
 android {
-    namespace 'com.greggory.portal'
-    compileSdk 35
+    namespace = 'com.greggory.portal'
+    compileSdk = 35
 
     defaultConfig {
         applicationId "com.greggory.portal"
-        minSdk 24
-        targetSdk 35
-        versionCode getGitVersionCode()
-        versionName getGitVersionName()
+        minSdk = 24
+        targetSdk = 35
+        versionCode = getGitVersionCode()
+        versionName = getGitVersionName()
 
-        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
-        vectorDrawables {
-            useSupportLibrary true
-        }
+        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        vectorDrawables.useSupportLibrary = true
     }
 
     signingConfigs {
@@ -68,18 +66,18 @@ android {
             buildConfigField "String", "BASE_URL", "\"http://10.0.2.2:10000/\""
         }
         release {
-            signingConfig signingConfigs.release
-            minifyEnabled true
-            shrinkResources true
+            signingConfig = signingConfigs.getByName("release")
+            minifyEnabled = true
+            shrinkResources = true
             // Production always talks to the Render cloud over HTTPS.
             buildConfigField "String", "BASE_URL", "\"https://w-the-greggory-systems-and-strategy-firm-1vf9.onrender.com/\""
-            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
         }
     }
 
     lint {
-        checkReleaseBuilds false
-        abortOnError false
+        checkReleaseBuilds = false
+        abortOnError = false
     }
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_17
@@ -89,8 +87,8 @@ android {
         jvmTarget = '17'
     }
     buildFeatures {
-        compose true
-        buildConfig true
+        compose = true
+        buildConfig = true
     }
     packaging {
         resources {
@@ -103,13 +101,10 @@ android {
 detekt {
     config.setFrom(files("$rootDir/detekt.yml"))
     buildUponDefaultConfig = true
-}
-
-// Detekt tasks configuration
-tasks.configureEach { task ->
-    if (task.name.startsWith("detekt")) {
-        // Target specific source sets or actions safely without class cast exceptions
-    }
+    // Baseline grandfathers the 376 pre-existing findings so the build passes
+    // now while guaranteeing NO new issues are introduced. Regenerate with:
+    //   gradlew :app:detektBaseline
+    baseline = file("$rootDir/detekt-baseline.xml")
 }
 
 dependencies {

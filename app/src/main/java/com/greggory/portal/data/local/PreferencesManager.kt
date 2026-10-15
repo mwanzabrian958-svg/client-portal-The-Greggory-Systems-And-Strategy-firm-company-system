@@ -1,3 +1,5 @@
+@file:Suppress("DEPRECATION")
+
 package com.greggory.portal.data.local
 
 import android.content.Context
@@ -6,6 +8,7 @@ import androidx.security.crypto.EncryptedSharedPreferences
 import androidx.security.crypto.MasterKey
 
 class PreferencesManager private constructor(context: Context) {
+    @Suppress("DEPRECATION")
     private val sharedPreferences: SharedPreferences = try {
         val masterKey = MasterKey.Builder(context)
             .setKeyScheme(MasterKey.KeyScheme.AES256_GCM)
@@ -104,6 +107,7 @@ class PreferencesManager private constructor(context: Context) {
         @Suppress("UNCHECKED_CAST")
         override fun getString(key: String?, defValue: String?): String? =
             if (isSecretKey(key)) (memory[key] as? String) ?: defValue else uiPrefs.getString(key, defValue)
+        @Suppress("UNCHECKED_CAST")
         override fun getStringSet(key: String?, defValues: MutableSet<String>?): MutableSet<String>? =
             if (isSecretKey(key)) (memory[key] as? MutableSet<String>) ?: defValues else uiPrefs.getStringSet(key, defValues)
         override fun getInt(key: String?, defValue: Int): Int =

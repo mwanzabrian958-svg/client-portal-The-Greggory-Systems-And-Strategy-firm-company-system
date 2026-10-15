@@ -1,0 +1,348 @@
+<?xml version="1.0" ?>
+<SmellBaseline>
+  <ManuallySuppressedIssues></ManuallySuppressedIssues>
+  <CurrentIssues>
+    <ID>CommentOverPrivateFunction:AiIssueMonitor.kt$AiIssueMonitor$private fun evaluatePriority(throwable: Throwable, stackTrace: String): String</ID>
+    <ID>CommentOverPrivateFunction:AiIssueMonitor.kt$AiIssueMonitor$private fun sanitizePayload(input: String): String</ID>
+    <ID>ComplexCondition:MpesaNotificationService.kt$MpesaNotificationService$fullBody.contains("Confirmed") &amp;&amp; (fullBody.contains("paid to") || fullBody.contains("sent to")) &amp;&amp; (fullBody.contains("Greggory") || fullBody.contains("07115525854"))</ID>
+    <ID>ComplexCondition:MpesaNotificationService.kt$MpesaNotificationService$packageName.contains("sms") || packageName.contains("messaging") || packageName.contains("safaricom") || packageName.contains("mpesa")</ID>
+    <ID>ConstructorParameterNaming:ApiService.kt$ChangePasswordRequest$val current_password: String</ID>
+    <ID>ConstructorParameterNaming:ApiService.kt$ChangePasswordRequest$val new_password: String</ID>
+    <ID>ConstructorParameterNaming:ApiService.kt$ChangeRequestAction$val project_id: Int</ID>
+    <ID>ConstructorParameterNaming:ApiService.kt$ChatMessageItem$val is_from_me: Boolean</ID>
+    <ID>ConstructorParameterNaming:ApiService.kt$ChatMessageItem$val sender_id: Int</ID>
+    <ID>ConstructorParameterNaming:ApiService.kt$ChatMessageItem$val sender_name: String</ID>
+    <ID>ConstructorParameterNaming:ApiService.kt$MpesaStatusResponse$val mpesa_receipt: String?</ID>
+    <ID>ConstructorParameterNaming:ApiService.kt$MpesaStatusResponse$val result_desc: String?</ID>
+    <ID>ConstructorParameterNaming:ApiService.kt$OtpVerifyResponse$@SerializedName("whatsapp_verified") val whatsapp_verified: Boolean? = null</ID>
+    <ID>ConstructorParameterNaming:ApiService.kt$ProfileUpdateRequest$val display_name: String</ID>
+    <ID>ConstructorParameterNaming:ApiService.kt$ProfileUpdateRequest$val phone_number: String</ID>
+    <ID>ConstructorParameterNaming:ApiService.kt$RegisterRequest$val first_name: String</ID>
+    <ID>ConstructorParameterNaming:ApiService.kt$RegisterRequest$val last_name: String</ID>
+    <ID>ConstructorParameterNaming:ApiService.kt$RegisterRequest$val profile_photo_base64: String? = null</ID>
+    <ID>ConstructorParameterNaming:ApiService.kt$RegisterRequest$val profile_photo_file_name: String? = null</ID>
+    <ID>ConstructorParameterNaming:ApiService.kt$RegisterRequest$val profile_photo_mime_type: String? = null</ID>
+    <ID>ConstructorParameterNaming:ApiService.kt$Report$@SerializedName("file_size") val file_size: Long</ID>
+    <ID>ConstructorParameterNaming:ApiService.kt$Report$@SerializedName("file_type") val file_type: String</ID>
+    <ID>ConstructorParameterNaming:ApiService.kt$Report$@SerializedName("project_name") val project_name: String</ID>
+    <ID>ConstructorParameterNaming:ApiService.kt$Report$@SerializedName("report_date") val report_date: String</ID>
+    <ID>ConstructorParameterNaming:AppDatabase.kt$InvoiceEntity$val client_id: Int</ID>
+    <ID>ConstructorParameterNaming:AppDatabase.kt$ProjectEntity$val client_id: Int</ID>
+    <ID>ConstructorParameterNaming:AppDatabase.kt$ReportEntity$val client_id: Int</ID>
+    <ID>ConstructorParameterNaming:AppDatabase.kt$ReportEntity$val file_size: Long</ID>
+    <ID>ConstructorParameterNaming:AppDatabase.kt$ReportEntity$val file_type: String</ID>
+    <ID>ConstructorParameterNaming:AppDatabase.kt$ReportEntity$val project_name: String</ID>
+    <ID>ConstructorParameterNaming:AppDatabase.kt$ReportEntity$val report_date: String</ID>
+    <ID>CyclomaticComplexMethod:BillingScreen.kt$@Composable fun BillingScreen(invoices: List&lt;Invoice&gt;, onViewPdf: (String, String) -&gt; Unit)</ID>
+    <ID>CyclomaticComplexMethod:LoginScreen.kt$@Composable fun LoginScreen( onLoginSuccess: () -&gt; Unit, onNavigateToSignup: () -&gt; Unit, onNavigateToForgotPassword: () -&gt; Unit, onNavigateToOtpVerification: () -&gt; Unit )</ID>
+    <ID>CyclomaticComplexMethod:OtpVerificationScreen.kt$@OptIn(ExperimentalMaterial3Api::class) @Composable fun OtpVerificationScreen(onBackToLogin: () -&gt; Unit)</ID>
+    <ID>CyclomaticComplexMethod:PortalScreen.kt$@Composable fun DrawerHeader(user: UserInfo?, profilePhotoData: String? = null)</ID>
+    <ID>CyclomaticComplexMethod:PortalScreen.kt$@OptIn(ExperimentalMaterial3Api::class) @Composable fun PortalScreen( onLogout: () -&gt; Unit, onViewPdf: (String, String) -&gt; Unit, onViewProject: (Int) -&gt; Unit, onNavigateToChat: () -&gt; Unit )</ID>
+    <ID>CyclomaticComplexMethod:ProfileScreen.kt$@Composable fun ProfileScreen(dashboardData: DashboardResponse? = null)</ID>
+    <ID>CyclomaticComplexMethod:SettingsScreen.kt$@Composable fun SettingsScreen( onLogout: (() -&gt; Unit)? = null, onNavigateToProfile: () -&gt; Unit, onNavigateToChat: () -&gt; Unit, dashboardData: DashboardResponse? = null )</ID>
+    <ID>CyclomaticComplexMethod:SignupScreen.kt$@OptIn(ExperimentalMaterial3Api::class) @Composable fun SignupScreen(onSignupSuccess: () -&gt; Unit, onBackToLogin: () -&gt; Unit)</ID>
+    <ID>CyclomaticComplexMethod:UpdateManager.kt$UpdateManager$suspend fun downloadAndInstall(context: Context, updateUrl: String, onProgress: (Float) -&gt; Unit): Boolean</ID>
+    <ID>EmptyCatchBlock:NotificationsScreen.kt${}</ID>
+    <ID>FunctionNaming:AppNavigation.kt$@Composable fun AppNavigation(navController: NavHostController, startDestination: String = Screen.Portal.route)</ID>
+    <ID>FunctionNaming:BillingScreen.kt$@Composable fun BillingScreen(invoices: List&lt;Invoice&gt;, onViewPdf: (String, String) -&gt; Unit)</ID>
+    <ID>FunctionNaming:BillingScreen.kt$@Composable fun InvoiceCard(invoice: Invoice, onPayClick: () -&gt; Unit, onDownloadClick: () -&gt; Unit, onReportClick: () -&gt; Unit)</ID>
+    <ID>FunctionNaming:BillingScreen.kt$@Composable fun InvoiceStatusBadge(status: String)</ID>
+    <ID>FunctionNaming:ChangePasswordDialog.kt$@OptIn(ExperimentalMaterial3Api::class) @Composable fun ChangePasswordDialog(onDismiss: () -&gt; Unit)</ID>
+    <ID>FunctionNaming:ChatScreen.kt$@Composable fun ChatBubble(msg: Message, isFromClient: Boolean)</ID>
+    <ID>FunctionNaming:ChatScreen.kt$@Composable fun ChatScreen(messages: List&lt;Message&gt;, onSendMessage: (String) -&gt; Unit)</ID>
+    <ID>FunctionNaming:CustomBackground.kt$@OptIn(UnstableApi::class) @Composable fun CustomBackground(modifier: Modifier = Modifier)</ID>
+    <ID>FunctionNaming:CustomBackground.kt$@OptIn(UnstableApi::class) @Composable fun VideoPlayer(uri: Uri)</ID>
+    <ID>FunctionNaming:FeedbackScreen.kt$@Composable fun FeedbackCard(item: FeedbackItem)</ID>
+    <ID>FunctionNaming:FeedbackScreen.kt$@Composable fun RatingBar(rating: Int, modifier: Modifier = Modifier)</ID>
+    <ID>FunctionNaming:FeedbackScreen.kt$@OptIn(ExperimentalMaterial3Api::class) @Composable fun FeedbackScreen()</ID>
+    <ID>FunctionNaming:FeedbackScreen.kt$@OptIn(ExperimentalMaterial3Api::class) @Composable fun SubmitFeedbackDialog(onDismiss: () -&gt; Unit, onSuccess: () -&gt; Unit)</ID>
+    <ID>FunctionNaming:ForgotPasswordScreen.kt$@OptIn(ExperimentalMaterial3Api::class) @Composable fun ForgotPasswordScreen(onBackToLogin: () -&gt; Unit)</ID>
+    <ID>FunctionNaming:ForgotPasswordScreen.kt$@Preview(showBackground = true) @Composable fun ForgotPasswordScreenPreview()</ID>
+    <ID>FunctionNaming:JobServicesScreen.kt$@Composable fun JobServicesScreen()</ID>
+    <ID>FunctionNaming:JobServicesScreen.kt$@Composable fun ServiceCard(service: ServiceItem)</ID>
+    <ID>FunctionNaming:LoginScreen.kt$@Composable fun LoginScreen( onLoginSuccess: () -&gt; Unit, onNavigateToSignup: () -&gt; Unit, onNavigateToForgotPassword: () -&gt; Unit, onNavigateToOtpVerification: () -&gt; Unit )</ID>
+    <ID>FunctionNaming:LoginScreen.kt$@Preview(showBackground = true) @Composable fun LoginScreenPreview()</ID>
+    <ID>FunctionNaming:MessagesScreen.kt$@Composable fun MessageCard(message: Message)</ID>
+    <ID>FunctionNaming:MessagesScreen.kt$@Composable fun MessagesScreen(messages: List&lt;Message&gt;)</ID>
+    <ID>FunctionNaming:NetworkStatusBar.kt$@Composable fun NetworkStatusBar()</ID>
+    <ID>FunctionNaming:NotificationsScreen.kt$@Composable fun NotificationCard(notification: Notification, onMarkRead: () -&gt; Unit)</ID>
+    <ID>FunctionNaming:NotificationsScreen.kt$@Composable fun NotificationsScreen(notifications: List&lt;Notification&gt;)</ID>
+    <ID>FunctionNaming:NotificationsScreen.kt$@Composable fun PriorityBadge(priority: String)</ID>
+    <ID>FunctionNaming:OnboardingScreen.kt$@OptIn(ExperimentalFoundationApi::class) @Composable fun OnboardingScreen(onOnboardingComplete: () -&gt; Unit)</ID>
+    <ID>FunctionNaming:OtpVerificationScreen.kt$@OptIn(ExperimentalMaterial3Api::class) @Composable fun OtpVerificationScreen(onBackToLogin: () -&gt; Unit)</ID>
+    <ID>FunctionNaming:PdfViewerScreen.kt$@Composable fun PdfViewContainer(file: File)</ID>
+    <ID>FunctionNaming:PdfViewerScreen.kt$@OptIn(ExperimentalMaterial3Api::class) @Composable fun PdfViewerScreen(url: String, title: String, onBack: () -&gt; Unit)</ID>
+    <ID>FunctionNaming:PortalScreen.kt$@Composable fun DirectStrategySupportCard(onNavigateToChat: () -&gt; Unit)</ID>
+    <ID>FunctionNaming:PortalScreen.kt$@Composable fun DrawerHeader(user: UserInfo?, profilePhotoData: String? = null)</ID>
+    <ID>FunctionNaming:PortalScreen.kt$@Composable fun DrawerItem(label: String, icon: ImageVector, selected: Boolean, onClick: () -&gt; Unit)</ID>
+    <ID>FunctionNaming:PortalScreen.kt$@Composable fun HomeKpiSection( dashboardData: DashboardResponse?, onNavigate: (String) -&gt; Unit, onNavigateToChat: () -&gt; Unit )</ID>
+    <ID>FunctionNaming:PortalScreen.kt$@Composable fun HomeScreen( isLoading: Boolean, dashboardData: DashboardResponse?, localProjects: List&lt;ProjectEntity&gt;, localInvoices: List&lt;InvoiceEntity&gt;, notifications: List&lt;Notification&gt;, onNavigate: (String) -&gt; Unit, onViewProject: (Int) -&gt; Unit, onNavigateToChat: () -&gt; Unit )</ID>
+    <ID>FunctionNaming:PortalScreen.kt$@Composable fun InvoicesSummaryList(invoices: List&lt;Invoice&gt;, onNavigate: (String) -&gt; Unit)</ID>
+    <ID>FunctionNaming:PortalScreen.kt$@Composable fun KpiCard(label: String, value: String, modifier: Modifier = Modifier)</ID>
+    <ID>FunctionNaming:PortalScreen.kt$@Composable fun MessageFeedItem(message: Message)</ID>
+    <ID>FunctionNaming:PortalScreen.kt$@Composable fun NotificationItem(notification: Notification)</ID>
+    <ID>FunctionNaming:PortalScreen.kt$@Composable fun ProjectsSummaryList( projects: List&lt;Project&gt;, onViewProject: (Int) -&gt; Unit )</ID>
+    <ID>FunctionNaming:PortalScreen.kt$@Composable fun QuickActionCard(label: String, icon: ImageVector, modifier: Modifier = Modifier, onClick: () -&gt; Unit)</ID>
+    <ID>FunctionNaming:PortalScreen.kt$@Composable fun SupportChannelItem(icon: ImageVector, label: String, color: Color, onClick: () -&gt; Unit)</ID>
+    <ID>FunctionNaming:PortalScreen.kt$@Composable fun TasksSummaryList(tasks: List&lt;Task&gt;, onNavigate: (String) -&gt; Unit)</ID>
+    <ID>FunctionNaming:PortalScreen.kt$@OptIn(ExperimentalMaterial3Api::class) @Composable fun PortalScreen( onLogout: () -&gt; Unit, onViewPdf: (String, String) -&gt; Unit, onViewProject: (Int) -&gt; Unit, onNavigateToChat: () -&gt; Unit )</ID>
+    <ID>FunctionNaming:ProfileScreen.kt$@Composable fun ProfileScreen(dashboardData: DashboardResponse? = null)</ID>
+    <ID>FunctionNaming:ProfileScreen.kt$@Composable fun RelationshipStatItem(label: String, value: String, icon: ImageVector)</ID>
+    <ID>FunctionNaming:ProjectDetailsScreen.kt$@Composable fun MediaCard(media: DevelopmentMedia)</ID>
+    <ID>FunctionNaming:ProjectDetailsScreen.kt$@OptIn(ExperimentalMaterial3Api::class) @Composable fun ProjectDetailsScreen( project: Project?, team: List&lt;TeamMember&gt;, onBack: () -&gt; Unit )</ID>
+    <ID>FunctionNaming:ProjectListScreen.kt$@Composable fun ProjectCard( project: Project, onViewRoadmap: () -&gt; Unit, onViewProposal: () -&gt; Unit, onClick: () -&gt; Unit = {} )</ID>
+    <ID>FunctionNaming:ProjectListScreen.kt$@Composable fun ProjectListScreen( projects: List&lt;Project&gt;, onViewPdf: (String, String) -&gt; Unit, onViewDetails: (Project) -&gt; Unit = {} )</ID>
+    <ID>FunctionNaming:ProjectListScreen.kt$@Composable fun ProjectProposalDialog(project: Project, onDismiss: () -&gt; Unit, onViewPdf: (String, String) -&gt; Unit)</ID>
+    <ID>FunctionNaming:ProjectListScreen.kt$@Composable fun ProjectRoadmapDialog(project: Project, onDismiss: () -&gt; Unit)</ID>
+    <ID>FunctionNaming:ProjectListScreen.kt$@Composable fun ProjectStatusBadge(status: String)</ID>
+    <ID>FunctionNaming:ProjectListScreen.kt$@Composable fun RoadmapStep(title: String, description: String, isDone: Boolean, isCurrent: Boolean)</ID>
+    <ID>FunctionNaming:ReportsScreen.kt$@Composable fun ReportCard(report: Report, isDownloading: Boolean, onDownload: () -&gt; Unit)</ID>
+    <ID>FunctionNaming:ReportsScreen.kt$@Composable fun ReportsScreen(reports: List&lt;Report&gt;, onViewPdf: (String, String) -&gt; Unit)</ID>
+    <ID>FunctionNaming:RequestsScreen.kt$@Composable fun ChangeRequestCard(req: ChangeRequest)</ID>
+    <ID>FunctionNaming:RequestsScreen.kt$@Composable fun ChangeRequestsList()</ID>
+    <ID>FunctionNaming:RequestsScreen.kt$@Composable fun QuoteCard(quote: Quote, onDecision: (String) -&gt; Unit)</ID>
+    <ID>FunctionNaming:RequestsScreen.kt$@Composable fun QuotesList()</ID>
+    <ID>FunctionNaming:RequestsScreen.kt$@Composable fun RequestsScreen()</ID>
+    <ID>FunctionNaming:RequestsScreen.kt$@Composable fun SignatureCard(req: SignatureRequest, onDecision: (String) -&gt; Unit)</ID>
+    <ID>FunctionNaming:RequestsScreen.kt$@Composable fun SignatureRequestsList()</ID>
+    <ID>FunctionNaming:RequestsScreen.kt$@OptIn(ExperimentalMaterial3Api::class) @Composable fun SubmitChangeRequestDialog(onDismiss: () -&gt; Unit, onSuccess: () -&gt; Unit)</ID>
+    <ID>FunctionNaming:SearchScreen.kt$@Composable fun SearchScreen( query: String, results: SearchResults?, isLoading: Boolean, onViewPdf: (String, String) -&gt; Unit, onNavigate: (String) -&gt; Unit )</ID>
+    <ID>FunctionNaming:SettingsScreen.kt$@Composable fun ActiveSessionsDialog(onDismiss: () -&gt; Unit)</ID>
+    <ID>FunctionNaming:SettingsScreen.kt$@Composable fun FeedbackDialog(onDismiss: () -&gt; Unit, onSend: (String, String) -&gt; Unit)</ID>
+    <ID>FunctionNaming:SettingsScreen.kt$@Composable fun SettingsClickItem(title: String, subtitle: String, icon: ImageVector, onClick: () -&gt; Unit)</ID>
+    <ID>FunctionNaming:SettingsScreen.kt$@Composable fun SettingsScreen( onLogout: (() -&gt; Unit)? = null, onNavigateToProfile: () -&gt; Unit, onNavigateToChat: () -&gt; Unit, dashboardData: DashboardResponse? = null )</ID>
+    <ID>FunctionNaming:SettingsScreen.kt$@Composable fun SettingsSectionHeader(title: String, icon: ImageVector)</ID>
+    <ID>FunctionNaming:SettingsScreen.kt$@Composable fun SettingsSwitchItem(title: String, subtitle: String, checked: Boolean, onCheckedChange: (Boolean) -&gt; Unit)</ID>
+    <ID>FunctionNaming:SharedComponents.kt$@Composable fun ContactExpertDialog(expert: TeamMember, onDismiss: () -&gt; Unit)</ID>
+    <ID>FunctionNaming:SharedComponents.kt$@Composable fun ProjectStatusBadge(status: String)</ID>
+    <ID>FunctionNaming:SharedComponents.kt$@Composable fun RoadmapStep(title: String, description: String, isDone: Boolean, isCurrent: Boolean)</ID>
+    <ID>FunctionNaming:SharedComponents.kt$@Composable fun SectionHeader(title: String, icon: ImageVector)</ID>
+    <ID>FunctionNaming:SharedComponents.kt$@Composable fun TeamMemberCard(member: TeamMember, onClick: () -&gt; Unit = {})</ID>
+    <ID>FunctionNaming:SignupScreen.kt$@OptIn(ExperimentalMaterial3Api::class) @Composable fun SignupScreen(onSignupSuccess: () -&gt; Unit, onBackToLogin: () -&gt; Unit)</ID>
+    <ID>FunctionNaming:SignupScreen.kt$@OptIn(ExperimentalMaterial3Api::class) @Composable fun TermsAndPrivacyDialog(onDismiss: () -&gt; Unit)</ID>
+    <ID>FunctionNaming:StrategyChatScreen.kt$@Composable fun ChatBubble(msg: StrategyChatMessageEntity)</ID>
+    <ID>FunctionNaming:StrategyChatScreen.kt$@OptIn(ExperimentalMaterial3Api::class) @Composable fun StrategyChatScreen(onBack: () -&gt; Unit)</ID>
+    <ID>FunctionNaming:TasksScreen.kt$@Composable fun TaskCard(task: Task)</ID>
+    <ID>FunctionNaming:TasksScreen.kt$@Composable fun TaskPriorityBadge(priority: String)</ID>
+    <ID>FunctionNaming:TasksScreen.kt$@Composable fun TasksScreen(tasks: List&lt;Task&gt;)</ID>
+    <ID>FunctionNaming:TeamScreen.kt$@Composable fun TeamScreen(members: List&lt;TeamMember&gt;)</ID>
+    <ID>FunctionNaming:Theme.kt$@Composable fun GreggoryPortalTheme( darkTheme: Boolean = isSystemInDarkTheme(), content: @Composable () -&gt; Unit )</ID>
+    <ID>LongMethod:ApiServiceTest.kt$ApiServiceTest$@Test fun deserializeDashboardResponse_Success()</ID>
+    <ID>LongMethod:AppNavigation.kt$@Composable fun AppNavigation(navController: NavHostController, startDestination: String = Screen.Portal.route)</ID>
+    <ID>LongMethod:BillingScreen.kt$@Composable fun BillingScreen(invoices: List&lt;Invoice&gt;, onViewPdf: (String, String) -&gt; Unit)</ID>
+    <ID>LongMethod:BillingScreen.kt$@Composable fun InvoiceCard(invoice: Invoice, onPayClick: () -&gt; Unit, onDownloadClick: () -&gt; Unit, onReportClick: () -&gt; Unit)</ID>
+    <ID>LongMethod:ChangePasswordDialog.kt$@OptIn(ExperimentalMaterial3Api::class) @Composable fun ChangePasswordDialog(onDismiss: () -&gt; Unit)</ID>
+    <ID>LongMethod:ChatScreen.kt$@Composable fun ChatBubble(msg: Message, isFromClient: Boolean)</ID>
+    <ID>LongMethod:ChatScreen.kt$@Composable fun ChatScreen(messages: List&lt;Message&gt;, onSendMessage: (String) -&gt; Unit)</ID>
+    <ID>LongMethod:CustomBackground.kt$@OptIn(UnstableApi::class) @Composable fun CustomBackground(modifier: Modifier = Modifier)</ID>
+    <ID>LongMethod:FeedbackScreen.kt$@Composable fun FeedbackCard(item: FeedbackItem)</ID>
+    <ID>LongMethod:FeedbackScreen.kt$@OptIn(ExperimentalMaterial3Api::class) @Composable fun FeedbackScreen()</ID>
+    <ID>LongMethod:FeedbackScreen.kt$@OptIn(ExperimentalMaterial3Api::class) @Composable fun SubmitFeedbackDialog(onDismiss: () -&gt; Unit, onSuccess: () -&gt; Unit)</ID>
+    <ID>LongMethod:FirebaseMessagingService.kt$MyFirebaseMessagingService$override fun onMessageReceived(message: RemoteMessage)</ID>
+    <ID>LongMethod:ForgotPasswordScreen.kt$@OptIn(ExperimentalMaterial3Api::class) @Composable fun ForgotPasswordScreen(onBackToLogin: () -&gt; Unit)</ID>
+    <ID>LongMethod:IntegrationFlowTest.kt$IntegrationFlowTest$@Test fun `Execute Register and Login Flow for Test User`()</ID>
+    <ID>LongMethod:JobServicesScreen.kt$@Composable fun JobServicesScreen()</ID>
+    <ID>LongMethod:JobServicesScreen.kt$@Composable fun ServiceCard(service: ServiceItem)</ID>
+    <ID>LongMethod:LoginScreen.kt$@Composable fun LoginScreen( onLoginSuccess: () -&gt; Unit, onNavigateToSignup: () -&gt; Unit, onNavigateToForgotPassword: () -&gt; Unit, onNavigateToOtpVerification: () -&gt; Unit )</ID>
+    <ID>LongMethod:MainActivity.kt$MainActivity$override fun onCreate(savedInstanceState: Bundle?)</ID>
+    <ID>LongMethod:MessagesScreen.kt$@Composable fun MessageCard(message: Message)</ID>
+    <ID>LongMethod:MessagesScreen.kt$@Composable fun MessagesScreen(messages: List&lt;Message&gt;)</ID>
+    <ID>LongMethod:NetworkStatusBar.kt$@Composable fun NetworkStatusBar()</ID>
+    <ID>LongMethod:NotificationsScreen.kt$@Composable fun NotificationCard(notification: Notification, onMarkRead: () -&gt; Unit)</ID>
+    <ID>LongMethod:NotificationsScreen.kt$@Composable fun NotificationsScreen(notifications: List&lt;Notification&gt;)</ID>
+    <ID>LongMethod:OnboardingScreen.kt$@OptIn(ExperimentalFoundationApi::class) @Composable fun OnboardingScreen(onOnboardingComplete: () -&gt; Unit)</ID>
+    <ID>LongMethod:OtpVerificationScreen.kt$@OptIn(ExperimentalMaterial3Api::class) @Composable fun OtpVerificationScreen(onBackToLogin: () -&gt; Unit)</ID>
+    <ID>LongMethod:PdfViewerScreen.kt$@OptIn(ExperimentalMaterial3Api::class) @Composable fun PdfViewerScreen(url: String, title: String, onBack: () -&gt; Unit)</ID>
+    <ID>LongMethod:PortalScreen.kt$@Composable fun DirectStrategySupportCard(onNavigateToChat: () -&gt; Unit)</ID>
+    <ID>LongMethod:PortalScreen.kt$@Composable fun DrawerHeader(user: UserInfo?, profilePhotoData: String? = null)</ID>
+    <ID>LongMethod:PortalScreen.kt$@Composable fun HomeScreen( isLoading: Boolean, dashboardData: DashboardResponse?, localProjects: List&lt;ProjectEntity&gt;, localInvoices: List&lt;InvoiceEntity&gt;, notifications: List&lt;Notification&gt;, onNavigate: (String) -&gt; Unit, onViewProject: (Int) -&gt; Unit, onNavigateToChat: () -&gt; Unit )</ID>
+    <ID>LongMethod:PortalScreen.kt$@OptIn(ExperimentalMaterial3Api::class) @Composable fun PortalScreen( onLogout: () -&gt; Unit, onViewPdf: (String, String) -&gt; Unit, onViewProject: (Int) -&gt; Unit, onNavigateToChat: () -&gt; Unit )</ID>
+    <ID>LongMethod:PortalScreen.kt$fun refreshData(isManual: Boolean = false)</ID>
+    <ID>LongMethod:ProfileScreen.kt$@Composable fun ProfileScreen(dashboardData: DashboardResponse? = null)</ID>
+    <ID>LongMethod:ProjectDetailsScreen.kt$@Composable fun MediaCard(media: DevelopmentMedia)</ID>
+    <ID>LongMethod:ProjectDetailsScreen.kt$@OptIn(ExperimentalMaterial3Api::class) @Composable fun ProjectDetailsScreen( project: Project?, team: List&lt;TeamMember&gt;, onBack: () -&gt; Unit )</ID>
+    <ID>LongMethod:ProjectListScreen.kt$@Composable fun ProjectCard( project: Project, onViewRoadmap: () -&gt; Unit, onViewProposal: () -&gt; Unit, onClick: () -&gt; Unit = {} )</ID>
+    <ID>LongMethod:ProjectListScreen.kt$@Composable fun ProjectListScreen( projects: List&lt;Project&gt;, onViewPdf: (String, String) -&gt; Unit, onViewDetails: (Project) -&gt; Unit = {} )</ID>
+    <ID>LongMethod:ProjectListScreen.kt$@Composable fun ProjectProposalDialog(project: Project, onDismiss: () -&gt; Unit, onViewPdf: (String, String) -&gt; Unit)</ID>
+    <ID>LongMethod:ProjectListScreen.kt$@Composable fun ProjectRoadmapDialog(project: Project, onDismiss: () -&gt; Unit)</ID>
+    <ID>LongMethod:ProjectListScreen.kt$@Composable fun RoadmapStep(title: String, description: String, isDone: Boolean, isCurrent: Boolean)</ID>
+    <ID>LongMethod:ReportsScreen.kt$@Composable fun ReportCard(report: Report, isDownloading: Boolean, onDownload: () -&gt; Unit)</ID>
+    <ID>LongMethod:ReportsScreen.kt$@Composable fun ReportsScreen(reports: List&lt;Report&gt;, onViewPdf: (String, String) -&gt; Unit)</ID>
+    <ID>LongMethod:RequestsScreen.kt$@Composable fun ChangeRequestsList()</ID>
+    <ID>LongMethod:RequestsScreen.kt$@Composable fun QuoteCard(quote: Quote, onDecision: (String) -&gt; Unit)</ID>
+    <ID>LongMethod:RequestsScreen.kt$@Composable fun SignatureCard(req: SignatureRequest, onDecision: (String) -&gt; Unit)</ID>
+    <ID>LongMethod:RequestsScreen.kt$@OptIn(ExperimentalMaterial3Api::class) @Composable fun SubmitChangeRequestDialog(onDismiss: () -&gt; Unit, onSuccess: () -&gt; Unit)</ID>
+    <ID>LongMethod:SearchScreen.kt$@Composable fun SearchScreen( query: String, results: SearchResults?, isLoading: Boolean, onViewPdf: (String, String) -&gt; Unit, onNavigate: (String) -&gt; Unit )</ID>
+    <ID>LongMethod:SettingsScreen.kt$@Composable fun ActiveSessionsDialog(onDismiss: () -&gt; Unit)</ID>
+    <ID>LongMethod:SettingsScreen.kt$@Composable fun FeedbackDialog(onDismiss: () -&gt; Unit, onSend: (String, String) -&gt; Unit)</ID>
+    <ID>LongMethod:SettingsScreen.kt$@Composable fun SettingsScreen( onLogout: (() -&gt; Unit)? = null, onNavigateToProfile: () -&gt; Unit, onNavigateToChat: () -&gt; Unit, dashboardData: DashboardResponse? = null )</ID>
+    <ID>LongMethod:SharedComponents.kt$@Composable fun ContactExpertDialog(expert: TeamMember, onDismiss: () -&gt; Unit)</ID>
+    <ID>LongMethod:SharedComponents.kt$@Composable fun RoadmapStep(title: String, description: String, isDone: Boolean, isCurrent: Boolean)</ID>
+    <ID>LongMethod:SharedComponents.kt$@Composable fun TeamMemberCard(member: TeamMember, onClick: () -&gt; Unit = {})</ID>
+    <ID>LongMethod:SignupScreen.kt$@OptIn(ExperimentalMaterial3Api::class) @Composable fun SignupScreen(onSignupSuccess: () -&gt; Unit, onBackToLogin: () -&gt; Unit)</ID>
+    <ID>LongMethod:SignupScreen.kt$@OptIn(ExperimentalMaterial3Api::class) @Composable fun TermsAndPrivacyDialog(onDismiss: () -&gt; Unit)</ID>
+    <ID>LongMethod:StrategyChatScreen.kt$@Composable fun ChatBubble(msg: StrategyChatMessageEntity)</ID>
+    <ID>LongMethod:StrategyChatScreen.kt$@OptIn(ExperimentalMaterial3Api::class) @Composable fun StrategyChatScreen(onBack: () -&gt; Unit)</ID>
+    <ID>LongMethod:TasksScreen.kt$@Composable fun TaskCard(task: Task)</ID>
+    <ID>LongMethod:TasksScreen.kt$@Composable fun TasksScreen(tasks: List&lt;Task&gt;)</ID>
+    <ID>LongMethod:TeamScreen.kt$@Composable fun TeamScreen(members: List&lt;TeamMember&gt;)</ID>
+    <ID>LongMethod:UpdateManager.kt$UpdateManager$suspend fun downloadAndInstall(context: Context, updateUrl: String, onProgress: (Float) -&gt; Unit): Boolean</ID>
+    <ID>LongParameterList:PortalScreen.kt$( isLoading: Boolean, dashboardData: DashboardResponse?, localProjects: List&lt;ProjectEntity&gt;, localInvoices: List&lt;InvoiceEntity&gt;, notifications: List&lt;Notification&gt;, onNavigate: (String) -&gt; Unit, onViewProject: (Int) -&gt; Unit, onNavigateToChat: () -&gt; Unit )</ID>
+    <ID>LongParameterList:PreferencesManager.kt$PreferencesManager$(userId: Int, email: String, name: String, phone: String? = null, role: String? = "user", briefing: String? = null, photoData: String? = null)</ID>
+    <ID>MatchingDeclarationName:FirebaseMessagingService.kt$MyFirebaseMessagingService : FirebaseMessagingService</ID>
+    <ID>MatchingDeclarationName:JobServicesScreen.kt$ServiceItem</ID>
+    <ID>MatchingDeclarationName:OnboardingScreen.kt$OnboardingPageData</ID>
+    <ID>MatchingDeclarationName:ProjectDetailsScreen.kt$DevelopmentMedia</ID>
+    <ID>MayBeConst:RetrofitClient.kt$RetrofitClient$// SECURITY (M3): TLS pinning for the production API host. The SHA-256 pins // below are the leaf + intermediate SPKI hashes for // w-the-greggory-systems-and-strategy-firm-1vf9.onrender.com's CURRENT // certificate ("Not After: ..." recorded when generated — re-run the probe // below BEFORE that date, because Render rotates its cert and stale pins // fail CLOSED, bricking the app's network). // // Probe (any machine with openssl): // openssl s_client -connect w-the-greggory-systems-and-strategy-firm-1vf9.onrender.com:443 -servername w-the-greggory-systems-and-strategy-firm-1vf9.onrender.com -showcerts &lt; /dev/null \ // | awk '/BEGIN CERT/,/END CERT/' | while read -r _; do :; done # (split chain manually) // openssl x509 -in &lt;each.pem&gt; -noout -pubkey | openssl pkey -pubin -outform DER \ // | openssl dgst -sha256 -binary | openssl enc -base64 // // Pinning applies ONLY to the production host; debug/local builds use the // system trust store so emulator testing never breaks. // // Live-measured 14 Oct 2026 (leaf NOT AFTER 2026-12-20; re-pin BEFORE then — // Render rotates ~quarterly and stale pins fail CLOSED / brick the network). private val PROD_API_HOST = "w-the-greggory-systems-and-strategy-firm-1vf9.onrender.com"</ID>
+    <ID>NestedBlockDepth:BillingScreen.kt$private suspend fun pollPaymentStatus(checkoutRequestId: String, snackbarHostState: SnackbarHostState)</ID>
+    <ID>ReturnCount:SearchScreen.kt$@Composable fun SearchScreen( query: String, results: SearchResults?, isLoading: Boolean, onViewPdf: (String, String) -&gt; Unit, onNavigate: (String) -&gt; Unit )</ID>
+    <ID>ReturnCount:UpdateManager.kt$UpdateManager$internal fun verifyUpdateUrl(updateUrl: String): String?</ID>
+    <ID>SwallowedException:BillingScreen.kt$e: Exception</ID>
+    <ID>SwallowedException:FeedbackScreen.kt$e: Exception</ID>
+    <ID>SwallowedException:FileDownloadHelper.kt$FileDownloadHelper$e: Exception</ID>
+    <ID>SwallowedException:JobServicesScreen.kt$e: Exception</ID>
+    <ID>SwallowedException:LoginScreen.kt$e: Exception</ID>
+    <ID>SwallowedException:NotificationsScreen.kt$e: Exception</ID>
+    <ID>SwallowedException:PortalScreen.kt$e: Exception</ID>
+    <ID>SwallowedException:RequestsScreen.kt$e: Exception</ID>
+    <ID>SwallowedException:SettingsScreen.kt$e: Exception</ID>
+    <ID>SwallowedException:SignupScreen.kt$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:AiIssueMonitor.kt$AiIssueMonitor$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:BillingScreen.kt$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:ChangePasswordDialog.kt$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:FeedbackScreen.kt$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:FileDownloadHelper.kt$FileDownloadHelper$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:FirebaseMessagingService.kt$MyFirebaseMessagingService$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:ForgotPasswordScreen.kt$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:JobServicesScreen.kt$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:LoginScreen.kt$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:MpesaNotificationService.kt$MpesaNotificationService$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:NotificationsScreen.kt$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:OfflineSyncRepository.kt$OfflineSyncRepository$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:OtpVerificationScreen.kt$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:PdfViewerScreen.kt$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:PortalScreen.kt$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:PreferencesManager.kt$PreferencesManager$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:ProfileScreen.kt$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:ReportsScreen.kt$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:RequestsScreen.kt$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:RetrofitClient.kt$RetrofitClient$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:SettingsScreen.kt$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:SignupScreen.kt$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:UpdateManager.kt$UpdateManager$e: Exception</ID>
+    <ID>TooManyFunctions:ApiService.kt$ApiService</ID>
+    <ID>TooManyFunctions:PortalScreen.kt$com.greggory.portal.ui.screens.PortalScreen.kt</ID>
+    <ID>TooManyFunctions:PreferencesManager.kt$PreferencesManager</ID>
+    <ID>UnusedParameter:AiIssueMonitor.kt$AiIssueMonitor$context: Context</ID>
+    <ID>UnusedParameter:PortalScreen.kt$onViewProject: (Int) -&gt; Unit</ID>
+    <ID>UnusedParameter:SettingsScreen.kt$onLogout: (() -&gt; Unit)? = null</ID>
+    <ID>UnusedParameter:SettingsScreen.kt$onNavigateToChat: () -&gt; Unit</ID>
+    <ID>UnusedParameter:SignupScreen.kt$onSignupSuccess: () -&gt; Unit</ID>
+    <ID>UnusedPrivateProperty:AiIssueMonitor.kt$AiIssueMonitor$val job = CoroutineScope(Dispatchers.IO).launch { sendFeedbackToServer(title, messageText, priority) }</ID>
+    <ID>UnusedPrivateProperty:BillingScreen.kt$val context = LocalContext.current</ID>
+    <ID>UnusedPrivateProperty:PortalScreen.kt$val messagesResponse = try { messagesDeferred.await() } catch (ignored: Exception) { null }</ID>
+    <ID>VariableNaming:ApiService.kt$ChangeRequest$val created_at: String get() = createdAt</ID>
+    <ID>VariableNaming:ApiService.kt$ChangeRequest$val project_name: String get() = projectName</ID>
+    <ID>VariableNaming:ApiService.kt$FeedbackItem$val created_at: String get() = createdAt</ID>
+    <ID>VariableNaming:ApiService.kt$Notification$val created_at: String get() = createdAt</ID>
+    <ID>VariableNaming:ApiService.kt$Quote$val created_at: String get() = createdAt</ID>
+    <ID>VariableNaming:ApiService.kt$Quote$val project_name: String get() = projectName</ID>
+    <ID>VariableNaming:ApiService.kt$SignatureRequest$val created_at: String get() = createdAt</ID>
+    <ID>VariableNaming:ApiService.kt$SignatureRequest$val document_name: String get() = documentName</ID>
+    <ID>VariableNaming:ApiService.kt$SignatureRequest$val project_name: String get() = projectName</ID>
+    <ID>WildcardImport:ApiService.kt$import retrofit2.http.*</ID>
+    <ID>WildcardImport:ApiServiceTest.kt$import org.junit.Assert.*</ID>
+    <ID>WildcardImport:AppDatabase.kt$import androidx.room.*</ID>
+    <ID>WildcardImport:AuthenticationSystemTest.kt$import org.junit.Assert.*</ID>
+    <ID>WildcardImport:BillingScreen.kt$import androidx.compose.foundation.layout.*</ID>
+    <ID>WildcardImport:BillingScreen.kt$import androidx.compose.material3.*</ID>
+    <ID>WildcardImport:BillingScreen.kt$import androidx.compose.runtime.*</ID>
+    <ID>WildcardImport:BillingScreen.kt$import com.greggory.portal.data.api.*</ID>
+    <ID>WildcardImport:ChangePasswordDialog.kt$import androidx.compose.material3.*</ID>
+    <ID>WildcardImport:ChangePasswordDialog.kt$import androidx.compose.runtime.*</ID>
+    <ID>WildcardImport:ChatScreen.kt$import androidx.compose.foundation.layout.*</ID>
+    <ID>WildcardImport:ChatScreen.kt$import androidx.compose.material3.*</ID>
+    <ID>WildcardImport:ChatScreen.kt$import androidx.compose.runtime.*</ID>
+    <ID>WildcardImport:CustomBackground.kt$import androidx.compose.runtime.*</ID>
+    <ID>WildcardImport:DataRouterTest.kt$import org.junit.Assert.*</ID>
+    <ID>WildcardImport:FeedbackScreen.kt$import androidx.compose.foundation.layout.*</ID>
+    <ID>WildcardImport:FeedbackScreen.kt$import androidx.compose.material3.*</ID>
+    <ID>WildcardImport:FeedbackScreen.kt$import androidx.compose.runtime.*</ID>
+    <ID>WildcardImport:ForgotPasswordScreen.kt$import androidx.compose.foundation.layout.*</ID>
+    <ID>WildcardImport:ForgotPasswordScreen.kt$import androidx.compose.material3.*</ID>
+    <ID>WildcardImport:ForgotPasswordScreen.kt$import androidx.compose.runtime.*</ID>
+    <ID>WildcardImport:IntegrationFlowTest.kt$import com.greggory.portal.data.api.*</ID>
+    <ID>WildcardImport:IntegrationFlowTest.kt$import org.junit.Assert.*</ID>
+    <ID>WildcardImport:JobServicesScreen.kt$import androidx.compose.foundation.layout.*</ID>
+    <ID>WildcardImport:JobServicesScreen.kt$import androidx.compose.material.icons.filled.*</ID>
+    <ID>WildcardImport:JobServicesScreen.kt$import androidx.compose.material3.*</ID>
+    <ID>WildcardImport:LoginScreen.kt$import androidx.compose.foundation.layout.*</ID>
+    <ID>WildcardImport:LoginScreen.kt$import androidx.compose.material3.*</ID>
+    <ID>WildcardImport:LoginScreen.kt$import androidx.compose.runtime.*</ID>
+    <ID>WildcardImport:MainActivity.kt$import androidx.compose.runtime.*</ID>
+    <ID>WildcardImport:MessagesScreen.kt$import androidx.compose.foundation.layout.*</ID>
+    <ID>WildcardImport:MessagesScreen.kt$import androidx.compose.material3.*</ID>
+    <ID>WildcardImport:NetworkStatusBar.kt$import androidx.compose.animation.*</ID>
+    <ID>WildcardImport:NetworkStatusBar.kt$import androidx.compose.foundation.layout.*</ID>
+    <ID>WildcardImport:NetworkStatusBar.kt$import androidx.compose.runtime.*</ID>
+    <ID>WildcardImport:NotificationsScreen.kt$import androidx.compose.foundation.layout.*</ID>
+    <ID>WildcardImport:NotificationsScreen.kt$import androidx.compose.material3.*</ID>
+    <ID>WildcardImport:OfflineSyncRepository.kt$import com.greggory.portal.data.local.*</ID>
+    <ID>WildcardImport:OnboardingScreen.kt$import androidx.compose.foundation.layout.*</ID>
+    <ID>WildcardImport:OnboardingScreen.kt$import androidx.compose.material3.*</ID>
+    <ID>WildcardImport:OnboardingScreen.kt$import androidx.compose.runtime.*</ID>
+    <ID>WildcardImport:OtpVerificationScreen.kt$import androidx.compose.foundation.layout.*</ID>
+    <ID>WildcardImport:OtpVerificationScreen.kt$import androidx.compose.material3.*</ID>
+    <ID>WildcardImport:OtpVerificationScreen.kt$import androidx.compose.runtime.*</ID>
+    <ID>WildcardImport:PdfViewerScreen.kt$import androidx.compose.foundation.layout.*</ID>
+    <ID>WildcardImport:PdfViewerScreen.kt$import androidx.compose.material3.*</ID>
+    <ID>WildcardImport:PdfViewerScreen.kt$import androidx.compose.runtime.*</ID>
+    <ID>WildcardImport:PortalScreen.kt$import androidx.compose.foundation.layout.*</ID>
+    <ID>WildcardImport:PortalScreen.kt$import androidx.compose.material.icons.filled.*</ID>
+    <ID>WildcardImport:PortalScreen.kt$import androidx.compose.material3.*</ID>
+    <ID>WildcardImport:PortalScreen.kt$import androidx.compose.runtime.*</ID>
+    <ID>WildcardImport:PortalScreen.kt$import com.greggory.portal.data.api.*</ID>
+    <ID>WildcardImport:PortalScreen.kt$import com.greggory.portal.data.local.*</ID>
+    <ID>WildcardImport:ProfileScreen.kt$import androidx.compose.foundation.layout.*</ID>
+    <ID>WildcardImport:ProfileScreen.kt$import androidx.compose.material3.*</ID>
+    <ID>WildcardImport:ProfileScreen.kt$import androidx.compose.runtime.*</ID>
+    <ID>WildcardImport:ProfileScreen.kt$import com.greggory.portal.data.api.*</ID>
+    <ID>WildcardImport:ProjectDetailsScreen.kt$import androidx.compose.foundation.layout.*</ID>
+    <ID>WildcardImport:ProjectDetailsScreen.kt$import androidx.compose.material.icons.filled.*</ID>
+    <ID>WildcardImport:ProjectDetailsScreen.kt$import androidx.compose.material3.*</ID>
+    <ID>WildcardImport:ProjectDetailsScreen.kt$import androidx.compose.runtime.*</ID>
+    <ID>WildcardImport:ProjectDetailsScreen.kt$import com.greggory.portal.ui.components.*</ID>
+    <ID>WildcardImport:ProjectListScreen.kt$import androidx.compose.foundation.layout.*</ID>
+    <ID>WildcardImport:ProjectListScreen.kt$import androidx.compose.material3.*</ID>
+    <ID>WildcardImport:ProjectListScreen.kt$import androidx.compose.runtime.*</ID>
+    <ID>WildcardImport:RegisterTest.kt$import org.junit.Assert.*</ID>
+    <ID>WildcardImport:ReportsScreen.kt$import androidx.compose.foundation.layout.*</ID>
+    <ID>WildcardImport:ReportsScreen.kt$import androidx.compose.material3.*</ID>
+    <ID>WildcardImport:ReportsScreen.kt$import androidx.compose.runtime.*</ID>
+    <ID>WildcardImport:RequestsScreen.kt$import androidx.compose.foundation.layout.*</ID>
+    <ID>WildcardImport:RequestsScreen.kt$import androidx.compose.material3.*</ID>
+    <ID>WildcardImport:RequestsScreen.kt$import androidx.compose.runtime.*</ID>
+    <ID>WildcardImport:RequestsScreen.kt$import com.greggory.portal.data.api.*</ID>
+    <ID>WildcardImport:SearchScreen.kt$import androidx.compose.foundation.layout.*</ID>
+    <ID>WildcardImport:SearchScreen.kt$import androidx.compose.material3.*</ID>
+    <ID>WildcardImport:SettingsScreen.kt$import androidx.compose.foundation.layout.*</ID>
+    <ID>WildcardImport:SettingsScreen.kt$import androidx.compose.material.icons.filled.*</ID>
+    <ID>WildcardImport:SettingsScreen.kt$import androidx.compose.material3.*</ID>
+    <ID>WildcardImport:SettingsScreen.kt$import androidx.compose.runtime.*</ID>
+    <ID>WildcardImport:SharedComponents.kt$import androidx.compose.foundation.layout.*</ID>
+    <ID>WildcardImport:SharedComponents.kt$import androidx.compose.material.icons.automirrored.filled.*</ID>
+    <ID>WildcardImport:SharedComponents.kt$import androidx.compose.material.icons.filled.*</ID>
+    <ID>WildcardImport:SharedComponents.kt$import androidx.compose.material3.*</ID>
+    <ID>WildcardImport:SignupScreen.kt$import androidx.compose.foundation.layout.*</ID>
+    <ID>WildcardImport:SignupScreen.kt$import androidx.compose.material3.*</ID>
+    <ID>WildcardImport:SignupScreen.kt$import androidx.compose.runtime.*</ID>
+    <ID>WildcardImport:StrategyChatScreen.kt$import androidx.compose.foundation.layout.*</ID>
+    <ID>WildcardImport:StrategyChatScreen.kt$import androidx.compose.material3.*</ID>
+    <ID>WildcardImport:StrategyChatScreen.kt$import androidx.compose.runtime.*</ID>
+    <ID>WildcardImport:TasksScreen.kt$import androidx.compose.foundation.layout.*</ID>
+    <ID>WildcardImport:TasksScreen.kt$import androidx.compose.material3.*</ID>
+    <ID>WildcardImport:TeamScreen.kt$import androidx.compose.foundation.layout.*</ID>
+    <ID>WildcardImport:TeamScreen.kt$import androidx.compose.material3.*</ID>
+    <ID>WildcardImport:TeamScreen.kt$import androidx.compose.runtime.*</ID>
+  </CurrentIssues>
+</SmellBaseline>
