@@ -47,13 +47,128 @@ fun JobServicesScreen() {
     val prefs = remember { PreferencesManager.getInstance(context) }
     var selectedService by remember { mutableStateOf<ServiceItem?>(null) }
 
-    val consultancyServices = listOf(
+    val allServices = listOf(
+        // --- Original Technical & IT Services ---
+        ServiceItem(
+            "Website Development",
+            "Technical Service",
+            "Responsive, high-performance websites built with modern frameworks to establish online presence.",
+            "We design and develop high-impact, lightning-fast corporate websites tailored to reflect your firm's brand authority. Optimized for search engines, mobile responsiveness, and high conversion.",
+            "Establish an immediate, professional digital footprint that converts visitors into high-value corporate clients.",
+            "Phase 1: Brand & Wireframe Design\nPhase 2: Frontend & SEO Architecture\nPhase 3: Content Integration & Performance Tuning\nPhase 4: Launch & Maintenance",
+            listOf(
+                "Fully Responsive Corporate Website",
+                "Advanced On-Page SEO & Analytics Setup",
+                "Secure SSL & Cloud Hosting Configuration",
+                "Content Management System (CMS) Integration"
+            ),
+            "https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=1000&q=80",
+            Icons.Default.Language
+        ),
+        ServiceItem(
+            "Web Applications",
+            "Technical Service",
+            "Complex cloud-based applications (SAAS, portals, ERPs) designed for scalable business logic.",
+            "Engineering bespoke web applications equipped with secure databases, user authentication, and high-performance backend pipelines tailored to enterprise operations.",
+            "Automate complex business workflows and deliver secure, cloud-native access to your stakeholders anywhere in the world.",
+            "Phase 1: Requirements Analysis & Architecture\nPhase 2: Database & API Development\nPhase 3: UI/UX Implementation & Testing\nPhase 4: Cloud Deployment & Monitoring",
+            listOf(
+                "Scalable Cloud-Based Web Application",
+                "Secure Role-Based User Authentication",
+                "High-Capacity Database Design & Migration",
+                "API Integration & Webhook Automation"
+            ),
+            "https://images.unsplash.com/photo-1555066931-4365d14bab8c?auto=format&fit=crop&w=1000&q=80",
+            Icons.Default.Web
+        ),
+        ServiceItem(
+            "Mobile App Development",
+            "Technical Service",
+            "Native Android (Compose) and iOS development tailored for client engagement.",
+            "Building sleek, highly responsive native mobile applications utilizing Jetpack Compose and modern cross-platform frameworks for peak mobile performance.",
+            "Engage clients and field teams directly on their mobile devices with push notifications, offline caching, and biometric login security.",
+            "Phase 1: Mobile UI/UX Prototype\nPhase 2: Native Kotlin/Compose Development\nPhase 3: Push Notifications & Secure Storage Integration\nPhase 4: Play Store / App Store Submission",
+            listOf(
+                "Native Android & iOS Mobile Application",
+                "Offline-First Room DB Caching & Sync",
+                "Firebase Cloud Messaging (FCM) Push Notifications",
+                "Biometric Authentication & Encrypted Storage"
+            ),
+            "https://images.unsplash.com/photo-1512941937669-90a1b58e7e9c?auto=format&fit=crop&w=1000&q=80",
+            Icons.Default.AppShortcut
+        ),
+        ServiceItem(
+            "Desktop Applications",
+            "Technical Service",
+            "Windows, Mac, and Linux desktop software for localized processing and system integration.",
+            "Developing powerful cross-platform desktop applications designed for localized heavy-duty processing, secure offline capability, and deep hardware integration.",
+            "Execute high-speed local processing tasks with dedicated desktop software optimized for enterprise workstations.",
+            "Phase 1: Desktop UI Design & Framework Setup\nPhase 2: Local Processing & Storage Integration\nPhase 3: Cross-Platform Packaging & Signing\nPhase 4: Installer Distribution & Updates",
+            listOf(
+                "Cross-Platform Desktop Software (Windows/Mac/Linux)",
+                "Secure Local Database & File Encryption",
+                "Hardware Integration & Peripherals Support",
+                "Auto-Update & Package Distribution Setup"
+            ),
+            "https://images.unsplash.com/photo-1517694712202-14dd9538aa97?auto=format&fit=crop&w=1000&q=80",
+            Icons.Default.DesktopWindows
+        ),
+        ServiceItem(
+            "Networking & Infrastructure",
+            "Technical Service",
+            "Setup of secure firm-wide networks, failover systems, and server infrastructure.",
+            "Designing and deploying resilient corporate networks, VPN tunnels, secure firewalls, and redundant cloud/on-premise server infrastructures.",
+            "Guarantee 99.9% uptime, data redundancy, and impenetrable perimeter defense for all corporate communications.",
+            "Phase 1: Infrastructure Assessment & Topology Design\nPhase 2: Firewall, VPN & Network Configuration\nPhase 3: Failover & Redundancy Testing\nPhase 4: 24/7 Monitoring & Support Setup",
+            listOf(
+                "Enterprise Network Topology & Firewall Setup",
+                "Secure VPN & Remote Access Gateways",
+                "Server High Availability & Failover Clustering",
+                "Infrastructure Monitoring & Alerting Systems"
+            ),
+            "https://images.unsplash.com/photo-1544197150-b99a580bb7a8?auto=format&fit=crop&w=1000&q=80",
+            Icons.Default.Router
+        ),
+        ServiceItem(
+            "Systems Architecture",
+            "Technical Service",
+            "Designing robust IT and operational systems for firm-wide efficiency.",
+            "Constructing comprehensive IT blueprints that harmonize disparate software, hardware, and database assets into a unified enterprise ecosystem.",
+            "Eliminate data silos and ensure seamless interoperability across all your firm's technological investments.",
+            "Phase 1: Enterprise System Audit\nPhase 2: Architectural Blueprint Formulation\nPhase 3: Integration & Middleware Development\nPhase 4: System Validation & Optimization",
+            listOf(
+                "Comprehensive IT Architectural Blueprint",
+                "Middleware & Enterprise Service Bus Integration",
+                "Legacy System Modernization Roadmap",
+                "Performance & Scalability Optimization"
+            ),
+            "https://images.unsplash.com/photo-1558494949-ef010cbdcc31?auto=format&fit=crop&w=1000&q=80",
+            Icons.Default.Dns
+        ),
+        ServiceItem(
+            "Financial Systems",
+            "Technical Service",
+            "Automated billing and M-Pesa integration for seamless cashflow management.",
+            "Deploying automated digital billing systems, transaction verification hooks, and real-time ledger accounting modules.",
+            "Streamline revenue collection and automate financial bookkeeping without manual paperwork.",
+            "Phase 1: Financial Workflow Mapping\nPhase 2: Billing & Payment Gateway Setup\nPhase 3: Automated Ledger & Reconciliation Testing\nPhase 4: Go-Live & Security Verification",
+            listOf(
+                "Automated Digital Billing & Invoicing Engine",
+                "Payment Gateway & Ledger Integration",
+                "Real-Time Transaction Status Tracking",
+                "Encrypted Financial Reporting Modules"
+            ),
+            "https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?auto=format&fit=crop&w=1000&q=80",
+            Icons.Default.AccountBalance
+        ),
+
+        // --- Business Consultancy & Strategy Packages ---
         ServiceItem(
             "Executive Business Advisory & Corporate Strategy",
             "Business Consultancy",
             "High-level strategic planning, organizational restructuring, and executive decision frameworks.",
             "As a premier business consultancy firm, The Greggory Systems & Strategy Firm provides comprehensive executive advisory services designed to navigate complex market environments. We collaborate directly with your leadership team to define long-term vision, optimize corporate governance, and position your enterprise for sustainable market leadership.",
-            "Accelerate strategic clarity, eliminate operational redundancies, and align your entire enterprise around high-yield growth milestones. Our advisory models yield measurable improvements in capital allocation, operational agility, and executive decision-making.",
+            "Accelerate strategic clarity, eliminate operational redundancies, and align your entire enterprise around high-yield growth milestones with measurable improvements in capital allocation and operational agility.",
             "Phase 1: Comprehensive Enterprise Diagnostic & Stakeholder Interviews\nPhase 2: Strategic Blueprint & Governance Framework Formulation\nPhase 3: Board-Level Execution & Change Management Oversight\nPhase 4: Continuous Performance Monitoring & Quarterly Strategic Review",
             listOf(
                 "Corporate Strategic Masterplan & 5-Year Roadmap",
@@ -78,7 +193,7 @@ fun JobServicesScreen() {
                 "Real-time Financial Telemetry & Audit Dashboards"
             ),
             "https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?auto=format&fit=crop&w=1000&q=80",
-            Icons.Default.AccountBalance
+            Icons.Default.MonetizationOn
         ),
         ServiceItem(
             "Software & Enterprise Cloud Applications",
@@ -94,7 +209,7 @@ fun JobServicesScreen() {
                 "High-Performance Web Applications & ERP Systems"
             ),
             "https://images.unsplash.com/photo-1555066931-4365d14bab8c?auto=format&fit=crop&w=1000&q=80",
-            Icons.Default.AppShortcut
+            Icons.Default.Computer
         ),
         ServiceItem(
             "Digital Transformation & Growth Strategy",
@@ -110,7 +225,7 @@ fun JobServicesScreen() {
                 "Omnichannel Growth & Marketing Automation"
             ),
             "https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=1000&q=80",
-            Icons.Default.Campaign
+            Icons.Default.Insights
         ),
         ServiceItem(
             "Data Intelligence, Analytics & AI Telemetry",
@@ -126,7 +241,7 @@ fun JobServicesScreen() {
                 "Enterprise Data Governance & Secure Warehousing"
             ),
             "https://images.unsplash.com/photo-1504868584819-f8e8b4b6d7e3?auto=format&fit=crop&w=1000&q=80",
-            Icons.Default.Analytics
+            Icons.Default.QueryStats
         ),
         ServiceItem(
             "Operational Efficiency & Workflow Optimization",
@@ -191,14 +306,14 @@ fun JobServicesScreen() {
                 color = MaterialTheme.colorScheme.primary
             )
             Text(
-                text = "Browse our consultancy packages and request professional services. Tap any service block for full-page details, contract documents, and direct job request submission.",
+                text = "Browse all 15 technical and business consultancy packages below. Tap any service block for full-page details, high-res imagery, contract documents, and direct job request submission.",
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.outline
             )
             Spacer(modifier = Modifier.height(8.dp))
         }
 
-        items(consultancyServices) { service ->
+        items(allServices) { service ->
             ServiceCard(service, onClick = { selectedService = service })
         }
         
