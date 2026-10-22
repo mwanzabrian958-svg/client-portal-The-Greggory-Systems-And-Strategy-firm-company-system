@@ -45,10 +45,9 @@ interface ApiService {
     @GET("api/mpesa/status/{checkoutRequestId}")
     suspend fun getMpesaStatus(@Path("checkoutRequestId") checkoutRequestId: String): Response<MpesaStatusResponse>
 
-    @Multipart
     @POST("api/users/profile-photo")
     suspend fun uploadProfilePhoto(
-        @Part photo: okhttp3.MultipartBody.Part
+        @Body request: ProfilePhotoRequest
     ): Response<ImageUploadResponse>
 
     @Multipart
@@ -268,6 +267,11 @@ data class RegisterRequest(
     val profile_photo_file_name: String? = null
 )
 data class RegisterResponse(val success: Boolean, val message: String?, val loginInstead: Boolean? = false)
+
+data class ProfilePhotoRequest(
+    @SerializedName("photo_base64") val photoBase64: String,
+    @SerializedName("mime_type") val mimeType: String
+)
 
 data class DashboardResponse(
     val success: Boolean,

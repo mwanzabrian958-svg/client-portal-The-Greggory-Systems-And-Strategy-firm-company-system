@@ -3,6 +3,7 @@ package com.greggory.portal.ui.screens
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.net.Uri
+import android.util.Base64
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -364,10 +365,10 @@ private fun uploadPhoto(
     scope.launch {
         try {
             val file = getFileFromUri(context, uri)
-            val requestFile = file.asRequestBody("image/*".toMediaTypeOrNull())
-            val body = MultipartBody.Part.createFormData("photo", file.name, requestFile)
+            val bytes = file.readBytes()
+            val b64 = Base64.encodeToString(bytes, Base64.NO_WRAP)
             
-            val response = RetrofitClient.instance.uploadProfilePhoto(body)
+            val response = RetrofitClient.instance.uploadProfilePhoto(ProfilePhotoRequest(b64, "image/jpeg"))
             if (response.isSuccessful && response.body()?.success == true) {
                 onResult(true, "Photo uploaded successfully", response.body()?.imageUrl)
             } else {

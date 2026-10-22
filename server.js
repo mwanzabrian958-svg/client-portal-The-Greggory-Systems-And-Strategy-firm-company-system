@@ -160,6 +160,14 @@ function authenticateUser(req, res, next) {
 }
 
 function publicUser(row) {
+  let photoData = null;
+  if (row.profile_photo_blob) {
+    const b64 = Buffer.from(row.profile_photo_blob).toString('base64');
+    const mime = row.profile_photo_mime_type || 'image/jpeg';
+    photoData = `data:${mime};base64,${b64}`;
+  } else if (row.profile_photo_data) {
+    photoData = row.profile_photo_data;
+  }
   return {
     id: Number(row.id),
     email: row.email,
@@ -170,6 +178,7 @@ function publicUser(row) {
     phone: row.phone_number,
     primary_role: row.primary_role,
     mission_briefing: row.mission_briefing,
+    profilePhotoData: photoData
   };
 }
 
@@ -242,7 +251,7 @@ app.get('/api/notify/status', (req, res) => {
 // --- Auth: each phone registers/logs in independently, gets its own JWT ---
 app.post('/api/users/register', async (req, res) => {
   try {
-    const { first_name, last_name, email, phone, password } = req.body || {};
+    const { first_name, last_name, email, phone, password, profile_photo_base64, profile_photo_mime_type } = req.body || {};
     if (!first_name || !last_name || !email || !phone || !password) {
       return res.status(400).json({ success: false, message: 'first_name, last_name, email, phone, password required' });
     }
@@ -250,13 +259,71 @@ app.post('/api/users/register', async (req, res) => {
     if (existing.length > 0) return res.json({ success: false, message: 'Account exists — please log in', loginInstead: true });
     const hash = await bcrypt.hash(password, 10);
     const display = `${first_name} ${last_name}`.trim();
+
+    let photoBlob = null;
+    let photoMime = null;
+    if (profile_photo_base64) {
+      photoBlob = Buffer.from(profile_photo_base64, 'base64');
+      photoMime = profile_photo_mime_type || 'image/jpeg';
+    }
+
     await q(
-      'INSERT INTO users (first_name, last_name, display_name, email, phone_number, password_hash) VALUES (?,?,?,?,?,?)',
-      [first_name, last_name, display, email, phone, hash]
+      'INSERT INTO users (first_name, last_name, display_name, email, phone_number, password_hash, profile_photo_blob, profile_photo_mime_type) VALUES (?,?,?,?,?,?,?,?)',
+      [first_name, last_name, display, email, phone, hash, photoBlob, photoMime]
     );
     res.json({ success: true, message: 'Account created — please log in' });
   } catch (e) {
     res.status(500).json({ success: false, message: e.message });
+  }
+});
+
+// --- Profile Photo Upload & Retrieval ---
+app.post('/api/users/profile-photo', authenticateUser, async (req, res) => {
+  try {
+    const { photo_base64, mime_type } = req.body || {};
+    if (!photo_base64) {
+      return res.status(400).json({ success: false, message: 'photo_base64 required' });
+    }
+    const imageBuffer = Buffer.from(photo_base64, 'base64');
+    const mimeType = mime_type || 'image/jpeg';
+
+    await q(
+      'UPDATE users SET profile_photo_blob = ?, profile_photo_mime_type = ? WHERE id = ?',
+      [imageBuffer, mimeType, req.user.id]
+    );
+
+    const imageUrl = `data:${mimeType};base64,${photo_base64}`;
+    res.json({ success: true, message: 'Photo uploaded successfully', imageUrl });
+  } catch (e) {
+    res.status(500).json({ success: false, message: e.message });
+  }
+});
+
+app.get('/api/users/profile-photo/me', authenticateUser, async (req, res) => {
+  try {
+    const [rows] = await q('SELECT profile_photo_blob, profile_photo_mime_type FROM users WHERE id = ?', [req.user.id]);
+    if (rows.length === 0 || !rows[0].profile_photo_blob) {
+      return res.status(404).send('Photo not found');
+    }
+    const row = rows[0];
+    res.setHeader('Content-Type', row.profile_photo_mime_type || 'image/jpeg');
+    res.send(row.profile_photo_blob);
+  } catch (e) {
+    res.status(500).send(e.message);
+  }
+});
+
+app.get('/api/users/profile-photo/:id', async (req, res) => {
+  try {
+    const [rows] = await q('SELECT profile_photo_blob, profile_photo_mime_type FROM users WHERE id = ?', [req.params.id]);
+    if (rows.length === 0 || !rows[0].profile_photo_blob) {
+      return res.status(404).send('Photo not found');
+    }
+    const row = rows[0];
+    res.setHeader('Content-Type', row.profile_photo_mime_type || 'image/jpeg');
+    res.send(row.profile_photo_blob);
+  } catch (e) {
+    res.status(500).send(e.message);
   }
 });
 
