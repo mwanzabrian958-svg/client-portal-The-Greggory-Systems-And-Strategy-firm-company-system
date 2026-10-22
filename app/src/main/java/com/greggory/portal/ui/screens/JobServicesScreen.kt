@@ -185,13 +185,13 @@ fun JobServicesScreen() {
     ) {
         item {
             Text(
-                text = "The Greggory Firm - Consultancy & Services",
+                text = "The Greggory Systems & Strategy Firm - Consultancy & Job Requests",
                 style = MaterialTheme.typography.headlineSmall,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.primary
             )
             Text(
-                text = "Tap any consultancy or service block below to view full-page details, executive scopes, images, contract documents, and submit job requests.",
+                text = "Browse our consultancy packages and request professional services. Tap any service block for full-page details, contract documents, and direct job request submission.",
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.outline
             )
