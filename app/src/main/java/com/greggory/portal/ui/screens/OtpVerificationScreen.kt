@@ -20,6 +20,7 @@ import com.greggory.portal.data.api.OtpRequest
 import com.greggory.portal.data.api.OtpVerify
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlin.time.Duration.Companion.seconds
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -27,7 +28,7 @@ fun OtpVerificationScreen(onBackToLogin: () -> Unit) {
     var identifier by remember { mutableStateOf("") }
     var code by remember { mutableStateOf("") }
     var codeSent by remember { mutableStateOf(false) }
-    var resendCooldown by remember { mutableStateOf(0) }
+    var resendCooldown by remember { mutableIntStateOf(0) }
     var isSending by remember { mutableStateOf(false) }
     var isVerifying by remember { mutableStateOf(false) }
     var verified by remember { mutableStateOf(false) }
@@ -39,7 +40,7 @@ fun OtpVerificationScreen(onBackToLogin: () -> Unit) {
     // Resend cooldown ticker (60s window)
     LaunchedEffect(resendCooldown) {
         if (resendCooldown > 0) {
-            delay(1000L)
+            delay(1.seconds)
             resendCooldown -= 1
         }
     }
@@ -47,7 +48,7 @@ fun OtpVerificationScreen(onBackToLogin: () -> Unit) {
     // Success → hold confirmation briefly, then return to log in screen
     LaunchedEffect(verified) {
         if (verified) {
-            delay(1500L)
+            delay(1.5.seconds)
             onBackToLogin()
         }
     }
@@ -169,12 +170,10 @@ fun OtpVerificationScreen(onBackToLogin: () -> Unit) {
                                                 isError = false
                                                 resendCooldown = 60
                                             } else {
-                                                if (response.code() == 429) {
-                                                    message = "Too many requests. Please wait before trying again."
-                                                } else if (response.code() == 502) {
-                                                    message = "Could not send the code, please try again."
-                                                } else {
-                                                    message = "Could not resend the code. Please try again."
+                                                message = when (response.code()) {
+                                                    429 -> "Too many requests. Please wait before trying again."
+                                                    502 -> "Could not send the code, please try again."
+                                                    else -> "Could not resend the code. Please try again."
                                                 }
                                                 isError = true
                                             }
@@ -246,12 +245,10 @@ fun OtpVerificationScreen(onBackToLogin: () -> Unit) {
                                         codeSent = true
                                         resendCooldown = 60
                                     } else {
-                                        if (response.code() == 429) {
-                                            message = "Too many requests. Please wait before trying again."
-                                        } else if (response.code() == 502) {
-                                            message = "Could not send the code, please try again."
-                                        } else {
-                                            message = "Could not send code. Please check your identifier."
+                                        message = when (response.code()) {
+                                            429 -> "Too many requests. Please wait before trying again."
+                                            502 -> "Could not send the code, please try again."
+                                            else -> "Could not send code. Please check your identifier."
                                         }
                                         isError = true
                                     }

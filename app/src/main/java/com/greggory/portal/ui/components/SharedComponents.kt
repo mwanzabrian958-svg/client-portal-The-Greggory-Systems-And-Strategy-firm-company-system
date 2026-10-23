@@ -13,6 +13,10 @@ import androidx.compose.material.icons.automirrored.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -25,8 +29,10 @@ import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
+import coil.request.ImageRequest
 import com.greggory.portal.data.api.RetrofitClient
 import com.greggory.portal.data.api.TeamMember
+import com.greggory.portal.data.local.PreferencesManager
 
 @Composable
 fun SectionHeader(title: String, icon: ImageVector) {
@@ -98,6 +104,8 @@ fun ProjectStatusBadge(status: String) {
 
 @Composable
 fun TeamMemberCard(member: TeamMember, onClick: () -> Unit = {}) {
+    val context = LocalContext.current
+    val prefs = remember { PreferencesManager.getInstance(context) }
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -115,19 +123,41 @@ fun TeamMemberCard(member: TeamMember, onClick: () -> Unit = {}) {
                     .background(MaterialTheme.colorScheme.primaryContainer),
                 contentAlignment = Alignment.Center
             ) {
-                AsyncImage(
-                    model = "${RetrofitClient.BASE_URL}api/users/profile-photo/${member.id}",
-                    contentDescription = member.name,
-                    modifier = Modifier.fillMaxSize(),
-                    contentScale = ContentScale.Crop,
-                    error = null
-                )
-                Icon(
-                    Icons.Default.Person,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.onPrimaryContainer,
-                    modifier = Modifier.size(32.dp)
-                )
+                var imageError by remember { mutableStateOf(false) }
+                val photoModel = "${RetrofitClient.BASE_URL}api/users/profile-photo/${member.id}"
+                
+                LaunchedEffect(photoModel) {
+                    imageError = false
+                }
+
+                if (!imageError) {
+                    val imageRequest = remember(photoModel, prefs.getToken()) {
+                        val builder = ImageRequest.Builder(context)
+                            .data(photoModel)
+                            .crossfade(true)
+                        if (prefs.getToken() != null) {
+                            builder.addHeader("Authorization", "Bearer ${prefs.getToken()}")
+                        }
+                        builder.build()
+                    }
+                    AsyncImage(
+                        model = imageRequest,
+                        contentDescription = member.name,
+                        modifier = Modifier.fillMaxSize(),
+                        contentScale = ContentScale.Crop,
+                        onError = { imageError = true },
+                        onSuccess = { imageError = false }
+                    )
+                }
+
+                if (imageError) {
+                    Icon(
+                        Icons.Default.Person,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                        modifier = Modifier.size(32.dp)
+                    )
+                }
             }
             Spacer(modifier = Modifier.width(16.dp))
             Column(modifier = Modifier.weight(1f)) {
