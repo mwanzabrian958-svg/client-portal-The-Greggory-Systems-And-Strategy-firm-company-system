@@ -8,7 +8,6 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Security
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
@@ -33,16 +32,13 @@ import androidx.fragment.app.FragmentActivity
 import com.greggory.portal.R
 import com.greggory.portal.data.api.RetrofitClient
 import com.greggory.portal.data.api.LoginRequest
-import com.greggory.portal.data.api.PushTokenRequest
 import com.greggory.portal.data.api.LoginResponse
 import com.greggory.portal.data.local.PreferencesManager
 import com.greggory.portal.data.local.AppDatabase
 import com.greggory.portal.data.local.toUserEntity
 import com.greggory.portal.utils.BiometricHelper
-import com.google.firebase.messaging.FirebaseMessaging
 import com.google.gson.Gson
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.tasks.await
 
 @Composable
 fun LoginScreen(
@@ -251,9 +247,9 @@ fun LoginScreen(
                                     )
                                     
                                     try {
-                                        val database = com.greggory.portal.data.local.AppDatabase.getDatabase(context)
+                                        val database = AppDatabase.getDatabase(context)
                                         database.userDao().insertUser(body.toUserEntity())
-                                    } catch (ignored: Exception) {}
+                                    } catch (_: Exception) {}
                                     
                                     RetrofitClient.initialize(context)
                                     if (BiometricHelper.isBiometricAvailable(context) && !prefs.isBiometricEnabled()) {
@@ -269,7 +265,7 @@ fun LoginScreen(
                                 val errorMsg = try {
                                     val json = Gson().fromJson(errorBody, LoginResponse::class.java)
                                     json.error ?: json.message
-                                } catch (e: Exception) {
+                                } catch (_: Exception) {
                                     null
                                 }
                                 errorMessage = errorMsg ?: "Login failed: ${response.code()}"
