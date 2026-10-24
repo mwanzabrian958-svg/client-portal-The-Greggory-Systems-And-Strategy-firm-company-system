@@ -1,12 +1,15 @@
 package com.greggory.portal.ui.screens
 
 import android.util.Log
+import android.widget.Toast
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.Security
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.*
@@ -54,6 +57,7 @@ fun LoginScreen(
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var passwordVisible by remember { mutableStateOf(false) }
+    var showBiometricOptInDialog by remember { mutableStateOf(false) }
     
     val context = LocalContext.current
     val prefs = remember { PreferencesManager.getInstance(context) }
@@ -72,6 +76,47 @@ fun LoginScreen(
                 )
             }
         }
+    }
+
+    if (showBiometricOptInDialog) {
+        AlertDialog(
+            onDismissRequest = {
+                showBiometricOptInDialog = false
+                onLoginSuccess()
+            },
+            title = { Text("Enable Biometric Login") },
+            text = { Text("Would you like to use your fingerprint or Face ID to log in faster next time?") },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        showBiometricOptInDialog = false
+                        BiometricHelper.showBiometricPrompt(
+                            activity = context as FragmentActivity,
+                            onSuccess = {
+                                prefs.saveBiometricEnabled(true)
+                                Toast.makeText(context, "Biometric login enabled", Toast.LENGTH_SHORT).show()
+                                onLoginSuccess()
+                            },
+                            onError = { _ ->
+                                onLoginSuccess()
+                            }
+                        )
+                    }
+                ) {
+                    Text("Enable")
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = {
+                        showBiometricOptInDialog = false
+                        onLoginSuccess()
+                    }
+                ) {
+                    Text("Not Now")
+                }
+            }
+        )
     }
 
     Scaffold(
@@ -211,7 +256,11 @@ fun LoginScreen(
                                     } catch (ignored: Exception) {}
                                     
                                     RetrofitClient.initialize(context)
-                                    onLoginSuccess()
+                                    if (BiometricHelper.isBiometricAvailable(context) && !prefs.isBiometricEnabled()) {
+                                        showBiometricOptInDialog = true
+                                    } else {
+                                        onLoginSuccess()
+                                    }
                                 } else {
                                     errorMessage = body.message ?: body.error ?: "Invalid response from server"
                                 }
@@ -255,6 +304,28 @@ fun LoginScreen(
 
         TextButton(onClick = { onNavigateToSignup() }) {
             Text("Don't have an account? Sign up", color = MaterialTheme.colorScheme.secondary)
+        }
+
+        if (prefs.isBiometricEnabled() && prefs.getToken() != null) {
+            Spacer(modifier = Modifier.height(16.dp))
+            OutlinedButton(
+                onClick = {
+                    if (BiometricHelper.isBiometricAvailable(context)) {
+                        BiometricHelper.showBiometricPrompt(
+                            activity = context as FragmentActivity,
+                            onSuccess = { onLoginSuccess() },
+                            onError = {}
+                        )
+                    }
+                },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(50.dp)
+            ) {
+                Icon(Icons.Default.Security, contentDescription = null)
+                Spacer(modifier = Modifier.width(8.dp))
+                Text("Unlock with Biometrics", fontWeight = FontWeight.Bold)
+            }
         }
        }
       }

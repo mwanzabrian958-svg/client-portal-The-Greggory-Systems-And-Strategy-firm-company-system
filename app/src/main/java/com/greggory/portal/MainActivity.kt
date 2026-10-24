@@ -75,6 +75,7 @@ class MainActivity : FragmentActivity() {
             // onboarding, everyone else lands on Login (same rule as the
             // website portal's PrivateRoute: no token -> /login).
             val startDestination = when {
+                !prefs.getToken().isNullOrEmpty() && prefs.getUserId() > 0 && prefs.isBiometricEnabled() -> Screen.Login.route
                 !prefs.getToken().isNullOrEmpty() && prefs.getUserId() > 0 -> Screen.Portal.route
                 prefs.isFirstLaunch() -> Screen.Onboarding.route
                 else -> Screen.Login.route

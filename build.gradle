@@ -28,6 +28,18 @@ allprojects {
     // Redirect build directory outside OneDrive on Windows to prevent file-locking and snapshotting errors
     if (System.getProperty('os.name').toLowerCase().contains('windows')) {
         buildDir = "C:/android-builds/The-Greggory-Client-Portal/${project.name}"
+        def tempPath = "C:/android-temp"
+        new File(tempPath).mkdirs()
+        System.setProperty('java.io.tmpdir', tempPath)
+        System.setProperty('TEMP', tempPath)
+        System.setProperty('TMP', tempPath)
+        try {
+            def env = System.getenv()
+            def field = env.getClass().getDeclaredField("m")
+            field.setAccessible(true)
+            ((Map) field.get(env)).put("TEMP", tempPath)
+            ((Map) field.get(env)).put("TMP", tempPath)
+        } catch (Exception ignored) {}
     }
 }
 
