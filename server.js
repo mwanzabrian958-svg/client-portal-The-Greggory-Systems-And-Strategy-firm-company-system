@@ -111,11 +111,17 @@ async function ensureSchema() {
     phone_number VARCHAR(50),
     primary_role VARCHAR(50) DEFAULT 'user',
     mission_briefing TEXT DEFAULT NULL,
+    profile_photo_blob LONGBLOB NULL DEFAULT NULL,
+    profile_photo_mime_type VARCHAR(100) NULL DEFAULT NULL,
     whatsapp_verified BOOLEAN DEFAULT FALSE,
     is_active BOOLEAN DEFAULT TRUE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
   ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`);
+
+  // Ensure columns exist on existing databases according to the_greggory_systems_and_strategy_firm_db_main.sql
+  try { await q('ALTER TABLE users ADD COLUMN profile_photo_blob LONGBLOB NULL DEFAULT NULL'); } catch (_) {}
+  try { await q('ALTER TABLE users ADD COLUMN profile_photo_mime_type VARCHAR(100) NULL DEFAULT NULL'); } catch (_) {}
   await q(`CREATE TABLE IF NOT EXISTS user_projects (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
     user_id BIGINT NOT NULL,
@@ -161,12 +167,10 @@ function authenticateUser(req, res, next) {
 
 function publicUser(row) {
   let photoData = null;
-  if (row.profile_photo_blob) {
+  if (row.profile_photo_blob && row.profile_photo_blob.length > 0) {
     const b64 = Buffer.from(row.profile_photo_blob).toString('base64');
     const mime = row.profile_photo_mime_type || 'image/jpeg';
     photoData = `data:${mime};base64,${b64}`;
-  } else if (row.profile_photo_data) {
-    photoData = row.profile_photo_data;
   }
   return {
     id: Number(row.id),
@@ -280,20 +284,27 @@ app.post('/api/users/register', async (req, res) => {
 // --- Profile Photo Upload & Retrieval ---
 app.post('/api/users/profile-photo', authenticateUser, async (req, res) => {
   try {
-    const { photo_base64, mime_type } = req.body || {};
+    const { photo_base64, mime_type, email } = req.body || {};
     if (!photo_base64) {
       return res.status(400).json({ success: false, message: 'photo_base64 required' });
     }
-    const imageBuffer = Buffer.from(photo_base64, 'base64');
+    const cleanB64 = photo_base64.replace(/^data:image\/[a-zA-Z]+;base64,/, '');
+    const imageBuffer = Buffer.from(cleanB64, 'base64');
     const mimeType = mime_type || 'image/jpeg';
+    const dataUri = `data:${mimeType};base64,${cleanB64}`;
 
+    if (email) {
+      await q(
+        'UPDATE users SET profile_photo_blob = ?, profile_photo_mime_type = ? WHERE LOWER(email) = ?',
+        [imageBuffer, mimeType, email.toLowerCase().trim()]
+      );
+    }
     await q(
       'UPDATE users SET profile_photo_blob = ?, profile_photo_mime_type = ? WHERE id = ?',
       [imageBuffer, mimeType, req.user.id]
     );
 
-    const imageUrl = `data:${mimeType};base64,${photo_base64}`;
-    res.json({ success: true, message: 'Photo uploaded successfully', imageUrl });
+    res.json({ success: true, message: 'Photo uploaded successfully', imageUrl: dataUri });
   } catch (e) {
     res.status(500).json({ success: false, message: e.message });
   }
@@ -302,7 +313,7 @@ app.post('/api/users/profile-photo', authenticateUser, async (req, res) => {
 app.get('/api/users/profile-photo/me', authenticateUser, async (req, res) => {
   try {
     const [rows] = await q('SELECT profile_photo_blob, profile_photo_mime_type FROM users WHERE id = ?', [req.user.id]);
-    if (rows.length === 0 || !rows[0].profile_photo_blob) {
+    if (rows.length === 0 || !rows[0].profile_photo_blob || rows[0].profile_photo_blob.length === 0) {
       return res.status(404).send('Photo not found');
     }
     const row = rows[0];
@@ -313,10 +324,15 @@ app.get('/api/users/profile-photo/me', authenticateUser, async (req, res) => {
   }
 });
 
-app.get('/api/users/profile-photo/:id', async (req, res) => {
+app.get('/api/users/profile-photo/:idOrEmail', async (req, res) => {
   try {
-    const [rows] = await q('SELECT profile_photo_blob, profile_photo_mime_type FROM users WHERE id = ?', [req.params.id]);
-    if (rows.length === 0 || !rows[0].profile_photo_blob) {
+    const param = req.params.idOrEmail;
+    const isEmail = param.includes('@');
+    const query = isEmail
+      ? 'SELECT profile_photo_blob, profile_photo_mime_type FROM users WHERE LOWER(email) = ?'
+      : 'SELECT profile_photo_blob, profile_photo_mime_type FROM users WHERE id = ?';
+    const [rows] = await q(query, [isEmail ? param.toLowerCase().trim() : param]);
+    if (rows.length === 0 || !rows[0].profile_photo_blob || rows[0].profile_photo_blob.length === 0) {
       return res.status(404).send('Photo not found');
     }
     const row = rows[0];

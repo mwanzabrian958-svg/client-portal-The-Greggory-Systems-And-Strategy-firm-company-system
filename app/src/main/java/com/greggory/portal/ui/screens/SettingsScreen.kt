@@ -142,12 +142,7 @@ fun SettingsScreen(
                     var imageError by remember { mutableStateOf(false) }
                     val cachedPhotoData = dbUser?.profilePhotoData ?: prefs.getUserPhotoData()
                     if (!imageError) {
-                        val photoModel = when {
-                            !cachedPhotoData.isNullOrEmpty() -> {
-                                if (cachedPhotoData.startsWith("http") || cachedPhotoData.startsWith("data:")) cachedPhotoData else "${RetrofitClient.BASE_URL}$cachedPhotoData"
-                            }
-                            else -> "${RetrofitClient.BASE_URL}api/users/profile-photo/me"
-                        }
+                        val photoModel = RetrofitClient.getNormalizedPhotoModel(cachedPhotoData)
                         val imageRequest = remember(photoModel, prefs.getToken()) {
                             val builder = coil.request.ImageRequest.Builder(context)
                                 .data(photoModel)

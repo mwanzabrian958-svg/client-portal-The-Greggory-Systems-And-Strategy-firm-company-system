@@ -96,7 +96,7 @@ fun ProfileScreen(dashboardData: DashboardResponse? = null) {
             )
             try {
                 database.userDao().insertUser(userFromDash.toEntity())
-            } catch (ignored: Exception) {}
+            } catch (_: Exception) {}
         }
     }
 
@@ -122,7 +122,7 @@ fun ProfileScreen(dashboardData: DashboardResponse? = null) {
                     scope.launch {
                         try {
                             database.userDao().updateProfilePhoto(email, imageUrl)
-                        } catch (ignored: Exception) {}
+                        } catch (_: Exception) {}
                     }
                 }
             }
@@ -156,13 +156,7 @@ fun ProfileScreen(dashboardData: DashboardResponse? = null) {
                 contentAlignment = Alignment.Center
             ) {
                 if (!imageError) {
-                    val photoModel = when {
-                        selectedImageUri != null -> selectedImageUri
-                        !profilePhotoData.isNullOrEmpty() -> {
-                            if (profilePhotoData!!.startsWith("http") || profilePhotoData!!.startsWith("data:")) profilePhotoData!! else "${RetrofitClient.BASE_URL}$profilePhotoData"
-                        }
-                        else -> "${RetrofitClient.BASE_URL}api/users/profile-photo/me"
-                    }
+                    val photoModel: Any = selectedImageUri ?: RetrofitClient.getNormalizedPhotoModel(profilePhotoData)
                     val imageRequest = remember(photoModel, prefs.getToken()) {
                         val builder = coil.request.ImageRequest.Builder(context)
                             .data(photoModel)

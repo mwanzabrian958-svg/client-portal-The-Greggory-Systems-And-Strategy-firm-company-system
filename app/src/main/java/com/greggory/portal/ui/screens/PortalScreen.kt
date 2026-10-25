@@ -1,8 +1,8 @@
 package com.greggory.portal.ui.screens
 
 import android.content.Intent
-import android.net.Uri
 import android.widget.Toast
+import kotlin.time.Duration.Companion.milliseconds
 import androidx.compose.ui.draw.clip
 import androidx.compose.foundation.shape.CircleShape
 import androidx.activity.compose.BackHandler
@@ -19,14 +19,14 @@ import androidx.compose.material.icons.automirrored.filled.TrendingUp
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
-import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.runtime.*
+import androidx.core.net.toUri
+import kotlinx.coroutines.delay
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -108,8 +108,8 @@ fun PortalScreen(
                                 }
                             }
                         }
-                    } catch (ignored: Exception) {}
-                    delay(4000)
+                    } catch (_: Exception) {}
+                    delay(4000.milliseconds)
                 }
             }
         }
@@ -118,7 +118,7 @@ fun PortalScreen(
     // Update States
     var updateInfo by remember { mutableStateOf<UpdateInfo?>(null) }
     var isDownloadingUpdate by remember { mutableStateOf(false) }
-    var downloadProgress by remember { mutableStateOf(0f) }
+    var downloadProgress by remember { mutableFloatStateOf(0f) }
 
     LaunchedEffect(Unit) {
         val info = UpdateManager.checkForUpdates()
@@ -217,7 +217,7 @@ fun PortalScreen(
                         scope.launch { snackbarHostState.showSnackbar(errorMessage!!) }
                     }
                 }
-            } catch (ignored: Exception) {
+            } catch (_: Exception) {
                 // handle error
             } finally {
                 isSearchLoading = false
@@ -229,8 +229,8 @@ fun PortalScreen(
         val token = preferencesManager.getToken()
         if (token == null) {
             scope.launch {
-                try { database.userDao().purgeAllTokens() } catch (ignored: Exception) {}
-                try { database.clearAllTables() } catch (ignored: Exception) {}
+                try { database.userDao().purgeAllTokens() } catch (_: Exception) {}
+                try { database.clearAllTables() } catch (_: Exception) {}
                 preferencesManager.clearToken()
                 preferencesManager.clear()
                 onLogout()
@@ -249,10 +249,10 @@ fun PortalScreen(
                     val notifsDeferred = async { RetrofitClient.instance.getNotifications() }
                     val messagesDeferred = async { RetrofitClient.instance.getFeedback() } // Serves as sync fallback
 
-                    val dashResponse = try { dashDeferred.await() } catch (ignored: Exception) { null }
-                    val reportsResponse = try { reportsDeferred.await() } catch (ignored: Exception) { null }
-                    val notifsResponse = try { notifsDeferred.await() } catch (ignored: Exception) { null }
-                    val messagesResponse = try { messagesDeferred.await() } catch (ignored: Exception) { null }
+                    val dashResponse = try { dashDeferred.await() } catch (_: Exception) { null }
+                    val reportsResponse = try { reportsDeferred.await() } catch (_: Exception) { null }
+                    val notifsResponse = try { notifsDeferred.await() } catch (_: Exception) { null }
+                    try { messagesDeferred.await() } catch (_: Exception) {}
 
                     var sessionExpired = false
 
@@ -269,19 +269,28 @@ fun PortalScreen(
                             body?.user?.let { u ->
                                 try {
                                     database.userDao().insertUser(u.toEntity())
-                                } catch (ignored: Exception) {}
+                                    preferencesManager.saveUserInfo(
+                                        userId = u.id,
+                                        email = u.email,
+                                        name = u.displayName ?: "${u.firstName} ${u.lastName ?: ""}".trim(),
+                                        phone = u.phone ?: "",
+                                        role = u.primaryRole,
+                                        briefing = u.missionBriefing,
+                                        photoData = u.profilePhotoData
+                                    )
+                                } catch (_: Exception) {}
                             }
                             body?.projects?.let { projects ->
                                 try {
                                     database.projectDao().clearProjects()
                                     database.projectDao().insertProjects(projects.map { it.toEntity() })
-                                } catch (ignored: Exception) {}
+                                } catch (_: Exception) {}
                             }
                             body?.invoices?.let { invoices ->
                                 try {
                                     database.invoiceDao().clearInvoices()
                                     database.invoiceDao().insertInvoices(invoices.map { it.toEntity() })
-                                } catch (ignored: Exception) {}
+                                } catch (_: Exception) {}
                             }
                             // Reconcile and Sync missing messages/receipt items into Room Cache
                             body?.messages?.let { apiMessages ->
@@ -300,7 +309,7 @@ fun PortalScreen(
                                     }
                                     database.messageCacheDao().clearMessages()
                                     database.messageCacheDao().insertMessages(messageEntities)
-                                } catch (ignored: Exception) {}
+                                } catch (_: Exception) {}
                             }
                         } else {
                             errorMessage = "Security: Dashboard routing mismatch for User $userId"
@@ -316,7 +325,7 @@ fun PortalScreen(
                             try {
                                 database.reportDao().clearReports()
                                 database.reportDao().insertReports(reports.map { it.toEntity() })
-                            } catch (ignored: Exception) {}
+                            } catch (_: Exception) {}
                         } else {
                             errorMessage = "Security: Reports routing mismatch for User $userId"
                         }
@@ -336,9 +345,9 @@ fun PortalScreen(
                         errorMessage = "Session expired. Please log in again."
                         scope.launch { 
                             snackbarHostState.showSnackbar(errorMessage!!)
-                            kotlinx.coroutines.delay(1000)
-                            try { database.userDao().purgeAllTokens() } catch (ignored: Exception) {}
-                            try { database.clearAllTables() } catch (ignored: Exception) {}
+                            delay(1000.milliseconds)
+                            try { database.userDao().purgeAllTokens() } catch (_: Exception) {}
+                            try { database.clearAllTables() } catch (_: Exception) {}
                             preferencesManager.clearToken()
                             preferencesManager.clear()
                             onLogout()
@@ -358,7 +367,7 @@ fun PortalScreen(
     }
 
     LaunchedEffect(key1 = true) {
-        delay(100) // Small buffer to ensure Prefs Singleton is settled after login navigation
+        delay(100.milliseconds) // Small buffer to ensure Prefs Singleton is settled after login navigation
         refreshData()
     }
 
@@ -386,9 +395,9 @@ fun PortalScreen(
                             // token is still in prefs so the interceptor can
                             // attach it. Best-effort — local cleanup below
                             // always runs, even offline.
-                            try { RetrofitClient.instance.logout() } catch (ignored: Exception) {}
-                            try { database.userDao().purgeAllTokens() } catch (ignored: Exception) {}
-                            try { database.clearAllTables() } catch (ignored: Exception) {}
+                            try { RetrofitClient.instance.logout() } catch (_: Exception) {}
+                            try { database.userDao().purgeAllTokens() } catch (_: Exception) {}
+                            try { database.clearAllTables() } catch (_: Exception) {}
                             preferencesManager.clearToken()
                             preferencesManager.clear()
                             RetrofitClient.initialize(context)
@@ -476,12 +485,7 @@ fun PortalScreen(
                             contentAlignment = Alignment.Center
                         ) {
                             if (!imageError) {
-                                val photoModel = when {
-                                    !cachedPhotoData.isNullOrEmpty() -> {
-                                        if (cachedPhotoData.startsWith("http") || cachedPhotoData.startsWith("data:")) cachedPhotoData else "${RetrofitClient.BASE_URL}$cachedPhotoData"
-                                    }
-                                    else -> "${RetrofitClient.BASE_URL}api/users/profile-photo/me"
-                                }
+                                val photoModel = RetrofitClient.getNormalizedPhotoModel(cachedPhotoData)
                                 val imageRequest = remember(photoModel, preferencesManager.getToken()) {
                                     val builder = coil.request.ImageRequest.Builder(context)
                                         .data(photoModel)
@@ -545,13 +549,13 @@ fun PortalScreen(
                                     localInvoices = localInvoices, 
                                     notifications = notificationsData,
                                     onNavigate = { currentView = it },
-                                    onViewProject = { selectedProjectId = it },
+                                    onViewProject = { selectedProjectId = it; onViewProject(it) },
                                     onNavigateToChat = onNavigateToChat
                                 )
                                 "Projects" -> ProjectListScreen(
                                     projects = dashboardData?.dashboard?.projects ?: localProjects.map { it.toApi() },
                                     onViewPdf = onViewPdf,
-                                    onViewDetails = { selectedProjectId = it.id }
+                                    onViewDetails = { selectedProjectId = it.id; onViewProject(it.id) }
                                 )
                                 "Team" -> TeamScreen(dashboardData?.dashboard?.teamMembers ?: emptyList())
                                 "Tasks" -> TasksScreen(dashboardData?.dashboard?.tasks ?: emptyList())
@@ -647,12 +651,7 @@ fun DrawerHeader(user: UserInfo?, profilePhotoData: String? = null) {
                 imageError = false
             }
 
-            val photoModel = when {
-                !photoData.isNullOrBlank() -> {
-                    if (photoData.startsWith("http") || photoData.startsWith("data:")) photoData else "${RetrofitClient.BASE_URL}$photoData"
-                }
-                else -> "${RetrofitClient.BASE_URL}api/users/profile-photo/me"
-            }
+            val photoModel = RetrofitClient.getNormalizedPhotoModel(photoData)
             if (!imageError) {
                 val imageRequest = remember(photoModel, prefs.getToken()) {
                     val builder = coil.request.ImageRequest.Builder(context)
@@ -921,13 +920,13 @@ fun DirectStrategySupportCard(onNavigateToChat: () -> Unit) {
                     onNavigateToChat()
                 }
                 SupportChannelItem(Icons.Default.Phone, "Call", Color(0xFF4CAF50)) {
-                    try { context.startActivity(Intent(Intent.ACTION_DIAL, Uri.parse("tel:+254115525854"))) } catch (e: Exception) { Toast.makeText(context, "Dialer unavailable", Toast.LENGTH_SHORT).show() }
+                    try { context.startActivity(Intent(Intent.ACTION_DIAL, "tel:+254115525854".toUri())) } catch (_: Exception) { Toast.makeText(context, "Dialer unavailable", Toast.LENGTH_SHORT).show() }
                 }
                 SupportChannelItem(Icons.Default.ChatBubble, "WhatsApp", Color(0xFF25D366)) {
-                    try { context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://api.whatsapp.com/send?phone=254115525854"))) } catch (e: Exception) { Toast.makeText(context, "WhatsApp not found", Toast.LENGTH_SHORT).show() }
+                    try { context.startActivity(Intent(Intent.ACTION_VIEW, "https://api.whatsapp.com/send?phone=254115525854".toUri())) } catch (_: Exception) { Toast.makeText(context, "WhatsApp not found", Toast.LENGTH_SHORT).show() }
                 }
                 SupportChannelItem(Icons.Default.Sms, "SMS", Color(0xFF2196F3)) {
-                    try { context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("sms:+254115525854"))) } catch (e: Exception) { Toast.makeText(context, "SMS app not found", Toast.LENGTH_SHORT).show() }
+                    try { context.startActivity(Intent(Intent.ACTION_VIEW, "sms:+254115525854".toUri())) } catch (_: Exception) { Toast.makeText(context, "SMS app not found", Toast.LENGTH_SHORT).show() }
                 }
             }
         }
@@ -1058,15 +1057,7 @@ fun InvoicesSummaryList(invoices: List<Invoice>, onNavigate: (String) -> Unit) {
     }
 }
 
-@Composable
-fun NotificationItem(notification: Notification) {
-    Card(modifier = Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.5f))) {
-        Column(modifier = Modifier.padding(12.dp)) {
-            Text(notification.title, style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold)
-            Text(notification.message, style = MaterialTheme.typography.bodySmall, maxLines = 2)
-        }
-    }
-}
+
 
 @Composable
 fun QuickActionCard(label: String, icon: ImageVector, modifier: Modifier = Modifier, onClick: () -> Unit) {

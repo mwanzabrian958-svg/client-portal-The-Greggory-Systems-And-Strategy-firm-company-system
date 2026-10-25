@@ -233,9 +233,22 @@ fun LoginScreen(
                                 if (token != null) {
                                     val prefs = PreferencesManager.getInstance(context)
                                     prefs.saveToken(token)
-                                    
+                                    RetrofitClient.initialize(context)
+
                                     val fullName = body.displayName ?: "${body.firstName} ${body.lastName ?: ""}".trim()
-                                    
+                                    var photoData = body.profilePhotoData
+
+                                    // Pull latest user profile photo from server immediately upon login
+                                    try {
+                                        val dashRes = RetrofitClient.instance.getDashboard()
+                                        if (dashRes.isSuccessful && dashRes.body()?.success == true) {
+                                            val dashUser = dashRes.body()?.dashboard?.user
+                                            if (dashUser != null && !dashUser.profilePhotoData.isNullOrBlank()) {
+                                                photoData = dashUser.profilePhotoData
+                                            }
+                                        }
+                                    } catch (_: Exception) {}
+
                                     prefs.saveUserInfo(
                                         body.id,
                                         body.email,
@@ -243,15 +256,14 @@ fun LoginScreen(
                                         body.phone ?: "",
                                         body.primaryRole,
                                         body.missionBriefing,
-                                        body.profilePhotoData
+                                        photoData
                                     )
-                                    
+
                                     try {
                                         val database = AppDatabase.getDatabase(context)
-                                        database.userDao().insertUser(body.toUserEntity())
+                                        database.userDao().insertUser(body.toUserEntity().copy(profilePhotoData = photoData))
                                     } catch (_: Exception) {}
-                                    
-                                    RetrofitClient.initialize(context)
+
                                     if (BiometricHelper.isBiometricAvailable(context) && !prefs.isBiometricEnabled()) {
                                         showBiometricOptInDialog = true
                                     } else {
