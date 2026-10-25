@@ -308,16 +308,25 @@ app.post('/api/users/register', async (req, res) => {
   }
 });
 
-// --- Profile Photo Upload & Retrieval ---
+// --- Profile Photo Upload & Retrieval (OWASP Secured) ---
 app.post('/api/users/profile-photo', authenticateUser, async (req, res) => {
   try {
     const { photo_base64, mime_type, email } = req.body || {};
     if (!photo_base64) {
       return res.status(400).json({ success: false, message: 'photo_base64 required' });
     }
-    const cleanB64 = photo_base64.replace(/^data:image\/[a-zA-Z]+;base64,/, '');
+    const cleanB64 = photo_base64.replace(/^data:image\/[a-zA-Z0-9.+_-]+;base64,/, '');
     const imageBuffer = Buffer.from(cleanB64, 'base64');
+
+    // OWASP Security Check: Enforce maximum size (5MB limit)
+    if (imageBuffer.length > 5 * 1024 * 1024) {
+      return res.status(400).json({ success: false, message: 'Image size exceeds 5MB limit' });
+    }
     const mimeType = mime_type || 'image/jpeg';
+    // OWASP Security Check: Strict MIME type validation (prevent arbitrary file uploads / XSS)
+    if (!mimeType.startsWith('image/')) {
+      return res.status(400).json({ success: false, message: 'Only image files are allowed for profile photos' });
+    }
     const dataUri = `data:${mimeType};base64,${cleanB64}`;
 
     // Insert into images table and get image ID so profile_photo_id points to the correct cell in the images table
@@ -356,6 +365,7 @@ app.get('/api/users/profile-photo/me', authenticateUser, async (req, res) => {
       return res.status(404).send('Photo not found');
     }
     const row = rows[0];
+    res.setHeader('X-Content-Type-Options', 'nosniff'); // OWASP security header
     if (row.profile_photo_blob && row.profile_photo_blob.length > 0) {
       res.setHeader('Content-Type', row.profile_photo_mime_type || 'image/jpeg');
       return res.send(row.profile_photo_blob);
@@ -385,6 +395,7 @@ app.get('/api/users/profile-photo/:idOrEmail', async (req, res) => {
       return res.status(404).send('Photo not found');
     }
     const row = rows[0];
+    res.setHeader('X-Content-Type-Options', 'nosniff'); // OWASP security header
     if (row.profile_photo_blob && row.profile_photo_blob.length > 0) {
       res.setHeader('Content-Type', row.profile_photo_mime_type || 'image/jpeg');
       return res.send(row.profile_photo_blob);
