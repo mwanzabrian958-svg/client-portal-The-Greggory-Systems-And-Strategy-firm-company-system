@@ -171,6 +171,12 @@ function publicUser(row) {
     const b64 = Buffer.from(row.profile_photo_blob).toString('base64');
     const mime = row.profile_photo_mime_type || 'image/jpeg';
     photoData = `data:${mime};base64,${b64}`;
+  } else if (row.img_blob && row.img_blob.length > 0) {
+    const b64 = Buffer.from(row.img_blob).toString('base64');
+    const mime = row.img_mime || row.img_type || 'image/jpeg';
+    photoData = `data:${mime};base64,${b64}`;
+  } else if (row.img_path) {
+    photoData = row.img_path;
   }
   return {
     id: Number(row.id),
@@ -312,13 +318,26 @@ app.post('/api/users/profile-photo', authenticateUser, async (req, res) => {
 
 app.get('/api/users/profile-photo/me', authenticateUser, async (req, res) => {
   try {
-    const [rows] = await q('SELECT profile_photo_blob, profile_photo_mime_type FROM users WHERE id = ?', [req.user.id]);
-    if (rows.length === 0 || !rows[0].profile_photo_blob || rows[0].profile_photo_blob.length === 0) {
+    const [rows] = await q(
+      'SELECT u.profile_photo_blob, u.profile_photo_mime_type, ' +
+      '       img.data AS img_blob, img.content_type AS img_mime, img.file_type AS img_type, img.file_path AS img_path ' +
+      'FROM users u LEFT JOIN images img ON u.profile_photo_id = img.id WHERE u.id = ?',
+      [req.user.id]
+    );
+    if (rows.length === 0) {
       return res.status(404).send('Photo not found');
     }
     const row = rows[0];
-    res.setHeader('Content-Type', row.profile_photo_mime_type || 'image/jpeg');
-    res.send(row.profile_photo_blob);
+    if (row.profile_photo_blob && row.profile_photo_blob.length > 0) {
+      res.setHeader('Content-Type', row.profile_photo_mime_type || 'image/jpeg');
+      return res.send(row.profile_photo_blob);
+    } else if (row.img_blob && row.img_blob.length > 0) {
+      res.setHeader('Content-Type', row.img_mime || row.img_type || 'image/jpeg');
+      return res.send(row.img_blob);
+    } else if (row.img_path) {
+      return res.redirect(row.img_path);
+    }
+    return res.status(404).send('Photo not found');
   } catch (e) {
     res.status(500).send(e.message);
   }
@@ -328,16 +347,26 @@ app.get('/api/users/profile-photo/:idOrEmail', async (req, res) => {
   try {
     const param = req.params.idOrEmail;
     const isEmail = param.includes('@');
-    const query = isEmail
-      ? 'SELECT profile_photo_blob, profile_photo_mime_type FROM users WHERE LOWER(email) = ?'
-      : 'SELECT profile_photo_blob, profile_photo_mime_type FROM users WHERE id = ?';
+    const query =
+      'SELECT u.profile_photo_blob, u.profile_photo_mime_type, ' +
+      '       img.data AS img_blob, img.content_type AS img_mime, img.file_type AS img_type, img.file_path AS img_path ' +
+      'FROM users u LEFT JOIN images img ON u.profile_photo_id = img.id ' +
+      (isEmail ? 'WHERE LOWER(u.email) = ?' : 'WHERE u.id = ?');
     const [rows] = await q(query, [isEmail ? param.toLowerCase().trim() : param]);
-    if (rows.length === 0 || !rows[0].profile_photo_blob || rows[0].profile_photo_blob.length === 0) {
+    if (rows.length === 0) {
       return res.status(404).send('Photo not found');
     }
     const row = rows[0];
-    res.setHeader('Content-Type', row.profile_photo_mime_type || 'image/jpeg');
-    res.send(row.profile_photo_blob);
+    if (row.profile_photo_blob && row.profile_photo_blob.length > 0) {
+      res.setHeader('Content-Type', row.profile_photo_mime_type || 'image/jpeg');
+      return res.send(row.profile_photo_blob);
+    } else if (row.img_blob && row.img_blob.length > 0) {
+      res.setHeader('Content-Type', row.img_mime || row.img_type || 'image/jpeg');
+      return res.send(row.img_blob);
+    } else if (row.img_path) {
+      return res.redirect(row.img_path);
+    }
+    return res.status(404).send('Photo not found');
   } catch (e) {
     res.status(500).send(e.message);
   }
@@ -347,7 +376,11 @@ app.post('/api/users/login', async (req, res) => {
   try {
     const { email, password } = req.body || {};
     if (!email || !password) return res.status(400).json({ success: false, message: 'email and password required' });
-    const [rows] = await q('SELECT * FROM users WHERE email = ?', [email]);
+    const [rows] = await q(
+      'SELECT u.*, img.data AS img_blob, img.content_type AS img_mime, img.file_type AS img_type, img.file_path AS img_path ' +
+      'FROM users u LEFT JOIN images img ON u.profile_photo_id = img.id WHERE u.email = ?',
+      [email]
+    );
     if (rows.length === 0) return res.status(401).json({ success: false, message: 'Invalid email or password' });
     const user = rows[0];
     const ok = user.password_hash ? await bcrypt.compare(password, user.password_hash) : false;
@@ -374,7 +407,11 @@ app.post('/api/users/logout', authenticateUser, (req, res) => res.json({ success
 app.get('/api/users/client-dashboard', authenticateUser, async (req, res) => {
   try {
     const uid = req.user.id;
-    const [urows] = await q('SELECT * FROM users WHERE id = ?', [uid]);
+    const [urows] = await q(
+      'SELECT u.*, img.data AS img_blob, img.content_type AS img_mime, img.file_type AS img_type, img.file_path AS img_path ' +
+      'FROM users u LEFT JOIN images img ON u.profile_photo_id = img.id WHERE u.id = ?',
+      [uid]
+    );
     const [projects] = await q(
       'SELECT id, project_name AS name, status, progress_percentage AS progress, user_id AS client_id FROM user_projects WHERE user_id = ?', [uid]);
     const [invoices] = await q(
