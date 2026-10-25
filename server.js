@@ -180,19 +180,50 @@ function authenticateUser(req, res, next) {
   }
 }
 
-function publicUser(row) {
-  let photoData = null;
-  if (row.profile_photo_blob && row.profile_photo_blob.length > 0) {
-    const b64 = Buffer.from(row.profile_photo_blob).toString('base64');
-    const mime = row.profile_photo_mime_type || 'image/jpeg';
-    photoData = `data:${mime};base64,${b64}`;
-  } else if (row.img_blob && row.img_blob.length > 0) {
-    const b64 = Buffer.from(row.img_blob).toString('base64');
-    const mime = row.img_mime || row.img_type || 'image/jpeg';
-    photoData = `data:${mime};base64,${b64}`;
-  } else if (row.img_path) {
-    photoData = row.img_path;
+function getNormalizedPhotoData(blob, mime, path) {
+  let rawBlob = blob;
+  let mimeType = mime || 'image/jpeg';
+  if (rawBlob) {
+    if (Buffer.isBuffer(rawBlob)) {
+      const asStr = rawBlob.toString('utf8');
+      if (asStr.startsWith('data:') || asStr.startsWith('/9j/') || asStr.startsWith('iVBORw') || asStr.startsWith('R0lGOD')) {
+        const cleaned = asStr.replace(/^data:[a-zA-Z0-9.+_-]+\/[a-zA-Z0-9.+_-]+;base64,/, '');
+        return `data:${mimeType};base64,${cleaned}`;
+      } else {
+        return `data:${mimeType};base64,${rawBlob.toString('base64')}`;
+      }
+    } else if (typeof rawBlob === 'string') {
+      const cleaned = rawBlob.replace(/^data:[a-zA-Z0-9.+_-]+\/[a-zA-Z0-9.+_-]+;base64,/, '');
+      return `data:${mimeType};base64,${cleaned}`;
+    }
+  } else if (path) {
+    return path;
   }
+  return null;
+}
+
+function getNormalizedBinaryBuffer(blob) {
+  if (!blob) return null;
+  if (Buffer.isBuffer(blob)) {
+    const asStr = blob.toString('utf8');
+    if (asStr.startsWith('data:') || asStr.startsWith('/9j/') || asStr.startsWith('iVBORw') || asStr.startsWith('R0lGOD')) {
+      const cleaned = asStr.replace(/^data:[a-zA-Z0-9.+_-]+\/[a-zA-Z0-9.+_-]+;base64,/, '');
+      return Buffer.from(cleaned, 'base64');
+    }
+    return blob;
+  } else if (typeof blob === 'string') {
+    const cleaned = blob.replace(/^data:[a-zA-Z0-9.+_-]+\/[a-zA-Z0-9.+_-]+;base64,/, '');
+    return Buffer.from(cleaned, 'base64');
+  }
+  return null;
+}
+
+function publicUser(row) {
+  const photoData = getNormalizedPhotoData(
+    row.profile_photo_blob || row.img_blob,
+    row.profile_photo_mime_type || row.img_mime || row.img_type,
+    row.img_path
+  );
   return {
     id: Number(row.id),
     email: row.email,
@@ -365,13 +396,13 @@ app.get('/api/users/profile-photo/me', authenticateUser, async (req, res) => {
       return res.status(404).send('Photo not found');
     }
     const row = rows[0];
-    res.setHeader('X-Content-Type-Options', 'nosniff'); // OWASP security header
-    if (row.profile_photo_blob && row.profile_photo_blob.length > 0) {
-      res.setHeader('Content-Type', row.profile_photo_mime_type || 'image/jpeg');
-      return res.send(row.profile_photo_blob);
-    } else if (row.img_blob && row.img_blob.length > 0) {
-      res.setHeader('Content-Type', row.img_mime || row.img_type || 'image/jpeg');
-      return res.send(row.img_blob);
+    res.setHeader('X-Content-Type-Options', 'nosniff');
+    const binaryBuf = getNormalizedBinaryBuffer(row.profile_photo_blob || row.img_blob);
+    const mime = row.profile_photo_mime_type || row.img_mime || row.img_type || 'image/jpeg';
+
+    if (binaryBuf && binaryBuf.length > 0) {
+      res.setHeader('Content-Type', mime);
+      return res.send(binaryBuf);
     } else if (row.img_path) {
       return res.redirect(row.img_path);
     }
@@ -395,13 +426,13 @@ app.get('/api/users/profile-photo/:idOrEmail', async (req, res) => {
       return res.status(404).send('Photo not found');
     }
     const row = rows[0];
-    res.setHeader('X-Content-Type-Options', 'nosniff'); // OWASP security header
-    if (row.profile_photo_blob && row.profile_photo_blob.length > 0) {
-      res.setHeader('Content-Type', row.profile_photo_mime_type || 'image/jpeg');
-      return res.send(row.profile_photo_blob);
-    } else if (row.img_blob && row.img_blob.length > 0) {
-      res.setHeader('Content-Type', row.img_mime || row.img_type || 'image/jpeg');
-      return res.send(row.img_blob);
+    res.setHeader('X-Content-Type-Options', 'nosniff');
+    const binaryBuf = getNormalizedBinaryBuffer(row.profile_photo_blob || row.img_blob);
+    const mime = row.profile_photo_mime_type || row.img_mime || row.img_type || 'image/jpeg';
+
+    if (binaryBuf && binaryBuf.length > 0) {
+      res.setHeader('Content-Type', mime);
+      return res.send(binaryBuf);
     } else if (row.img_path) {
       return res.redirect(row.img_path);
     }
