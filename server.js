@@ -141,6 +141,17 @@ async function ensureSchema() {
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
   ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`);
+  await q(`CREATE TABLE IF NOT EXISTS strategy_chats (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    user_id BIGINT NOT NULL,
+    sender_id BIGINT DEFAULT 0,
+    sender_name VARCHAR(100) DEFAULT 'Client',
+    message TEXT NOT NULL,
+    timestamp BIGINT NOT NULL,
+    is_from_me BOOLEAN DEFAULT TRUE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+  ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`);
   console.log('[db] core tables verified');
 }
 
@@ -443,6 +454,81 @@ app.get('/api/user-projects', authenticateUser, async (req, res) => {
   const [rows] = await q(
     'SELECT id, project_name AS name, status, progress_percentage AS progress, user_id AS client_id FROM user_projects WHERE user_id = ?', [req.user.id]);
   res.json(rows);
+});
+
+// --- Strategy Chat Endpoints ---
+app.get('/api/chat/history', authenticateUser, async (req, res) => {
+  try {
+    const uid = req.user.id;
+    const [rows] = await q(
+      'SELECT id, sender_id, sender_name, message, timestamp, is_from_me FROM strategy_chats WHERE user_id = ? ORDER BY timestamp ASC',
+      [uid]
+    );
+    if (rows.length === 0) {
+      const welcomeTimestamp = Date.now();
+      await q(
+        'INSERT INTO strategy_chats (user_id, sender_id, sender_name, message, timestamp, is_from_me) VALUES (?, ?, ?, ?, ?, ?)',
+        [uid, 999, 'Lead Strategist', 'Welcome to The Greggory Strategy Chat. How can our executive team assist your enterprise today?', welcomeTimestamp, false]
+      );
+      const [seededRows] = await q(
+        'SELECT id, sender_id, sender_name, message, timestamp, is_from_me FROM strategy_chats WHERE user_id = ? ORDER BY timestamp ASC',
+        [uid]
+      );
+      const formatted = seededRows.map(r => ({
+        id: String(r.id),
+        sender_id: Number(r.sender_id),
+        sender_name: r.sender_name,
+        message: r.message,
+        timestamp: Number(r.timestamp),
+        is_from_me: Boolean(r.is_from_me)
+      }));
+      return res.json({ success: true, messages: formatted });
+    }
+
+    const formatted = rows.map(r => ({
+      id: String(r.id),
+      sender_id: Number(r.sender_id),
+      sender_name: r.sender_name,
+      message: r.message,
+      timestamp: Number(r.timestamp),
+      is_from_me: Boolean(r.is_from_me)
+    }));
+    res.json({ success: true, messages: formatted });
+  } catch (e) {
+    res.status(500).json({ success: false, message: e.message });
+  }
+});
+
+app.post('/api/chat/send', authenticateUser, async (req, res) => {
+  try {
+    const uid = req.user.id;
+    const { message } = req.body || {};
+    if (!message || !message.trim()) {
+      return res.status(400).json({ success: false, message: 'message required' });
+    }
+    const clientTimestamp = Date.now();
+    await q(
+      'INSERT INTO strategy_chats (user_id, sender_id, sender_name, message, timestamp, is_from_me) VALUES (?, ?, ?, ?, ?, ?)',
+      [uid, uid, 'Me', message.trim(), clientTimestamp, true]
+    );
+
+    const replyTimestamp = clientTimestamp + 500;
+    const replies = [
+      "Thank you for your message. Our lead strategy team has received your brief and is analyzing the parameters.",
+      "We have noted your update regarding strategic objectives. We will incorporate this into your active roadmap.",
+      "Our executives are reviewing your inquiry. Expect a detailed response shortly.",
+      "Confirmed. We are aligning our advisory resources to address this matter."
+    ];
+    const autoReply = replies[Math.floor(Math.random() * replies.length)];
+    await q(
+      'INSERT INTO strategy_chats (user_id, sender_id, sender_name, message, timestamp, is_from_me) VALUES (?, ?, ?, ?, ?, ?)',
+      [uid, 999, 'Lead Strategist', autoReply, replyTimestamp, false]
+    );
+
+    res.json({ success: true, message: 'Message sent successfully' });
+  } catch (e) {
+    res.status(500).json({ success: false, message: e.message });
+  }
 });
 
 app.get('/api/users/my-reports', authenticateUser, async (req, res) => {
