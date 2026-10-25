@@ -53,7 +53,9 @@ data class StrategyChatMessageEntity(
     val senderName: String,
     val message: String,
     val timestamp: Long,
-    val isFromMe: Boolean
+    val isFromMe: Boolean,
+    val attachmentUrl: String? = null,
+    val attachmentType: String? = null
 )
 
 @Entity(tableName = "users")

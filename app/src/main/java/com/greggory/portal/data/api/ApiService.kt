@@ -132,9 +132,15 @@ data class ChatMessageItem(
     val sender_name: String,
     val message: String,
     val timestamp: Long,
-    val is_from_me: Boolean
+    val is_from_me: Boolean,
+    @SerializedName("attachment_url") val attachment_url: String? = null,
+    @SerializedName("attachment_type") val attachment_type: String? = null
 )
-data class SendChatRequest(val message: String)
+data class SendChatRequest(
+    val message: String,
+    @SerializedName("attachment_base64") val attachment_base64: String? = null,
+    @SerializedName("attachment_type") val attachment_type: String? = null
+)
 
 data class FeedbackRequest(
     val title: String,

@@ -149,9 +149,13 @@ async function ensureSchema() {
     message TEXT NOT NULL,
     timestamp BIGINT NOT NULL,
     is_from_me BOOLEAN DEFAULT TRUE,
+    attachment_url TEXT DEFAULT NULL,
+    attachment_type VARCHAR(50) DEFAULT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
   ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`);
+  try { await q('ALTER TABLE strategy_chats ADD COLUMN attachment_url TEXT DEFAULT NULL'); } catch (_) {}
+  try { await q('ALTER TABLE strategy_chats ADD COLUMN attachment_type VARCHAR(50) DEFAULT NULL'); } catch (_) {}
   console.log('[db] core tables verified');
 }
 
@@ -461,7 +465,7 @@ app.get('/api/chat/history', authenticateUser, async (req, res) => {
   try {
     const uid = req.user.id;
     const [rows] = await q(
-      'SELECT id, sender_id, sender_name, message, timestamp, is_from_me FROM strategy_chats WHERE user_id = ? ORDER BY timestamp ASC',
+      'SELECT id, sender_id, sender_name, message, timestamp, is_from_me, attachment_url, attachment_type FROM strategy_chats WHERE user_id = ? ORDER BY timestamp ASC',
       [uid]
     );
     if (rows.length === 0) {
@@ -471,7 +475,7 @@ app.get('/api/chat/history', authenticateUser, async (req, res) => {
         [uid, 999, 'Lead Strategist', 'Welcome to The Greggory Strategy Chat. How can our executive team assist your enterprise today?', welcomeTimestamp, false]
       );
       const [seededRows] = await q(
-        'SELECT id, sender_id, sender_name, message, timestamp, is_from_me FROM strategy_chats WHERE user_id = ? ORDER BY timestamp ASC',
+        'SELECT id, sender_id, sender_name, message, timestamp, is_from_me, attachment_url, attachment_type FROM strategy_chats WHERE user_id = ? ORDER BY timestamp ASC',
         [uid]
       );
       const formatted = seededRows.map(r => ({
@@ -480,7 +484,9 @@ app.get('/api/chat/history', authenticateUser, async (req, res) => {
         sender_name: r.sender_name,
         message: r.message,
         timestamp: Number(r.timestamp),
-        is_from_me: Boolean(r.is_from_me)
+        is_from_me: Boolean(r.is_from_me),
+        attachment_url: r.attachment_url,
+        attachment_type: r.attachment_type
       }));
       return res.json({ success: true, messages: formatted });
     }
@@ -491,7 +497,9 @@ app.get('/api/chat/history', authenticateUser, async (req, res) => {
       sender_name: r.sender_name,
       message: r.message,
       timestamp: Number(r.timestamp),
-      is_from_me: Boolean(r.is_from_me)
+      is_from_me: Boolean(r.is_from_me),
+      attachment_url: r.attachment_url,
+      attachment_type: r.attachment_type
     }));
     res.json({ success: true, messages: formatted });
   } catch (e) {
@@ -502,22 +510,31 @@ app.get('/api/chat/history', authenticateUser, async (req, res) => {
 app.post('/api/chat/send', authenticateUser, async (req, res) => {
   try {
     const uid = req.user.id;
-    const { message } = req.body || {};
-    if (!message || !message.trim()) {
-      return res.status(400).json({ success: false, message: 'message required' });
+    const { message, attachment_base64, attachment_type } = req.body || {};
+    if ((!message || !message.trim()) && !attachment_base64) {
+      return res.status(400).json({ success: false, message: 'message or attachment required' });
     }
+    let attachmentUrl = null;
+    let attType = attachment_type || null;
+    if (attachment_base64) {
+      const cleanB64 = attachment_base64.replace(/^data:[a-zA-Z0-9.+_-]+\/[a-zA-Z0-9.+_-]+;base64,/, '');
+      const mime = attType || 'image/jpeg';
+      attachmentUrl = `data:${mime};base64,${cleanB64}`;
+    }
+
+    const msgText = (message && message.trim()) ? message.trim() : (attType?.startsWith('video') ? '[Video Attachment]' : '[Image Attachment]');
     const clientTimestamp = Date.now();
     await q(
-      'INSERT INTO strategy_chats (user_id, sender_id, sender_name, message, timestamp, is_from_me) VALUES (?, ?, ?, ?, ?, ?)',
-      [uid, uid, 'Me', message.trim(), clientTimestamp, true]
+      'INSERT INTO strategy_chats (user_id, sender_id, sender_name, message, timestamp, is_from_me, attachment_url, attachment_type) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+      [uid, uid, 'Me', msgText, clientTimestamp, true, attachmentUrl, attType]
     );
 
     const replyTimestamp = clientTimestamp + 500;
     const replies = [
-      "Thank you for your message. Our lead strategy team has received your brief and is analyzing the parameters.",
-      "We have noted your update regarding strategic objectives. We will incorporate this into your active roadmap.",
-      "Our executives are reviewing your inquiry. Expect a detailed response shortly.",
-      "Confirmed. We are aligning our advisory resources to address this matter."
+      "Thank you for your message and media attachment. Our lead strategy team is reviewing the files.",
+      "We have received your document/media and incorporated it into your executive project portfolio.",
+      "Attachment reviewed by our advisory team. We will follow up with structured feedback.",
+      "Confirmed receipt of media. Our strategists are analyzing the visual assets."
     ];
     const autoReply = replies[Math.floor(Math.random() * replies.length)];
     await q(
