@@ -272,14 +272,20 @@ app.post('/api/users/register', async (req, res) => {
 
     let photoBlob = null;
     let photoMime = null;
+    let photoId = null;
     if (profile_photo_base64) {
       photoBlob = Buffer.from(profile_photo_base64, 'base64');
       photoMime = profile_photo_mime_type || 'image/jpeg';
+      const [imgResult] = await q(
+        'INSERT INTO images (data, content_type, file_type, file_path) VALUES (?, ?, ?, ?)',
+        [photoBlob, photoMime, 'image/jpeg', `data:${photoMime};base64,${profile_photo_base64}`]
+      );
+      photoId = imgResult.insertId;
     }
 
     await q(
-      'INSERT INTO users (first_name, last_name, display_name, email, phone_number, password_hash, profile_photo_blob, profile_photo_mime_type) VALUES (?,?,?,?,?,?,?,?)',
-      [first_name, last_name, display, email, phone, hash, photoBlob, photoMime]
+      'INSERT INTO users (first_name, last_name, display_name, email, phone_number, password_hash, profile_photo_blob, profile_photo_mime_type, profile_photo_id) VALUES (?,?,?,?,?,?,?,?,?)',
+      [first_name, last_name, display, email, phone, hash, photoBlob, photoMime, photoId]
     );
     res.json({ success: true, message: 'Account created — please log in' });
   } catch (e) {
@@ -299,15 +305,22 @@ app.post('/api/users/profile-photo', authenticateUser, async (req, res) => {
     const mimeType = mime_type || 'image/jpeg';
     const dataUri = `data:${mimeType};base64,${cleanB64}`;
 
+    // Insert into images table and get image ID so profile_photo_id points to the correct cell in the images table
+    const [imgResult] = await q(
+      'INSERT INTO images (data, content_type, file_type, file_path) VALUES (?, ?, ?, ?)',
+      [imageBuffer, mimeType, 'image/jpeg', dataUri]
+    );
+    const imageId = imgResult.insertId;
+
     if (email) {
       await q(
-        'UPDATE users SET profile_photo_blob = ?, profile_photo_mime_type = ? WHERE LOWER(email) = ?',
-        [imageBuffer, mimeType, email.toLowerCase().trim()]
+        'UPDATE users SET profile_photo_blob = ?, profile_photo_mime_type = ?, profile_photo_id = ? WHERE LOWER(email) = ?',
+        [imageBuffer, mimeType, imageId, email.toLowerCase().trim()]
       );
     }
     await q(
-      'UPDATE users SET profile_photo_blob = ?, profile_photo_mime_type = ? WHERE id = ?',
-      [imageBuffer, mimeType, req.user.id]
+      'UPDATE users SET profile_photo_blob = ?, profile_photo_mime_type = ?, profile_photo_id = ? WHERE id = ?',
+      [imageBuffer, mimeType, imageId, req.user.id]
     );
 
     res.json({ success: true, message: 'Photo uploaded successfully', imageUrl: dataUri });
