@@ -171,7 +171,7 @@ interface StrategyChatDao {
     suspend fun clearChat()
 }
 
-@Database(entities = [ProjectEntity::class, InvoiceEntity::class, ReportEntity::class, MessageCacheEntity::class, StrategyChatMessageEntity::class, UserEntity::class], version = 4, exportSchema = false)
+@Database(entities = [ProjectEntity::class, InvoiceEntity::class, ReportEntity::class, MessageCacheEntity::class, StrategyChatMessageEntity::class, UserEntity::class], version = 5, exportSchema = false)
 abstract class AppDatabase : RoomDatabase() {
     abstract fun projectDao(): ProjectDao
     abstract fun invoiceDao(): InvoiceDao
