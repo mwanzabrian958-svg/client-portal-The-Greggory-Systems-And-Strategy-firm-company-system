@@ -27,7 +27,7 @@ Welcome to your mission control. This application is designed to give you comple
 
 | Channel | Directive & Purpose | Technical Execution |
 | :--- | :--- | :--- |
-| 💬 **Direct System Chat ("Chat")** | In-app, encrypted messaging stream directly with Lead Strategists. | Launches **Strategy Chat Screen** (`/api/chat/send`), persisted locally in Room DB for offline resilience. |
+| 💬 **Direct System Chat ("Chat")** | In-app, encrypted messaging stream directly with Lead Strategists, supporting **image and video media sharing**. | Launches **Strategy Chat Screen** (`/api/chat/send`), equipped with a media picker, live preview, and Room DB persistence. |
 | 📞 **Direct Phone Call ("Call")** | Direct voice hotline connection (`+254 115 525 854`). | Launches Android Phone Dialer via `ACTION_DIAL` (`tel:+254115525854`). |
 | 💬 **WhatsApp Stream ("WhatsApp")** | Encrypted instant messaging and document sharing via official WhatsApp business desk. | Opens WhatsApp conversation window (`https://api.whatsapp.com/send?phone=254115525854`). |
 | ✉️ **Direct SMS ("SMS")** | Low-bandwidth or offline cellular SMS messaging line. | Opens native Android SMS app via `ACTION_VIEW` (`sms:+254115525854`). |
@@ -74,7 +74,8 @@ Access all official project reports and deliverables.
 ---
 
 ## ⚙️ Profile & Support
-*   **Photo Uploader:** Personalize your portal by uploading a profile photo in the settings.
+*   **Photo Uploader & OWASP Security:** Personalize your portal by uploading a profile photo in your profile screen, secured with 5MB payload limits, strict MIME type validation, and synchronized database cells.
+*   **Strategy Chat Media Sharing:** Attach and share images and videos directly with lead strategists in the in-app chat.
 *   **Security:** To log out securely, use the logout button at the bottom of the side menu. This will clear all local session data for your protection.
 
 ---
