@@ -445,7 +445,7 @@ data class MpesaStatusResponse(
 data class ImageUploadResponse(
     val success: Boolean,
     val message: String?,
-    val imageUrl: String?
+    @SerializedName(value = "imageUrl", alternate = ["image_url", "url", "photo_url", "path"]) val imageUrl: String?
 )
 
 // ── WhatsApp OTP auth-code pipeline DTOs ────────────────────────────────────

@@ -105,7 +105,34 @@ fun ProfileScreen(dashboardData: DashboardResponse? = null) {
     ) { uri: Uri? ->
         uri?.let {
             selectedImageUri = it
-            // Trigger upload
+            // 1. Instantly save locally so all containers render the photo immediately
+            val base64Local = try {
+                context.contentResolver.openInputStream(it)?.use { stream ->
+                    val bytes = stream.readBytes()
+                    Base64.encodeToString(bytes, Base64.NO_WRAP)
+                }
+            } catch (_: Exception) { null }
+
+            if (!base64Local.isNullOrEmpty()) {
+                val dataUri = "data:image/jpeg;base64,$base64Local"
+                profilePhotoData = dataUri
+                prefs.saveUserInfo(
+                    userId = prefs.getUserId(),
+                    email = email,
+                    name = firstName,
+                    phone = phoneNumber,
+                    role = prefs.getUserRole(),
+                    briefing = missionBriefing,
+                    photoData = dataUri
+                )
+                scope.launch {
+                    try {
+                        database.userDao().updateProfilePhoto(email, dataUri)
+                    } catch (_: Exception) {}
+                }
+            }
+
+            // 2. Trigger background upload to backend DB
             uploadPhoto(context, it, scope) { success, message, imageUrl ->
                 Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
                 if (success && !imageUrl.isNullOrEmpty()) {
