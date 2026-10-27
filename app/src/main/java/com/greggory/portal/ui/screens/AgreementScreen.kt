@@ -34,7 +34,25 @@ fun AgreementScreen(onBack: () -> Unit) {
     var companyName by remember { mutableStateOf("") }
     var email by remember { mutableStateOf(prefs.getUserEmail() ?: "") }
     var phoneNumber by remember { mutableStateOf(prefs.getUserPhone() ?: "") }
-    var serviceCategory by remember { mutableStateOf("Enterprise Software Engineering & Architecture") }
+    var dropdownExpanded by remember { mutableStateOf(false) }
+    val serviceOptions = listOf(
+        "Executive Business Advisory & Corporate Strategy",
+        "Financial Engineering & M-Pesa Integration",
+        "Software & Enterprise Cloud Applications",
+        "Digital Transformation & Growth Strategy",
+        "Data Intelligence, Analytics & AI Telemetry",
+        "Operational Efficiency & Workflow Optimization",
+        "Legal, Governance & Regulatory Compliance",
+        "Cybersecurity & Data Vault Systems",
+        "Website Development",
+        "Web Applications",
+        "Mobile App Development",
+        "Desktop Applications",
+        "Networking & Infrastructure",
+        "Systems Architecture",
+        "Financial Systems"
+    )
+    var serviceCategory by remember { mutableStateOf(serviceOptions[0]) }
     var declarationAccepted by remember { mutableStateOf(false) }
     var signatureName by remember { mutableStateOf("") }
     var isSubmitting by remember { mutableStateOf(false) }
@@ -112,13 +130,35 @@ fun AgreementScreen(onBack: () -> Unit) {
 
         Spacer(modifier = Modifier.height(12.dp))
 
-        OutlinedTextField(
-            value = serviceCategory,
-            onValueChange = { serviceCategory = it },
-            label = { Text("Primary Service Engagement Scope *") },
-            modifier = Modifier.fillMaxWidth(),
-            singleLine = true
-        )
+        ExposedDropdownMenuBox(
+            expanded = dropdownExpanded,
+            onExpandedChange = { dropdownExpanded = !dropdownExpanded },
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            OutlinedTextField(
+                value = serviceCategory,
+                onValueChange = {},
+                readOnly = true,
+                label = { Text("Primary Service Engagement Scope *") },
+                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = dropdownExpanded) },
+                colors = ExposedDropdownMenuDefaults.outlinedTextFieldColors(),
+                modifier = Modifier.menuAnchor(MenuAnchorType.PrimaryNotEditable).fillMaxWidth()
+            )
+            ExposedDropdownMenu(
+                expanded = dropdownExpanded,
+                onDismissRequest = { dropdownExpanded = false }
+            ) {
+                serviceOptions.forEach { option ->
+                    DropdownMenuItem(
+                        text = { Text(option) },
+                        onClick = {
+                            serviceCategory = option
+                            dropdownExpanded = false
+                        }
+                    )
+                }
+            }
+        }
 
         Spacer(modifier = Modifier.height(20.dp))
 
