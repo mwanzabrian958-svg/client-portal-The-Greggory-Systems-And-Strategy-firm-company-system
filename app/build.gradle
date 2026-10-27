@@ -39,6 +39,11 @@ android {
         vectorDrawables.useSupportLibrary = true
     }
 
+    adbOptions {
+        timeOutInMs = 300000 // 5 minutes timeout to prevent TimeoutException during install
+        installOptions += "-r"
+    }
+
     signingConfigs {
         release {
             def signingPropsFile = file("${project.rootDir}/signing.properties")
