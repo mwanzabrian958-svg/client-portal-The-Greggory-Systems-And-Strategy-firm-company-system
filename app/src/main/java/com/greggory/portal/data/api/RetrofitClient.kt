@@ -206,7 +206,6 @@ object RetrofitClient {
         .addInterceptor(authInterceptor)
         .addInterceptor(retryInterceptor)
         .addInterceptor(logging)
-        .certificatePinner(certificatePinner)
         .build()
 
     /**
