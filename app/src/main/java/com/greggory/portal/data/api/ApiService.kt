@@ -241,7 +241,7 @@ data class LoginResponse(
     @SerializedName("display_name") val displayName: String? = null,
     @SerializedName("phone_number", alternate = ["phone"]) val phone: String? = null,
     @SerializedName("primary_role") val primaryRole: String? = "user",
-    @SerializedName("profilePhotoData") val profilePhotoData: String? = null,
+    @SerializedName("profilePhotoData", alternate = ["profile_photo_data", "profile_photo", "avatar_url", "profile_photo_url", "avatar"]) val profilePhotoData: String? = null,
     @SerializedName("mission_briefing") val missionBriefing: String? = null,
     val token: String?,
     // Error fields for failed login
