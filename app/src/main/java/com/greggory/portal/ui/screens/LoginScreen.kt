@@ -314,17 +314,24 @@ fun LoginScreen(
             Text("Don't have an account? Sign up", color = MaterialTheme.colorScheme.secondary)
         }
 
-        if (prefs.isBiometricEnabled() && prefs.getToken() != null) {
+        if (BiometricHelper.isBiometricAvailable(context)) {
             Spacer(modifier = Modifier.height(16.dp))
             OutlinedButton(
                 onClick = {
-                    if (BiometricHelper.isBiometricAvailable(context)) {
-                        BiometricHelper.showBiometricPrompt(
-                            activity = context as FragmentActivity,
-                            onSuccess = { onLoginSuccess() },
-                            onError = {}
-                        )
-                    }
+                    BiometricHelper.showBiometricPrompt(
+                        activity = context as FragmentActivity,
+                        onSuccess = {
+                            if (prefs.getToken() != null) {
+                                prefs.saveBiometricEnabled(true)
+                                onLoginSuccess()
+                            } else {
+                                Toast.makeText(context, "Please log in with email & password once to activate biometric session", Toast.LENGTH_LONG).show()
+                            }
+                        },
+                        onError = { error ->
+                            Toast.makeText(context, "Biometric authentication failed: $error", Toast.LENGTH_SHORT).show()
+                        }
+                    )
                 },
                 modifier = Modifier
                     .fillMaxWidth()
@@ -332,7 +339,10 @@ fun LoginScreen(
             ) {
                 Icon(Icons.Default.Security, contentDescription = null)
                 Spacer(modifier = Modifier.width(8.dp))
-                Text("Unlock with Biometrics", fontWeight = FontWeight.Bold)
+                Text(
+                    text = if (prefs.isBiometricEnabled() && prefs.getToken() != null) "Unlock with Biometrics" else "Quick Biometric Login",
+                    fontWeight = FontWeight.Bold
+                )
             }
         }
        }
