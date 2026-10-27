@@ -147,7 +147,7 @@ fun SettingsScreen(
                             val builder = coil.request.ImageRequest.Builder(context)
                                 .data(photoModel)
                                 .crossfade(true)
-                            if (prefs.getToken() != null) {
+                            if (photoModel is String && prefs.getToken() != null) {
                                 builder.addHeader("Authorization", "Bearer ${prefs.getToken()}")
                             }
                             builder.build()

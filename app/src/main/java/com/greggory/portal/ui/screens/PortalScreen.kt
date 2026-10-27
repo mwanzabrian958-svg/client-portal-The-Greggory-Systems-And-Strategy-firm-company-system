@@ -490,7 +490,7 @@ fun PortalScreen(
                                     val builder = coil.request.ImageRequest.Builder(context)
                                         .data(photoModel)
                                         .crossfade(true)
-                                    if (preferencesManager.getToken() != null) {
+                                    if (photoModel is String && preferencesManager.getToken() != null) {
                                         builder.addHeader("Authorization", "Bearer ${preferencesManager.getToken()}")
                                     }
                                     builder.build()
@@ -657,7 +657,7 @@ fun DrawerHeader(user: UserInfo?, profilePhotoData: String? = null) {
                     val builder = coil.request.ImageRequest.Builder(context)
                         .data(photoModel)
                         .crossfade(true)
-                    if (prefs.getToken() != null) {
+                    if (photoModel is String && prefs.getToken() != null) {
                         builder.addHeader("Authorization", "Bearer ${prefs.getToken()}")
                     }
                     builder.build()
