@@ -90,7 +90,9 @@ fun SearchScreen(
         results?.tasks?.takeIf { it.isNotEmpty() }?.let { tasks ->
             item { Text("TASKS", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary) }
             items(tasks) { task ->
-                TaskCard(task)
+                TaskCard(task) {
+                    onNavigate("Tasks")
+                }
             }
         }
     }
