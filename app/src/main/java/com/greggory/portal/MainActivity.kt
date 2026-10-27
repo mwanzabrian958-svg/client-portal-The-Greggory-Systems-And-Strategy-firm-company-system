@@ -32,11 +32,11 @@ class MainActivity : FragmentActivity() {
     }
 
     private lateinit var prefs: PreferencesManager
-    private val themeModeState = mutableStateOf("system")
+    private val themeModeState = mutableStateOf("dark")
 
     private val prefListener = SharedPreferences.OnSharedPreferenceChangeListener { sharedPreferences, key ->
         if (key == "theme_mode") {
-            themeModeState.value = sharedPreferences.getString("theme_mode", "system") ?: "system"
+            themeModeState.value = sharedPreferences.getString("theme_mode", "dark") ?: "dark"
         }
     }
 
@@ -61,15 +61,9 @@ class MainActivity : FragmentActivity() {
         NotificationHelper.requestPermission(this, requestPermissionLauncher)
         
         setContent {
-            val systemInDarkTheme = isSystemInDarkTheme()
-            
             val themeMode by remember { themeModeState }
             
-            val darkTheme = when (themeMode) {
-                "light" -> false
-                "dark" -> true
-                else -> systemInDarkTheme
-            }
+            val darkTheme = themeMode == "dark"
 
             // Portal only for an existing signed-in account; first run shows
             // onboarding, everyone else lands on Login (same rule as the

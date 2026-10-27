@@ -170,7 +170,10 @@ class PreferencesManager private constructor(context: Context) {
         sharedPreferences.edit().putString("bg_type", type).apply()
     }
 
-    fun getBackgroundType(): String = sharedPreferences.getString("bg_type", "color") ?: "color"
+    fun getBackgroundType(): String {
+        val type = sharedPreferences.getString("bg_type", "image") ?: "image"
+        return if (type == "color") "image" else type
+    }
 
     fun saveBackgroundUri(uri: String) {
         sharedPreferences.edit().putString("bg_uri", uri).apply()
@@ -186,7 +189,10 @@ class PreferencesManager private constructor(context: Context) {
 
     // New Settings
     fun saveThemeMode(mode: String) { sharedPreferences.edit().putString("theme_mode", mode).apply() }
-    fun getThemeMode(): String = sharedPreferences.getString("theme_mode", "system") ?: "system"
+    fun getThemeMode(): String {
+        val mode = sharedPreferences.getString("theme_mode", "dark") ?: "dark"
+        return if (mode == "system") "dark" else mode
+    }
 
     fun saveBiometricEnabled(enabled: Boolean) { sharedPreferences.edit().putBoolean("biometric_enabled", enabled).apply() }
     fun isBiometricEnabled(): Boolean = sharedPreferences.getBoolean("biometric_enabled", false)

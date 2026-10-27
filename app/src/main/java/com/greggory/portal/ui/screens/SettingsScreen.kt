@@ -186,7 +186,7 @@ fun SettingsScreen(
         
         Text("Theme Mode", style = MaterialTheme.typography.titleSmall)
         Row(modifier = Modifier.padding(vertical = 8.dp)) {
-            listOf("System" to "system", "Light" to "light", "Dark" to "dark").forEach { (label, value) ->
+            listOf("Light" to "light", "Dark" to "dark").forEach { (label, value) ->
                 FilterChip(
                     selected = themeMode == value,
                     onClick = { themeMode = value; prefs.saveThemeMode(value) },
@@ -199,7 +199,7 @@ fun SettingsScreen(
         Spacer(modifier = Modifier.height(8.dp))
         Text("Background Mode", style = MaterialTheme.typography.titleSmall)
         Row(modifier = Modifier.padding(vertical = 8.dp)) {
-            listOf("Default" to "color", "Image" to "image", "Video" to "video").forEach { (label, value) ->
+            listOf("Image" to "image", "Video" to "video").forEach { (label, value) ->
                 FilterChip(
                     selected = backgroundType == value,
                     onClick = { backgroundType = value; prefs.saveBackgroundType(value) },
