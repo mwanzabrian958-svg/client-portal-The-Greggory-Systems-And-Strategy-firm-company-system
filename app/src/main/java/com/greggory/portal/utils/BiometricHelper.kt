@@ -9,9 +9,13 @@ import androidx.fragment.app.FragmentActivity
 object BiometricHelper {
     fun isBiometricAvailable(context: Context): Boolean {
         val biometricManager = BiometricManager.from(context)
-        return biometricManager.canAuthenticate(
-            BiometricManager.Authenticators.BIOMETRIC_STRONG or BiometricManager.Authenticators.DEVICE_CREDENTIAL
-        ) == BiometricManager.BIOMETRIC_SUCCESS
+        val authStatus = biometricManager.canAuthenticate(
+            BiometricManager.Authenticators.BIOMETRIC_STRONG or 
+            BiometricManager.Authenticators.BIOMETRIC_WEAK or 
+            BiometricManager.Authenticators.DEVICE_CREDENTIAL
+        )
+        return authStatus == BiometricManager.BIOMETRIC_SUCCESS || 
+               authStatus == BiometricManager.BIOMETRIC_ERROR_NONE_ENROLLED
     }
 
     fun showBiometricPrompt(
@@ -35,8 +39,12 @@ object BiometricHelper {
 
         val promptInfo = BiometricPrompt.PromptInfo.Builder()
             .setTitle("Greggory Portal Unlock")
-            .setSubtitle("Log in using your biometric credential")
-            .setAllowedAuthenticators(BiometricManager.Authenticators.BIOMETRIC_STRONG or BiometricManager.Authenticators.DEVICE_CREDENTIAL)
+            .setSubtitle("Log in using your biometric or device credential")
+            .setAllowedAuthenticators(
+                BiometricManager.Authenticators.BIOMETRIC_STRONG or 
+                BiometricManager.Authenticators.BIOMETRIC_WEAK or 
+                BiometricManager.Authenticators.DEVICE_CREDENTIAL
+            )
             .build()
 
         biometricPrompt.authenticate(promptInfo)
