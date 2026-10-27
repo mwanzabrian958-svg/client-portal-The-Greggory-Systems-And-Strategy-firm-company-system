@@ -942,7 +942,7 @@ fun HomeKpiSection(
     
     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
         KpiCard("Active Projects", summary?.activeProjects?.toString() ?: "0", Modifier.weight(1f).clickable { onNavigate("Projects") })
-        KpiCard("Open Invoices", summary?.openInvoices?.toString() ?: "0", Modifier.weight(1f).clickable { onNavigate("Billing") })
+        KpiCard("Client Agreement", "Master SOW File", Modifier.weight(1f).clickable { onNavigate("Agreement") })
     }
     Spacer(modifier = Modifier.height(8.dp))
     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
