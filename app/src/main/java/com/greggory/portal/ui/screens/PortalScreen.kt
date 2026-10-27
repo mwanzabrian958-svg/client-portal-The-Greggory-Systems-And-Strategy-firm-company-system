@@ -576,6 +576,7 @@ fun PortalScreen(
                                     }
                                 )
                                 "Feedback" -> FeedbackScreen()
+                                "Agreement" -> AgreementScreen(onBack = { currentView = "Home" })
                                 "Notifications" -> NotificationsScreen(notificationsData)
                                 "Profile" -> ProfileScreen(dashboardData)
                                 "Settings" -> SettingsScreen(
@@ -770,6 +771,7 @@ fun HomeScreen(
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 QuickActionCard("Request Job", Icons.Default.AddCircle, Modifier.weight(1f)) { onNavigate("Services") }
                 QuickActionCard("Feedback", Icons.Default.RateReview, Modifier.weight(1f)) { onNavigate("Feedback") }
+                QuickActionCard("Client Agreement", Icons.Default.Description, Modifier.weight(1f)) { onNavigate("Agreement") }
             }
         }
         

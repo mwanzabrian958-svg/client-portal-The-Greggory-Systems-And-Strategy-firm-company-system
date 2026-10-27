@@ -171,7 +171,35 @@ interface StrategyChatDao {
     suspend fun clearChat()
 }
 
-@Database(entities = [ProjectEntity::class, InvoiceEntity::class, ReportEntity::class, MessageCacheEntity::class, StrategyChatMessageEntity::class, UserEntity::class], version = 6, exportSchema = false)
+@Entity(tableName = "client_agreements")
+data class ClientAgreementEntity(
+    @PrimaryKey(autoGenerate = true) val id: Int = 0,
+    val clientName: String,
+    val companyName: String,
+    val email: String,
+    val phoneNumber: String,
+    val serviceCategory: String,
+    val declarationAccepted: Boolean,
+    val signatureName: String,
+    val timestamp: Long
+)
+
+@Dao
+interface AgreementDao {
+    @Query("SELECT * FROM client_agreements ORDER BY timestamp DESC")
+    fun getAllAgreements(): Flow<List<ClientAgreementEntity>>
+
+    @Query("SELECT * FROM client_agreements WHERE email = :email ORDER BY timestamp DESC LIMIT 1")
+    suspend fun getAgreementByEmailSync(email: String): ClientAgreementEntity?
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertAgreement(agreement: ClientAgreementEntity)
+
+    @Query("DELETE FROM client_agreements")
+    suspend fun clearAgreements()
+}
+
+@Database(entities = [ProjectEntity::class, InvoiceEntity::class, ReportEntity::class, MessageCacheEntity::class, StrategyChatMessageEntity::class, UserEntity::class, ClientAgreementEntity::class], version = 7, exportSchema = false)
 abstract class AppDatabase : RoomDatabase() {
     abstract fun projectDao(): ProjectDao
     abstract fun invoiceDao(): InvoiceDao
@@ -179,6 +207,7 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun messageCacheDao(): MessageCacheDao
     abstract fun strategyChatDao(): StrategyChatDao
     abstract fun userDao(): UserDao
+    abstract fun agreementDao(): AgreementDao
 
     companion object {
         @Volatile
