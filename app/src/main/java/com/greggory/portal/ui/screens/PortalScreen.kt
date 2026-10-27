@@ -768,7 +768,6 @@ fun HomeScreen(
                 QuickActionCard("Requests", Icons.Default.Assessment, Modifier.weight(1f)) { onNavigate("Requests") }
             }
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                QuickActionCard("Direct Strategy Support", Icons.AutoMirrored.Filled.Chat, Modifier.weight(1f)) { onNavigateToChat() }
                 QuickActionCard("Request Job", Icons.Default.AddCircle, Modifier.weight(1f)) { onNavigate("Services") }
                 QuickActionCard("Feedback", Icons.Default.RateReview, Modifier.weight(1f)) { onNavigate("Feedback") }
             }
@@ -838,31 +837,6 @@ fun HomeScreen(
                     }
                 }
             }
-        }
-
-        Spacer(modifier = Modifier.height(24.dp))
-        SectionHeader("Active Projects", Icons.Default.BusinessCenter)
-        ProjectsSummaryList(displayProjects.take(3), onViewProject)
-        
-        // Section Header "Milestone Tasks" with AutoMirrored icon
-        Spacer(modifier = Modifier.height(24.dp))
-        SectionHeader("Milestone Tasks", Icons.AutoMirrored.Filled.Assignment)
-        TasksSummaryList(dashboardData?.dashboard?.tasks?.take(3) ?: emptyList(), onNavigate)
-
-        Spacer(modifier = Modifier.height(24.dp))
-        SectionHeader("Recent Invoices", Icons.Default.Payments)
-        InvoicesSummaryList(displayInvoices.take(3), onNavigate)
-        Spacer(modifier = Modifier.height(24.dp))
-        SectionHeader("Latest Updates", Icons.Default.Notifications)
-        
-        // Show Live Feed (Messages)
-        dashboardData?.dashboard?.messages?.take(3)?.forEach { message ->
-            MessageFeedItem(message)
-            Spacer(modifier = Modifier.height(8.dp))
-        }
-
-        if (notifications.isEmpty() && (dashboardData?.dashboard?.messages).isNullOrEmpty()) {
-            Text("No recent updates", style = MaterialTheme.typography.bodySmall)
         }
     }
 }
