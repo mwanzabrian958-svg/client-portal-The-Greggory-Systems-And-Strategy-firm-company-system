@@ -117,7 +117,7 @@
 
         <div class="step-box">
             <span class="step-title">Step 1: Preparation</span>
-            <span class="step-desc">When prompted, tap <b>"Download anyway"</b>. This is safe as the app is hosted on our official firm repository.</span>
+            <span class="step-desc">Your browser may warn that this APK is installed outside Google Play. Continue only if you trust this download source.</span>
         </div>
 
         <div class="step-box">
@@ -125,19 +125,33 @@
             <span class="step-desc">Open the file and tap <b>"Settings"</b> if prompted to allow unknown apps, then toggle <b>"Allow from this source"</b>.</span>
         </div>
 
-        <a href="GSSF-client-portal.apk" class="download-btn" onclick="primeUser()">Download for Android</a>
+        <a href="GSSF-client-portal.apk" class="download-btn">Download for Android</a>
 
         <div class="footer">
-            Build 1.0.0-Stable | AI-Telemetry Enabled<br>
+            <span id="release-version" aria-live="polite">Latest stable release</span><br>
+            <small>APK SHA-256: <code id="release-sha256">See version manifest</code></small><br>
             &copy; 2026 The Greggory Systems & Strategy Firm
         </div>
     </div>
 
     <script>
-        function primeUser() {
-            console.log("Priming user for Android security prompts...");
-            // We can add a small delay or a visual confirmation here
-        }
+        fetch("version.json", { cache: "no-store" })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`Version manifest request failed: ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(version => {
+                document.getElementById("release-version").textContent =
+                    `Latest stable release: ${version.versionName}`;
+                if (/^[0-9a-f]{64}$/i.test(version.sha256)) {
+                    document.getElementById("release-sha256").textContent = version.sha256;
+                }
+            })
+            .catch(error => {
+                console.error("Could not load the latest app version.", error);
+            });
     </script>
 </body>
 </html>

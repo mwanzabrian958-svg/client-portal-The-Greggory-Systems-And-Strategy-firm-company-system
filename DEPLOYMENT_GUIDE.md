@@ -53,13 +53,15 @@ To prepare the app for installation on client phones or the Play Store:
 7. **IMPORTANT:** Keep this file and these passwords safe! If you lose them, you cannot update the app in the future.
 
 ### B. Configure GitHub Secrets (For Automated Deployment)
-If you use the GitHub Actions workflow defined in the `README.md`, you need to add these secrets to your GitHub Repository:
+Add these secrets in your GitHub repository under **Settings > Secrets and variables > Actions**:
 1. Go to your repo on GitHub > **Settings > Secrets and variables > Actions**.
 2. Add **New repository secret**:
    - `RELEASE_KEYSTORE_BASE64`: Open a terminal, run `[Convert]::ToBase64String([IO.File]::ReadAllBytes("path\to\your\keystore.jks"))` in PowerShell, and paste the output.
    - `KEYSTORE_PASSWORD`: The password you chose.
    - `KEY_ALIAS`: `greggory_alias`.
    - `KEY_PASSWORD`: The key password you chose.
+
+The Android workflow uses the checked-in `app/google-services.json`; it does not require a separate Firebase JSON secret. Ensure GitHub Actions is permitted to write repository contents so it can publish releases and update `docs/version.json` for the in-app updater. In **Settings > Pages**, set the build and deployment source to **GitHub Actions**. To publish, create and push a `vMAJOR.MINOR.PATCH` tag on a commit already merged to `main`. CI runs tests and Detekt, builds and signs the APK/AAB, attaches the APK, AAB, and matching checksum manifest to a published GitHub Release, then updates the version manifest and download link on `main`. The Pages workflow deploys those `docs/` changes automatically.
 
 ---
 

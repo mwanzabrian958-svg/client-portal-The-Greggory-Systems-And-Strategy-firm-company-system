@@ -6,7 +6,7 @@ A modern Android application built with Jetpack Compose, designed to provide cli
 Access the web version or download the Android app directly:
 *   [**Web Client Portal**](https://client-portal-tgssf.onrender.com)
 *   [**Download GSSF-client portal (Android APK)**](https://mwanzabrian958-svg.github.io/client-portal-The-Greggory-Systems-And-Strategy-firm-company-system/)
-*   Direct Link: [GSSF-client-portal.apk](https://github.com/mwanzabrian958-svg/client-portal-The-Greggory-Systems-And-Strategy-firm-company-system/raw/main/docs/GSSF-client-portal.apk)
+*   Direct Link: [Download the APK from the client portal website](https://mwanzabrian958-svg.github.io/client-portal-The-Greggory-Systems-And-Strategy-firm-company-system/)
 
 ## 📖 Project Documentation
 For detailed information, please refer to the following guides:
@@ -66,11 +66,15 @@ $env:JAVA_HOME = "C:\Program Files\Android\Android Studio\jbr"
 ```
 
 ### 🚀 CI/CD & Deployment
-The project is configured with GitHub Actions for automated builds. To enable production builds, add the following secrets to your GitHub repository:
+The project is configured with GitHub Actions for automated builds. To enable production releases, add the following secrets to your GitHub repository:
 *   `RELEASE_KEYSTORE_BASE64`: The base64-encoded string of your `.jks` file.
 *   `KEYSTORE_PASSWORD`: Password for the keystore.
 *   `KEY_ALIAS`: Your key alias.
 *   `KEY_PASSWORD`: Password for the specific key.
+
+Push a semantic version tag from a commit on `main` (for example, `v1.2.3`) to publish a signed APK, AAB, and matching SHA-256 version manifest. The same manifest is committed to `main` for already-installed app versions, and the download page points to the latest published APK. GitHub Actions must be allowed to write repository contents so it can update `docs/version.json`.
+
+The download site deploys from `docs/` with GitHub Actions. In **Settings > Pages**, set the build and deployment source to **GitHub Actions**. The first deployment runs after the workflow and website files are pushed to `main`; the tag-release pipeline updates and redeploys the site with the latest APK link.
 
 To install on the active emulator:
 ```powershell

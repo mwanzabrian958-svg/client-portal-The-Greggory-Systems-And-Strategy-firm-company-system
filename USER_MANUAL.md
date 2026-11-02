@@ -5,7 +5,7 @@ Welcome to your mission control. This application is designed to give you comple
 ## 📥 App Download & Web Portal Links
 * **Web Client Portal:** [https://client-portal-tgssf.onrender.com](https://client-portal-tgssf.onrender.com)
 * **Web Download Page:** [https://mwanzabrian958-svg.github.io/client-portal-The-Greggory-Systems-And-Strategy-firm-company-system/](https://mwanzabrian958-svg.github.io/client-portal-The-Greggory-Systems-And-Strategy-firm-company-system/)
-* **Direct APK Download:** [GSSF-client-portal.apk](https://github.com/mwanzabrian958-svg/client-portal-The-Greggory-Systems-And-Strategy-firm-company-system/raw/main/docs/GSSF-client-portal.apk)
+* **Direct APK Download:** [Download the APK from the client portal website](https://mwanzabrian958-svg.github.io/client-portal-The-Greggory-Systems-And-Strategy-firm-company-system/)
 
 ---
 
