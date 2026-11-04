@@ -42,7 +42,7 @@ data class MessageCacheEntity(
     val time: String,
     val unread: Boolean,
     val feedback: Boolean,
-    val attachmentUrl: String? = null // For downloadable receipts or documentation items
+    val attachmentUrl: String? = null
 )
 
 @Entity(tableName = "chat_messages")
@@ -83,6 +83,73 @@ data class UserEntity(
         profilePhotoData = profilePhotoData
     )
 }
+
+@Entity(tableName = "client_agreements")
+data class ClientAgreementEntity(
+    @PrimaryKey(autoGenerate = true) val id: Int = 0,
+    val clientName: String,
+    val companyName: String,
+    val email: String,
+    val phoneNumber: String,
+    val serviceCategory: String,
+    val declarationAccepted: Boolean,
+    val signatureName: String,
+    val timestamp: Long
+)
+
+@Entity(tableName = "quotes")
+data class QuoteEntity(
+    @PrimaryKey val id: Int,
+    val project_id: Int,
+    val project_name: String,
+    val amount: Double,
+    val description: String,
+    val status: String,
+    val client_id: Int,
+    val created_at: String
+)
+
+@Entity(tableName = "feedback")
+data class FeedbackEntity(
+    @PrimaryKey val id: Int,
+    val title: String,
+    val message: String,
+    val type: String,
+    val rating: Int,
+    val priority: String,
+    val author: String,
+    val created_at: String
+)
+
+@Entity(tableName = "change_requests")
+data class ChangeRequestEntity(
+    @PrimaryKey val id: Int,
+    val title: String,
+    val description: String,
+    val status: String,
+    val client_id: Int,
+    val created_at: String
+)
+
+@Entity(tableName = "signature_requests")
+data class SignatureRequestEntity(
+    @PrimaryKey val id: Int,
+    val document_name: String,
+    val project_name: String,
+    val status: String,
+    val client_id: Int,
+    val created_at: String
+)
+
+@Entity(tableName = "notifications")
+data class NotificationEntity(
+    @PrimaryKey val id: Int,
+    val title: String,
+    val message: String,
+    val timestamp: String,
+    val read: Boolean,
+    val client_id: Int
+)
 
 @Dao
 interface UserDao {
@@ -171,19 +238,6 @@ interface StrategyChatDao {
     suspend fun clearChat()
 }
 
-@Entity(tableName = "client_agreements")
-data class ClientAgreementEntity(
-    @PrimaryKey(autoGenerate = true) val id: Int = 0,
-    val clientName: String,
-    val companyName: String,
-    val email: String,
-    val phoneNumber: String,
-    val serviceCategory: String,
-    val declarationAccepted: Boolean,
-    val signatureName: String,
-    val timestamp: Long
-)
-
 @Dao
 interface AgreementDao {
     @Query("SELECT * FROM client_agreements ORDER BY timestamp DESC")
@@ -199,7 +253,84 @@ interface AgreementDao {
     suspend fun clearAgreements()
 }
 
-@Database(entities = [ProjectEntity::class, InvoiceEntity::class, ReportEntity::class, MessageCacheEntity::class, StrategyChatMessageEntity::class, UserEntity::class, ClientAgreementEntity::class], version = 7, exportSchema = false)
+@Dao
+interface QuoteDao {
+    @Query("SELECT * FROM quotes")
+    fun getAllQuotes(): Flow<List<QuoteEntity>>
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertQuotes(quotes: List<QuoteEntity>)
+
+    @Query("DELETE FROM quotes")
+    suspend fun clearQuotes()
+}
+
+@Dao
+interface FeedbackDao {
+    @Query("SELECT * FROM feedback")
+    fun getAllFeedback(): Flow<List<FeedbackEntity>>
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertFeedback(feedback: List<FeedbackEntity>)
+
+    @Query("DELETE FROM feedback")
+    suspend fun clearFeedback()
+}
+
+@Dao
+interface ChangeRequestDao {
+    @Query("SELECT * FROM change_requests")
+    fun getAllChangeRequests(): Flow<List<ChangeRequestEntity>>
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertChangeRequests(requests: List<ChangeRequestEntity>)
+
+    @Query("DELETE FROM change_requests")
+    suspend fun clearChangeRequests()
+}
+
+@Dao
+interface SignatureRequestDao {
+    @Query("SELECT * FROM signature_requests")
+    fun getAllSignatureRequests(): Flow<List<SignatureRequestEntity>>
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertSignatureRequests(requests: List<SignatureRequestEntity>)
+
+    @Query("DELETE FROM signature_requests")
+    suspend fun clearSignatureRequests()
+}
+
+@Dao
+interface NotificationDao {
+    @Query("SELECT * FROM notifications")
+    fun getAllNotifications(): Flow<List<NotificationEntity>>
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertNotifications(notifications: List<NotificationEntity>)
+
+    @Query("DELETE FROM notifications")
+    suspend fun clearNotifications()
+}
+
+@Database(
+    entities = [
+        ProjectEntity::class,
+        InvoiceEntity::class,
+        ReportEntity::class,
+        MessageCacheEntity::class,
+        StrategyChatMessageEntity::class,
+        UserEntity::class,
+        ClientAgreementEntity::class,
+        QuoteEntity::class,
+        FeedbackEntity::class,
+        ChangeRequestEntity::class,
+        SignatureRequestEntity::class,
+        NotificationEntity::class
+    ],
+    version = 8,
+    exportSchema = false
+)
 abstract class AppDatabase : RoomDatabase() {
     abstract fun projectDao(): ProjectDao
     abstract fun invoiceDao(): InvoiceDao
@@ -208,6 +339,11 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun strategyChatDao(): StrategyChatDao
     abstract fun userDao(): UserDao
     abstract fun agreementDao(): AgreementDao
+    abstract fun quoteDao(): QuoteDao
+    abstract fun feedbackDao(): FeedbackDao
+    abstract fun changeRequestDao(): ChangeRequestDao
+    abstract fun signatureRequestDao(): SignatureRequestDao
+    abstract fun notificationDao(): NotificationDao
 
     companion object {
         @Volatile
@@ -220,7 +356,7 @@ abstract class AppDatabase : RoomDatabase() {
                     AppDatabase::class.java,
                     "greggory_portal_database"
                 )
-                .fallbackToDestructiveMigration(true) // Modernized migration strategy
+                .fallbackToDestructiveMigration(true)
                 .build()
                 INSTANCE = instance
                 instance
@@ -238,6 +374,12 @@ fun InvoiceEntity.toApi() = com.greggory.portal.data.api.Invoice(id, amount, sta
 
 fun com.greggory.portal.data.api.Report.toEntity() = ReportEntity(id, title, summary, fileType, fileSize, reportDate, projectName, clientId)
 fun ReportEntity.toApi() = com.greggory.portal.data.api.Report(id, title, summary, file_type, file_size, report_date, project_name, client_id)
+
+fun com.greggory.portal.data.api.Quote.toEntity() = QuoteEntity(id, projectId, projectName, amount, description, status, clientId, createdAt)
+fun QuoteEntity.toApi() = com.greggory.portal.data.api.Quote(id, project_id, project_name, amount, description, status, client_id, created_at)
+
+fun com.greggory.portal.data.api.FeedbackItem.toEntity() = FeedbackEntity(id, title, message, type, rating, priority, author, createdAt)
+fun FeedbackEntity.toApi() = com.greggory.portal.data.api.FeedbackItem(id, title, message, type, rating, priority, author, created_at)
 
 fun com.greggory.portal.data.api.UserInfo.toEntity(authToken: String? = null) = UserEntity(
     email = email,
