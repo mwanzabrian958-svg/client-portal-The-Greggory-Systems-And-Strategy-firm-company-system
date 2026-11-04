@@ -68,6 +68,12 @@ android {
         debug {
             // Point debug builds to the live Render cloud backend as well
             buildConfigField "String", "BASE_URL", "\"https://w-the-greggory-systems-and-strategy-firm-1vf9.onrender.com/\""
+            buildConfigField "String", "SECONDARY_DB_HOST", "\"mysql-57dd84d-the-greggory-systems-and-strategy-firm.i.aivencloud.com\""
+            buildConfigField "int", "SECONDARY_DB_PORT", "27809"
+            buildConfigField "String", "SECONDARY_DB_NAME", "\"defaultdb\""
+            buildConfigField "String", "SECONDARY_DB_USER", "\"avnadmin\""
+            buildConfigField "String", "SECONDARY_DB_PASSWORD", "\"CONFIGURED_SECURE_PASSWORD\""
+            buildConfigField "String", "SECONDARY_DB_URI", "\"mysql://avnadmin:CONFIGURED_SECURE_PASSWORD@mysql-57dd84d-the-greggory-systems-and-strategy-firm.i.aivencloud.com:27809/defaultdb?ssl-mode=REQUIRED\""
         }
         release {
             signingConfig = signingConfigs.getByName("release")
@@ -75,6 +81,12 @@ android {
             shrinkResources = true
             // Production always talks to the Render cloud over HTTPS.
             buildConfigField "String", "BASE_URL", "\"https://w-the-greggory-systems-and-strategy-firm-1vf9.onrender.com/\""
+            buildConfigField "String", "SECONDARY_DB_HOST", "\"mysql-57dd84d-the-greggory-systems-and-strategy-firm.i.aivencloud.com\""
+            buildConfigField "int", "SECONDARY_DB_PORT", "27809"
+            buildConfigField "String", "SECONDARY_DB_NAME", "\"defaultdb\""
+            buildConfigField "String", "SECONDARY_DB_USER", "\"avnadmin\""
+            buildConfigField "String", "SECONDARY_DB_PASSWORD", "\"CONFIGURED_SECURE_PASSWORD\""
+            buildConfigField "String", "SECONDARY_DB_URI", "\"mysql://avnadmin:CONFIGURED_SECURE_PASSWORD@mysql-57dd84d-the-greggory-systems-and-strategy-firm.i.aivencloud.com:27809/defaultdb?ssl-mode=REQUIRED\""
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
         }
     }
