@@ -12,6 +12,7 @@ import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
+import com.greggory.portal.data.local.PreferencesManager
 
 object RetrofitClient {
     // Live Production Backend - Wired to Render Cloud & Aiven MySQL
@@ -29,7 +30,8 @@ object RetrofitClient {
      */
     fun getNormalizedPhotoModel(photoData: String?): Any {
         if (photoData.isNullOrBlank()) {
-            return "${BASE_URL.trimEnd('/')}/api/users/profile-photo/me"
+            val userId = appContext?.let { PreferencesManager.getInstance(it).getUserId() } ?: 0
+            return "${BASE_URL.trimEnd('/')}/api/users/profile-photo/$userId"
         }
         val trimmed = photoData.trim()
         return when {
