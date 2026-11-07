@@ -76,16 +76,17 @@ fun CustomBackground(modifier: Modifier = Modifier) {
 @Composable
 fun VideoPlayer(uri: Uri) {
     val context = LocalContext.current
-    val exoPlayer = remember {
+    val exoPlayer = remember(uri) {
         ExoPlayer.Builder(context).build().apply {
             setMediaItem(MediaItem.fromUri(uri))
             repeatMode = Player.REPEAT_MODE_ALL
             playWhenReady = true
+            volume = 1.0f // Ensure full volume / audio is enabled
             prepare()
         }
     }
 
-    DisposableEffect(exoPlayer) {
+    DisposableEffect(uri) {
         onDispose {
             exoPlayer.release()
         }
@@ -94,7 +95,7 @@ fun VideoPlayer(uri: Uri) {
     AndroidView(
         factory = {
             PlayerView(context).apply {
-                useController = false
+                useController = true // Enable controls for full playback, volume, and duration access
                 resizeMode = AspectRatioFrameLayout.RESIZE_MODE_ZOOM
                 player = exoPlayer
             }
