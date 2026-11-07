@@ -946,19 +946,11 @@ fun HomeKpiSection(
     }
     Spacer(modifier = Modifier.height(8.dp))
     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-        KpiCard("Direct Strategy Support", "24/7 Active Lead", Modifier.weight(1f).clickable { onNavigateToChat() })
         KpiCard("Next Milestone", summary?.nextMilestone ?: "Syncing...", Modifier.weight(1f).clickable { onNavigate("Tasks") })
+        KpiCard("Open Invoices", summary?.openInvoices?.toString() ?: "0", Modifier.weight(1f).clickable { onNavigate("Billing") })
     }
 
     DirectStrategySupportCard(onNavigateToChat = onNavigateToChat)
-
-    dashboardData?.dashboard?.kpiMetrics?.forEach { metric ->
-        val label = metric.label
-        if (!label.equals("On-time Delivery", ignoreCase = true) && !label.equals("On Time Delivery", ignoreCase = true)) {
-            Spacer(modifier = Modifier.height(8.dp))
-            KpiCard(label, metric.value, Modifier.fillMaxWidth())
-        }
-    }
 }
 
 @Composable
