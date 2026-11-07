@@ -81,7 +81,7 @@ fun VideoPlayer(uri: Uri) {
             setMediaItem(MediaItem.fromUri(uri))
             repeatMode = Player.REPEAT_MODE_ALL
             playWhenReady = true
-            volume = 1.0f // Ensure full volume / audio is enabled
+            volume = 0.0f // Muted audio as requested
             prepare()
         }
     }
@@ -95,7 +95,7 @@ fun VideoPlayer(uri: Uri) {
     AndroidView(
         factory = {
             PlayerView(context).apply {
-                useController = true // Enable controls for full playback, volume, and duration access
+                useController = false // Clean background video display without controllers
                 resizeMode = AspectRatioFrameLayout.RESIZE_MODE_ZOOM
                 player = exoPlayer
             }
