@@ -141,4 +141,14 @@ CREATE TABLE IF NOT EXISTS `notifications` (
     `client_id` INT NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+-- 13. Orders Table
+CREATE TABLE IF NOT EXISTS `orders` (
+    `id` INT NOT NULL PRIMARY KEY,
+    `project_name` VARCHAR(255) NOT NULL,
+    `amount` DECIMAL(12,2) NOT NULL,
+    `status` VARCHAR(100) NOT NULL,
+    `client_id` INT NOT NULL,
+    `created_at` VARCHAR(50) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
 SET FOREIGN_KEY_CHECKS = 1;

@@ -30,6 +30,9 @@ interface ApiService {
     @GET("api/user-projects")
     suspend fun getProjects(): Response<List<Project>>
 
+    @GET("api/users/my-orders")
+    suspend fun getOrders(): Response<OrdersResponse>
+
     @GET("api/users/notifications/me")
     suspend fun getNotifications(): Response<NotificationsResponse>
 
@@ -516,3 +519,17 @@ data class WhatsAppAuthStatusResponse(
     @SerializedName("otpTtlMinutes") val otpTtlMinutes: Int?,
     val issues: List<String>?
 )
+
+data class OrdersResponse(val success: Boolean, val orders: List<Order>)
+data class Order(
+    val id: Int,
+    @SerializedName("project_name") val projectName: String,
+    val amount: Double,
+    val status: String,
+    @SerializedName("created_at") val createdAt: String,
+    @SerializedName("user_id") val clientId: Int = 0
+) {
+    val project_name: String get() = projectName
+    val created_at: String get() = createdAt
+    val client_id: Int get() = clientId
+}

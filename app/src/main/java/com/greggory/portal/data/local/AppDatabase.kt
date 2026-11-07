@@ -151,6 +151,16 @@ data class NotificationEntity(
     val client_id: Int
 )
 
+@Entity(tableName = "orders")
+data class OrderEntity(
+    @PrimaryKey val id: Int,
+    val project_name: String,
+    val amount: Double,
+    val status: String,
+    val client_id: Int,
+    val created_at: String
+)
+
 @Dao
 interface UserDao {
     @Query("SELECT * FROM users WHERE email = :email")
@@ -313,6 +323,18 @@ interface NotificationDao {
     suspend fun clearNotifications()
 }
 
+@Dao
+interface OrderDao {
+    @Query("SELECT * FROM orders")
+    fun getAllOrders(): Flow<List<OrderEntity>>
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertOrders(orders: List<OrderEntity>)
+
+    @Query("DELETE FROM orders")
+    suspend fun clearOrders()
+}
+
 @Database(
     entities = [
         ProjectEntity::class,
@@ -326,9 +348,10 @@ interface NotificationDao {
         FeedbackEntity::class,
         ChangeRequestEntity::class,
         SignatureRequestEntity::class,
-        NotificationEntity::class
+        NotificationEntity::class,
+        OrderEntity::class
     ],
-    version = 8,
+    version = 9,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -344,6 +367,7 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun changeRequestDao(): ChangeRequestDao
     abstract fun signatureRequestDao(): SignatureRequestDao
     abstract fun notificationDao(): NotificationDao
+    abstract fun orderDao(): OrderDao
 
     companion object {
         @Volatile
@@ -380,6 +404,9 @@ fun QuoteEntity.toApi() = com.greggory.portal.data.api.Quote(id, project_id, pro
 
 fun com.greggory.portal.data.api.FeedbackItem.toEntity() = FeedbackEntity(id, title, message, type, rating, priority, author, createdAt)
 fun FeedbackEntity.toApi() = com.greggory.portal.data.api.FeedbackItem(id, title, message, type, rating, priority, author, created_at)
+
+fun com.greggory.portal.data.api.Order.toEntity() = OrderEntity(id, projectName, amount, status, clientId, createdAt)
+fun OrderEntity.toApi() = com.greggory.portal.data.api.Order(id, project_name, amount, status, created_at, client_id)
 
 fun com.greggory.portal.data.api.UserInfo.toEntity(authToken: String? = null) = UserEntity(
     email = email,
