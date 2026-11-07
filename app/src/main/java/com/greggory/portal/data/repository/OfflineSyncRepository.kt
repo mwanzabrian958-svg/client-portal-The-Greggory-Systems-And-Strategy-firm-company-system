@@ -79,4 +79,58 @@ class OfflineSyncRepository(context: Context) {
             Log.e("SyncRepository", "Reports archive background sync failed: ${e.localizedMessage}")
         }
     }
+
+    suspend fun syncOrders() {
+        try {
+            val response = RetrofitClient.instance.getOrders()
+            if (response.isSuccessful && response.body()?.success == true) {
+                val userId = prefs.getUserId()
+                val apiOrders = response.body()!!.orders
+                    .filter { DataRouter.verifyRoutingIntegrity(it.clientId, userId) }
+                database.orderDao().clearOrders()
+                database.orderDao().insertOrders(apiOrders.map { it.toEntity() })
+            }
+        } catch (e: Exception) {
+            Log.e("SyncRepository", "Orders sync failed: ${e.localizedMessage}")
+        }
+    }
+
+    suspend fun syncQuotes() {
+        try {
+            val response = RetrofitClient.instance.getQuotes()
+            if (response.isSuccessful && response.body()?.success == true) {
+                val userId = prefs.getUserId()
+                val apiQuotes = response.body()!!.quotes
+                    .filter { DataRouter.verifyRoutingIntegrity(it.clientId, userId) }
+                database.quoteDao().clearQuotes()
+                database.quoteDao().insertQuotes(apiQuotes.map { it.toEntity() })
+            }
+        } catch (e: Exception) {
+            Log.e("SyncRepository", "Quotes sync failed: ${e.localizedMessage}")
+        }
+    }
+
+    suspend fun syncNotifications() {
+        try {
+            val response =RetrofitClient.instance.getNotifications()
+            if (response.isSuccessful && response.body() != null) {
+                val userId = prefs.getUserId()
+                val apiNotifs = response.body()!!.notifications
+                    .filter { DataRouter.verifyRoutingIntegrity(it.clientId, userId) }
+                database.notificationDao().clearNotifications()
+                database.notificationDao().insertNotifications(apiNotifs.map { n ->
+                    NotificationEntity(
+                        id = n.id,
+                        title = n.title,
+                        message = n.message,
+                        timestamp = n.createdAt,
+                        read = n.status == "read",
+                        client_id = n.clientId
+                    )
+                })
+            }
+        } catch (e: Exception) {
+            Log.e("SyncRepository", "Notifications sync failed: ${e.localizedMessage}")
+        }
+    }
 }

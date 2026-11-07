@@ -389,9 +389,11 @@ data class Notification(
     val message: String,
     val priority: String,
     val status: String,
-    @SerializedName("created_at") val createdAt: String
+    @SerializedName("created_at") val createdAt: String,
+    @SerializedName("user_id", alternate = ["client_id"]) val clientId: Int = 0
 ) {
     val created_at: String get() = createdAt
+    val client_id: Int get() = clientId
 }
 
 data class ReportsResponse(val success: Boolean, val reports: List<Report>)
